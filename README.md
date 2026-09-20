@@ -2,7 +2,9 @@
 
 A self-hosted science tutor with a browser frontend and a small Node.js server
 that calls Ollama. It uses `qwen3:8b` by default, a fixed tutor prompt, and
-independent questions without conversation history.
+independent questions without conversation history. Each answer includes three
+clickable, self-contained follow-up questions to keep exploring the topic.
+The tutor uses a kind, patient tone for children aged 10–12.
 
 ## Run locally
 

@@ -21,13 +21,17 @@ test('question becomes a bounded Qwen request and only final content returns', a
     payload = JSON.parse(body);
     assert.equal(req.url, '/api/chat');
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ message: { content: 'Gravity attracts objects with mass.', thinking: 'Not for the response panel.' } }));
+    res.end(JSON.stringify({ message: { content: JSON.stringify({ answer: 'Gravity attracts objects with mass.', followUps: ['Why does the Moon orbit Earth?', 'How does gravity affect ocean tides?', 'Why do astronauts float in orbit?'] }), thinking: 'Not for the response panel.' } }));
   });
   const reply = await f.post({ question: '  What is gravity?  ', model: 'unrequested-model', messages: [] });
   assert.equal(reply.status, 200);
   const data = await reply.json();
   assert.equal(data.answer, 'Gravity attracts objects with mass.');
   assert.equal(data.thinking, undefined);
+  assert.equal(data.followUps.length, 3);
+  assert.equal(data.followUps[0], 'Why does the Moon orbit Earth?');
+  assert.equal(payload.format.properties.followUps.minItems, 3);
+  assert.equal(payload.format.properties.followUps.maxItems, 3);
   assert.equal(payload.model, 'qwen3:8b');
   assert.equal(payload.stream, false); assert.equal(payload.think, false);
   assert.equal(payload.messages[0].role, 'system');
@@ -54,4 +58,20 @@ test('upstream errors and timeouts give retryable messages', async t => {
 test('empty model content does not appear as success', async t => {
   const f = await fixture(t, (_, res) => { res.end(JSON.stringify({ message: { content: '' } })); });
   assert.equal((await f.post({ question: 'Gravity?' })).status, 502);
+});
+
+test('malformed answers and invalid suggestions return a retryable error', async t => {
+  for (const content of [
+    'not JSON',
+    JSON.stringify({ answer: 'Hello', followUps: ['One?', 'Two?'] }),
+    JSON.stringify({ answer: 'Hello', followUps: ['One?', 'one?', 'Three?'] }),
+    JSON.stringify({ answer: 'Hello', followUps: ['One?', 42, 'Three?'] }),
+    JSON.stringify({ answer: 'Hello', followUps: ['One?', 'Two?', 'x'.repeat(181)] }),
+    JSON.stringify({ answer: ' ', followUps: ['One?', 'Two?', 'Three?'] })
+  ]) {
+    const f = await fixture(t, (_, res) => res.end(JSON.stringify({ message: { content } })));
+    const reply = await f.post({ question: 'What is gravity?' });
+    assert.equal(reply.status, 502);
+    assert.match((await reply.json()).error, /try your question again/);
+  }
 });

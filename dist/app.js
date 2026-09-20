@@ -13,7 +13,7 @@ function stopSpeech() { synthesis?.cancel(); speaking = false; $('read').innerHT
 function setBusy(busy) {
   $('ask').disabled = busy;
   $('question').disabled = busy;
-  document.querySelectorAll('.topic').forEach(el => { el.disabled = busy; });
+  document.querySelectorAll('.topic, .follow-up').forEach(el => { el.disabled = busy; });
   $('cancel').hidden = !busy;
   $('answer-panel').setAttribute('aria-busy', String(busy));
   updateRead();
@@ -24,6 +24,8 @@ async function ask(question) {
   question = question.trim();
   $('question').value = question;
   stopSpeech(); answerText = '';
+  $('question').setCustomValidity('');
+  $('follow-ups').hidden = true; $('follow-up-list').replaceChildren();
   controller = new AbortController();
   const timer = setTimeout(() => controller?.abort('timeout'), 125000);
   $('empty').hidden = true; $('answer').hidden = true; $('error').hidden = true; $('loading').hidden = false;
@@ -39,11 +41,20 @@ async function ask(question) {
     $('asked-question').textContent = question;
     $('answer-text').textContent = answerText;
     $('answer').hidden = false;
+    const followUps = Array.isArray(data.followUps) ? data.followUps.filter(q => typeof q === 'string' && q.trim()).slice(0, 3) : [];
+    for (const suggestion of followUps) {
+      const button = document.createElement('button');
+      button.type = 'button'; button.className = 'follow-up secondary';
+      button.textContent = suggestion; button.disabled = true;
+      button.addEventListener('click', () => { if (!controller) void ask(suggestion); });
+      $('follow-up-list').append(button);
+    }
+    $('follow-ups').hidden = followUps.length !== 3;
     $('status').textContent = `Answered in ${(data.elapsedMs / 1000).toFixed(1)} seconds.`;
     if (!localVoice()) { $('speech-note').textContent = 'Read aloud is unavailable in this browser. You can still read your answer above.'; $('speech-note').hidden = false; }
     $('answer').focus({ preventScroll: true });
     if (window.matchMedia('(max-width: 780px)').matches) $('answer-panel').scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
-    return { question, answer: answerText };
+    return { question, answer: answerText, followUps };
   } catch (error) {
     if (controller.signal.aborted && controller.signal.reason !== 'timeout') {
       $('empty').hidden = false; $('status').textContent = 'Stopped. Try another question whenever you’re ready.';
