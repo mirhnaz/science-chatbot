@@ -1,0 +1,31 @@
+# Dependencies and test output
+node_modules/
+coverage/
+.nyc_output/
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+deploy/*.local.*
+deploy/Caddyfile.local
+
+# Logs, backups, and editor/OS files
+*.log
+*.bak
+*.before-web*
+*~
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.agents/
+.codex/
+
+# dist/ contains the actual frontend; keep it tracked.

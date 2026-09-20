@@ -1,0 +1,21 @@
+[Unit]
+Description=Science Chatbot Web App
+After=network.target
+
+[Service]
+Type=simple
+# Template: set User, WorkingDirectory, ExecStart, and PUBLIC_ORIGIN locally.
+User=science-chatbot
+WorkingDirectory=/opt/science-chatbot
+Environment=HOST=127.0.0.1
+Environment=PORT=11436
+Environment=OLLAMA_BASE_URL=http://127.0.0.1:11434
+Environment=OLLAMA_MODEL=qwen3:8b
+Environment=PUBLIC_ORIGIN=https://chatbot.example.com
+# Use the absolute path from `command -v node`; systemd does not load shell setup.
+ExecStart=/usr/bin/node /opt/science-chatbot/server.mjs
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

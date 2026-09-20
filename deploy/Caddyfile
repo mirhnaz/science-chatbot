@@ -1,0 +1,23 @@
+{
+	admin off
+}
+
+http://:11435 {
+	bind 127.0.0.1
+
+	# Preserve the model-list check used during setup.
+	@models {
+		method GET
+		path /api/tags
+	}
+	handle @models {
+		reverse_proxy 127.0.0.1:11434 {
+			header_up Host localhost:11434
+		}
+	}
+
+	# The web app handles the page and the bounded question API.
+	handle {
+		reverse_proxy 127.0.0.1:11436
+	}
+}

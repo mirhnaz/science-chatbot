@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080b18">
+  <meta name="description" content="Ask a science question and explore the answer with your own science tutor.">
+  <title>Science Chatbot · Your curiosity, explored</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23080b18'/%3E%3Ccircle cx='16' cy='16' r='4' fill='%2363ddff'/%3E%3Cellipse cx='16' cy='16' rx='13' ry='6' fill='none' stroke='%238575ff' stroke-width='2' transform='rotate(-40 16 16)'/%3E%3Cellipse cx='16' cy='16' rx='13' ry='6' fill='none' stroke='%2363ddff' stroke-width='2' transform='rotate(40 16 16)'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/styles.css"><script type="module" src="/app.js"></script>
+</head>
+<body>
+  <main class="app">
+    <header class="masthead"><span class="wordmark">✦ THE CURIOSITY LAB</span><span class="private-label">Your own science corner</span></header>
+    <section class="hero" aria-labelledby="title">
+      <h1 id="title" class="sr-only">Science Chatbot</h1>
+      <img src="/science-banner.png" width="2172" height="724" alt="Science Chatbot. Ask anything. Discover something!" fetchpriority="high">
+    </section>
+    <div class="workspace">
+      <section class="question-panel" aria-labelledby="question-heading">
+        <p class="eyebrow"><span aria-hidden="true">01</span> START WITH A WONDER</p>
+        <h2 id="question-heading">What makes you curious?</h2>
+        <form id="question-form">
+          <label for="question">Your science question</label>
+          <textarea id="question" name="question" maxlength="2000" rows="4" placeholder="Why does the Moon change shape?" required aria-describedby="question-help"></textarea>
+          <p id="question-help" class="hint">Big questions and tiny wonders are welcome.</p>
+          <div class="submit-row"><button class="ask primary" id="ask" type="submit"><span aria-hidden="true">↗</span> Ask a question</button><button id="cancel" class="secondary" type="button" hidden>Stop</button></div>
+        </form>
+        <div class="topics"><h3>Need a spark?</h3><div class="topic-grid">
+          <button class="topic" type="button" data-topic="electricity"><span aria-hidden="true">⚡</span>Electricity</button>
+          <button class="topic" type="button" data-topic="light"><span aria-hidden="true">💡</span>Light</button>
+          <button class="topic" type="button" data-topic="gravity"><span aria-hidden="true">🌍</span>Gravity</button>
+          <button class="topic" type="button" data-topic="sound"><span aria-hidden="true">🔊</span>Sound</button>
+        </div></div>
+      </section>
+      <section class="answer-panel" id="answer-panel" aria-labelledby="answer-heading" aria-busy="false">
+        <div class="answer-top"><div><p class="eyebrow"><span aria-hidden="true">02</span> FOLLOW YOUR CURIOSITY</p><h2 id="answer-heading">Let’s discover.</h2></div><span class="bot" aria-hidden="true">✦</span></div>
+        <div id="empty" class="empty-state"><span class="empty-orbit" aria-hidden="true">✧</span><p>Every discovery starts<br>with a question.</p><span>Ask yours. Your answer will appear here.</span></div>
+        <div id="loading" class="loading" hidden><span class="spinner" aria-hidden="true"></span><p>Working on your answer…</p><span>This can take a little longer for the first question.</span></div>
+        <div id="error" class="error" role="alert" hidden></div>
+        <article id="answer" tabindex="-1" hidden><p id="asked-question" class="asked-question"></p><div id="answer-text"></div></article>
+        <div class="answer-bottom"><p id="status" class="status" role="status" aria-live="polite">Ready when you are.</p><button id="read" class="read secondary" type="button" disabled><span aria-hidden="true">◖))</span> Read aloud</button></div>
+        <p id="speech-note" class="speech-note" hidden></p>
+      </section>
+    </div>
+    <footer><span>Stay curious. Keep asking why.</span><span>AI can make mistakes. Check surprising facts with an adult.</span></footer>
+  </main>
+</body>
+</html>
