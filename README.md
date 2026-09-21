@@ -9,14 +9,21 @@ The tutor uses a kind, patient tone for children aged 10–12.
 ## Run locally
 
 Requires Node.js 22 or newer and a running Ollama instance with the model installed.
-There are no third-party npm dependencies or frontend build steps.
+There are no third-party runtime dependencies. TypeScript and Node.js type
+definitions are installed as development dependencies for building and checking
+the server, browser code, and tests.
 
 ```sh
+npm ci
 ollama pull qwen3:8b
 npm start
 ```
 
-Open <http://127.0.0.1:11436>. Run the mock-backend checks with `npm test`.
+Open <http://127.0.0.1:11436>. `npm start` builds the project before starting it.
+Run strict type checks with `npm run typecheck` and the mock-backend and browser
+checks with `npm test` (which also builds first). To build without starting the
+server, run `npm run build`.
+Each build clears old generated files first; `npm run clean` removes only `build/`.
 
 ## Configuration
 
@@ -33,14 +40,43 @@ automatically load `.env` files.
 
 `PUBLIC_ORIGIN` is an origin check, not authentication. The intended deployment
 uses Tailscale Serve for private access, with Caddy and Node bound to loopback.
-See [INSTALL.md](INSTALL.md) for systemd, Caddy, and boot startup instructions.
+See [installation guide](docs/INSTALL.md) for systemd, Caddy, and boot startup instructions.
 
 ## Repository layout
 
-- `dist/`: frontend files served directly; these are required runtime assets.
-- `server.mjs`: static server and bounded question API.
-- `deploy/`: portable configuration templates. Customize ignored local copies.
-- `test/`: automated tests with a mock Ollama backend.
+```text
+src/
+  server.ts           Node.js static server and question API
+  client/
+    app.ts            Browser interaction code
+public/               HTML, CSS, images, icons, and web manifest
+assets/               Original design artwork, not served to browsers
+test/                 Backend and browser tests written in TypeScript
+deploy/               Caddy and systemd configuration templates
+docs/                 Installation and verification guides
+build/                Generated JavaScript; ignored by Git
+package.json          Dependencies and build/run/test commands
+tsconfig*.json        Shared, Node.js, and browser compiler settings
+```
+
+Node.js and TypeScript do not mandate these directory names. Here, `public/`
+contains source assets and `build/` contains generated output. `dist/` is another
+common name for generated output; this project uses `build/` consistently.
+Keep application code in `src/`, and add subdirectories when there are enough
+related modules to justify them.
+
+The Node.js build preserves source paths: `src/server.ts` becomes
+`build/src/server.js`, and `test/*.ts` becomes `build/test/*.js`. The separate
+browser build compiles `src/client/app.ts` to `build/client/app.js`, served at
+`/app.js`. This keeps browser and Node.js types separate without adding a bundler.
+
+Edit the TypeScript sources and `public/` assets; do not edit `build/`.
+Deploy `package.json` plus the complete `build/` and `public/` directories in
+their existing relative locations. A prebuilt deployment can run
+`node build/src/server.js` without npm dependencies installed. Keep `package.json`
+so Node.js recognizes the compiled server as an ES module.
+
+See [verification](docs/VERIFICATION.md) for automated and manual checks.
 
 The app does not persist questions or answers. Model answers may be incorrect;
 the tests verify application behavior, not scientific accuracy. Read aloud

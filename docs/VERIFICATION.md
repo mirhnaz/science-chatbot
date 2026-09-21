@@ -1,17 +1,20 @@
 # Verification
 
-Run automated backend checks with:
+Install dependencies and run strict type checks plus automated application checks:
 
 ```sh
+npm ci
+npm run typecheck
 npm test
-node --check server.mjs
-node --check dist/app.js
 caddy validate --config deploy/Caddyfile --adapter caddyfile
 ```
 
-The backend tests use a mock Ollama server. They cover the fixed model and
+`npm test` compiles the server, browser source, and tests before running the
+compiled tests. The backend tests use a mock Ollama server. They cover the fixed model and
 tutor prompt, invalid and cross-origin requests, upstream errors and timeouts,
-empty responses, and malformed or invalid follow-up suggestions. They do not require a running model. A frontend interaction test checks that
+empty responses, malformed or invalid follow-up suggestions, and serving static
+assets from the compiled deployment layout. They do not require a running model.
+A frontend interaction test checks that
 clicking a suggestion submits its question, clears stale suggestions, prevents
 duplicate requests, and displays new suggestions after the answer.
 

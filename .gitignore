@@ -1,5 +1,6 @@
 # Dependencies and test output
 node_modules/
+build/
 coverage/
 .nyc_output/
 
@@ -28,4 +29,4 @@ Thumbs.db
 .agents/
 .codex/
 
-# dist/ contains the actual frontend; keep it tracked.
+# public/ contains source assets and must stay tracked.

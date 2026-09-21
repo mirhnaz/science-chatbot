@@ -5,27 +5,41 @@ import vm from 'node:vm';
 
 test('follow-up buttons submit their question and clear while the next answer loads', async () => {
   class Element {
-    hidden = false; disabled = false; value = ''; textContent = ''; children = []; listeners = {};
-    addEventListener(type, handler) { this.listeners[type] = handler; }
+    hidden = false; disabled = false; value = ''; textContent = '';
+    children: Element[] = []; listeners: Record<string, () => void> = {};
+    addEventListener(type: string, handler: () => void) { this.listeners[type] = handler; }
     setAttribute() {} setCustomValidity() {} focus() {} scrollIntoView() {}
     replaceChildren() { this.children = []; }
-    append(child) { this.children.push(child); }
+    append(child: Element) { this.children.push(child); }
   }
-  const elements = new Map();
-  const get = id => { if (!elements.has(id)) elements.set(id, new Element()); return elements.get(id); };
-  const requests = [];
+  const elements = new Map<string, Element>();
+  const get = (id: string): Element => {
+    let element = elements.get(id);
+    if (!element) { element = new Element(); elements.set(id, element); }
+    return element;
+  };
+  interface MockResponse {
+    ok: boolean;
+    json: () => Promise<{ answer: string; followUps: string[]; elapsedMs: number }>;
+  }
+  interface PendingRequest {
+    url: string;
+    options: { body: string };
+    resolve: (response: MockResponse) => void;
+  }
+  const requests: PendingRequest[] = [];
   const followUps = ['Why does the Moon orbit Earth?', 'What causes ocean tides?', 'How does gravity affect stars?'];
   const context = vm.createContext({
     document: {
       getElementById: get, createElement: () => new Element(),
-      querySelectorAll: selector => selector.includes('.follow-up') ? get('follow-up-list').children : []
+      querySelectorAll: (selector: string) => selector.includes('.follow-up') ? get('follow-up-list').children : []
     },
     window: { addEventListener() {}, matchMedia: () => ({ matches: false }) },
     AbortController, setTimeout, clearTimeout,
-    fetch: (url, options) => new Promise(resolve => requests.push({ url, options, resolve }))
+    fetch: (url: string, options: { body: string }) => new Promise<MockResponse>(resolve => requests.push({ url, options, resolve }))
   });
-  vm.runInContext(await readFile(new URL('../dist/app.js', import.meta.url), 'utf8'), context);
-  const complete = request => request.resolve({ ok: true, json: async () => ({ answer: 'Gravity pulls objects together.', followUps, elapsedMs: 10 }) });
+  vm.runInContext(await readFile(new URL('../client/app.js', import.meta.url), 'utf8'), context);
+  const complete = (request: PendingRequest) => request.resolve({ ok: true, json: async () => ({ answer: 'Gravity pulls objects together.', followUps, elapsedMs: 10 }) });
   const first = vm.runInContext('ask("What is gravity?")', context);
   complete(requests[0]); await first;
   assert.equal(get('follow-ups').hidden, false);

@@ -16,7 +16,17 @@ command -v node
 ollama pull qwen3:8b
 ```
 
-No npm install or frontend build is required. Keep `dist/` with `server.mjs`.
+Install the locked development dependencies and compile the TypeScript:
+
+```sh
+npm ci
+npm run build
+npm test
+```
+
+Keep the complete `build/` and `public/` directories in the repository's
+layout. The running app has no third-party runtime dependencies. Rebuild after
+source updates before restarting the web service.
 
 ## 2. Customize and install the web service
 
@@ -31,7 +41,7 @@ Edit `deploy/science-chatbot-web.local.service`:
 - Set `User` to the existing account that will run the app.
 - Set `WorkingDirectory` to this repository's absolute path.
 - Set `ExecStart` to the absolute Node executable followed by the absolute path
-  to `server.mjs`. Use `command -v node` to locate Node. For mise installations,
+  to `build/src/server.js`. Use `command -v node` to locate Node. For mise installations,
   use an installed Node path or a maintained version alias. Systemd does not
   load your interactive shell configuration.
 - Set `PUBLIC_ORIGIN` to the exact Tailscale HTTPS origin reported by
