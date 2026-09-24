@@ -1,161 +1,116 @@
-# Private self-hosted installation
+# Build, deploy, and roll back
 
-Traffic flows from Tailscale HTTPS to Caddy on `127.0.0.1:11435`, then to the
-web app on `127.0.0.1:11436`, which calls Ollama on `127.0.0.1:11434`.
-Run these commands from the repository root on the host PC. Keep it powered on
-and awake, and connect client devices to the same tailnet.
+The backend is Rust; the frontend remains TypeScript. The existing host uses
+Tailscale Funnel directly to `127.0.0.1:11436`. Preserve that working mapping.
+A separate Caddy configuration is supplied for installations that already use
+it, but switching the backend does not require changing any proxy configuration.
 
-## 1. Check prerequisites
+## Build and test
 
-Install Node.js 22 or newer, Ollama, Caddy, and Tailscale using your system's
-package management. Confirm Ollama is running and has the configured model:
-
-```sh
-node --version
-command -v node
-ollama pull qwen3:8b
-```
-
-Install the locked development dependencies and compile the TypeScript:
+Install stable Rust and Node.js 22 or newer for building, and run Ollama with the
+configured model. From the repository root:
 
 ```sh
 npm ci
 npm run build
 npm test
+npm run test:node
+npm run typecheck
+npm run check:rust
 ```
 
-Keep the complete `build/` and `public/` directories in the repository's
-layout. The running app has no third-party runtime dependencies. Rebuild after
-source updates before restarting the web service.
-
-## 2. Customize and install the web service
-
-Make an ignored local copy of the template:
+The release binary is `backend/target/release/science-chatbot-server`.
+Keep `public/` and `build/client/app.js` under the deployment root. Set
+`WorkingDirectory` or `ASSET_ROOT` to that root. The running Rust server does not
+need Node or Cargo installed. Preserve the Node reference and its build during
+the initial Rust observation period:
 
 ```sh
-cp --no-clobber deploy/science-chatbot-web.service deploy/science-chatbot-web.local.service
+npm run build:node
 ```
 
-Edit `deploy/science-chatbot-web.local.service`:
+## Verify beside the running service
 
-- Set `User` to the existing account that will run the app.
-- Set `WorkingDirectory` to this repository's absolute path.
-- Set `ExecStart` to the absolute Node executable followed by the absolute path
-  to `build/src/server.js`. Use `command -v node` to locate Node. For mise installations,
-  use an installed Node path or a maintained version alias. Systemd does not
-  load your interactive shell configuration.
-- Set `PUBLIC_ORIGIN` to the exact Tailscale HTTPS origin reported by
-  `tailscale serve status`, such as `https://machine.tail-example.ts.net`, with
-  no trailing slash. Update this value and restart the app if the domain changes.
-
-The template values are examples; do not install it without customization.
-Keep local hostnames, credentials, and personalized unit files out of Git.
+Rust defaults to loopback port `11437`, so it can run beside Node on `11436`:
 
 ```sh
+backend/target/release/science-chatbot-server
+```
+
+In another terminal:
+
+```sh
+curl --noproxy '*' --fail http://127.0.0.1:11437/healthz
+curl --noproxy '*' --fail http://127.0.0.1:11437/app.js
+curl --noproxy '*' --fail http://127.0.0.1:11437/api/chat \
+  -H 'Content-Type: application/json' --data '{"question":"Why is the sky blue?"}'
+```
+
+Verify `answer`, exactly three `followUps`, and numeric `elapsedMs`. Stop the
+side-by-side instance with Ctrl+C after checking it.
+
+## Switch an existing systemd service
+
+Inspect `systemctl cat science-chatbot-web.service` first, including any drop-ins.
+Save the exact working Node unit before changing it. In a local copy, preserve
+`User`, `WorkingDirectory`, all environment variables, especially `PUBLIC_ORIGIN`
+and `PORT=11436`, and the existing enablement. Change only `ExecStart` to the
+absolute release-binary path. Set `TimeoutStopSec=10s` as a final stop bound.
+The repository's `deploy/science-chatbot-web.service` is a Rust template for new
+installations; customize it rather than installing its example account/paths.
+
+```sh
+cp /etc/systemd/system/science-chatbot-web.service deploy/science-chatbot-web.node.local.service
+cp deploy/science-chatbot-web.node.local.service deploy/science-chatbot-web.local.service
+# Edit the local copy's ExecStart and TimeoutStopSec as described above.
 systemd-analyze verify deploy/science-chatbot-web.local.service
 sudo install -m 0644 deploy/science-chatbot-web.local.service /etc/systemd/system/science-chatbot-web.service
 sudo systemctl daemon-reload
-sudo systemctl enable science-chatbot-web.service
 sudo systemctl restart science-chatbot-web.service
 systemctl status science-chatbot-web.service --no-pager
 curl --noproxy '*' --fail http://127.0.0.1:11436/healthz
 ```
 
-Expect `{"status":"ok"}` from the health check.
+Expect the main process to be `science-chatbot-server` and health to report
+`{"status":"ok"}`. Check the existing public HTTPS URL for the page, assets,
+and a real question. Confirm `tailscale serve status` still shows the original
+mapping; do not run a new Serve/Funnel configuration command.
 
-## 3. Configure the dedicated Caddy proxy
+For a new installation, customize the template's account, paths, and origin,
+install it, and enable the service. Keep local unit copies and hostnames out of
+Git. Installed units are not automatically updated by edits to this repository.
 
-The provided Caddyfile preserves GET `/api/tags` as a direct Ollama route.
-All other requests go to the web app. Raw Ollama clients using `/api/generate`,
-the old `/api/chat` payload, or other Ollama endpoints must use a separate
-endpoint or be updated. The web app accepts `{ "question": "..." }` at `/api/chat`.
+## Roll back to Node
 
-Validate before installation:
+Restore the saved Node unit and restart the same service. No Funnel change is
+needed because the port stays `11436`:
 
 ```sh
-caddy validate --config deploy/Caddyfile --adapter caddyfile
+npm run build:frontend
+npm run build:node
+sudo install -m 0644 deploy/science-chatbot-web.node.local.service /etc/systemd/system/science-chatbot-web.service
+sudo systemctl daemon-reload
+sudo systemctl restart science-chatbot-web.service
+curl --noproxy '*' --fail http://127.0.0.1:11436/healthz
 ```
 
-If validation succeeds, back up any existing configuration and install it:
+For a manual fallback, stop the systemd service first, then `npm run start:node`.
+Do not run both servers on port `11436`. Do not delete the Node reference or unit
+backup until the Rust deployment has completed its observation period.
+
+## Operations
 
 ```sh
-mkdir -p "$HOME/.config/science-chatbot"
-if [ -f "$HOME/.config/science-chatbot/Caddyfile" ]; then
-    backup_path=$(mktemp "$HOME/.config/science-chatbot/Caddyfile.before-web.XXXXXX")
-    cp "$HOME/.config/science-chatbot/Caddyfile" "$backup_path"
-    printf 'Backup: %s\n' "$backup_path"
-fi
-cp deploy/Caddyfile "$HOME/.config/science-chatbot/Caddyfile"
-```
-
-Use the existing user service `science-chatbot-caddy.service` if installed.
-For a new installation, install the provided unit first:
-
-```sh
-mkdir -p "$HOME/.config/systemd/user"
-cp --no-clobber deploy/science-chatbot-caddy.service "$HOME/.config/systemd/user/science-chatbot-caddy.service"
-systemctl --user daemon-reload
-systemctl --user enable science-chatbot-caddy.service
-systemctl --user restart science-chatbot-caddy.service
-```
-
-Caddy has `admin off`, so use restart rather than reload. If an older Caddy
-instance runs in a terminal on port 11435, stop that instance before starting
-this service.
-
-## 4. Tailscale and boot startup
-
-If Tailscale Serve already maps HTTPS to `http://127.0.0.1:11435`, preserve that
-mapping. Otherwise, configure it on the host:
-
-```sh
-tailscale serve --bg http://127.0.0.1:11435
+journalctl -u science-chatbot-web.service -n 50 --no-pager
+systemctl is-enabled science-chatbot-web.service ollama.service tailscaled.service
 tailscale serve status
 ```
 
-Use the reported HTTPS origin for `PUBLIC_ORIGIN` in step 2. Do not enable
-Funnel for this private deployment. Caddy and Ollama should remain on loopback.
-`PUBLIC_ORIGIN` is a browser-origin check, not authentication; Tailscale access
-rules control which tailnet users and devices can reach the service.
+Check mobile and desktop layout, follow-up clicks, Stop, and Read aloud from a
+browser. Speech depends on installed voices. A health check proves only the web
+server is up; send a real question to verify Ollama. Recheck startup after the
+next planned reboot; the migration itself does not require rebooting the host.
 
-Check startup settings:
-
-```sh
-systemctl is-enabled science-chatbot-web.service ollama.service tailscaled.service
-systemctl --user is-enabled science-chatbot-caddy.service
-loginctl show-user "$USER" -p Linger
-```
-
-All services should report `enabled`. If necessary, enable the dependencies:
-
-```sh
-sudo systemctl enable --now ollama.service tailscaled.service
-```
-
-The user service needs `Linger=yes` to start without an interactive login:
-
-```sh
-sudo loginctl enable-linger "$USER"
-```
-
-Full-disk encryption may still require unlocking the host at boot.
-
-## 5. Verify and troubleshoot
-
-```sh
-curl --noproxy '*' --fail http://127.0.0.1:11435/healthz
-curl --noproxy '*' --fail http://127.0.0.1:11435/api/tags
-journalctl -u science-chatbot-web.service -n 50 --no-pager
-journalctl --user -u science-chatbot-caddy.service -n 50 --no-pager
-```
-
-Open the Tailscale HTTPS URL from a connected device. Submit a question and
-check Stop and Read aloud. Speech availability depends on the browser and
-installed voices. Check again after a reboot to verify the full startup path.
-
-To roll back a proxy update, copy the saved backup over
-`~/.config/science-chatbot/Caddyfile`, then run
-`systemctl --user restart science-chatbot-caddy.service`.
-
-References: [Tailscale Serve](https://tailscale.com/docs/features/tailscale-serve)
-and [Caddy service guidance](https://caddyserver.com/docs/running).
+`PUBLIC_ORIGIN` is a browser-origin check, not login or authentication. Funnel
+makes the app publicly accessible. The migration preserves the existing access
+policy rather than changing it.

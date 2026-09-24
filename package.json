@@ -3,16 +3,25 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "clean": "node -e \"require('node:fs').rmSync('build', { recursive: true, force: true })\"",
-    "prebuild": "npm run clean",
-    "build": "tsc -p tsconfig.json && tsc -p tsconfig.client.json",
+    "build:frontend": "tsc -p tsconfig.client.json",
+    "build:node": "tsc -p tsconfig.json",
+    "build:rust": "cargo build --manifest-path backend/Cargo.toml --locked --release",
+    "build": "npm run build:frontend && npm run build:rust",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.client.json --noEmit",
     "prestart": "npm run build",
-    "start": "node build/src/server.js",
-    "pretest": "npm run build",
-    "test": "node --test build/test/*.test.js"
+    "start": "backend/target/release/science-chatbot-server",
+    "prestart:node": "npm run build:frontend && npm run build:node",
+    "start:node": "node build/src/server.js",
+    "pretest": "npm run build:frontend && npm run build:node && cargo build --manifest-path backend/Cargo.toml --locked",
+    "test": "cargo test --manifest-path backend/Cargo.toml --locked && TEST_BACKEND=rust node --test build/test/*.test.js",
+    "pretest:node": "npm run build:frontend && npm run build:node",
+    "test:node": "TEST_BACKEND=node node --test build/test/*.test.js",
+    "check:rust": "cargo fmt --manifest-path backend/Cargo.toml --check && cargo clippy --manifest-path backend/Cargo.toml --locked --all-targets -- -D warnings"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

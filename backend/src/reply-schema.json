@@ -1,0 +1,1 @@
+{"type":"object","additionalProperties":false,"properties":{"answer":{"type":"string","minLength":1},"followUps":{"type":"array","minItems":3,"maxItems":3,"uniqueItems":true,"items":{"type":"string","minLength":1,"maxLength":180}}},"required":["answer","followUps"]}

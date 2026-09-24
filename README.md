@@ -1,17 +1,15 @@
 # Science Chatbot
 
-A self-hosted science tutor with a browser frontend and a small Node.js server
-that calls Ollama. It uses `qwen3:8b` by default, a fixed tutor prompt, and
-independent questions without conversation history. Each answer includes three
-clickable, self-contained follow-up questions to keep exploring the topic.
-The tutor uses a kind, patient tone for children aged 10–12.
+A self-hosted science tutor with a TypeScript browser frontend and a Rust backend
+that calls Ollama. It uses `qwen3:8b`, a fixed tutor prompt, and independent
+questions without conversation history. Each answer includes three clickable,
+self-contained follow-up questions. The tutor uses a kind, patient tone for
+children aged 10–12.
 
 ## Run locally
 
-Requires Node.js 22 or newer and a running Ollama instance with the model installed.
-There are no third-party runtime dependencies. TypeScript and Node.js type
-definitions are installed as development dependencies for building and checking
-the server, browser code, and tests.
+Build prerequisites: stable Rust and Node.js 22 or newer. Run Ollama with the
+configured model installed:
 
 ```sh
 npm ci
@@ -19,83 +17,72 @@ ollama pull qwen3:8b
 npm start
 ```
 
-Open <http://127.0.0.1:11436>. `npm start` builds the project before starting it.
-Run strict type checks with `npm run typecheck` and the mock-backend and browser
-checks with `npm test` (which also builds first). To build without starting the
-server, run `npm run build`.
-Each build clears old generated files first; `npm run clean` removes only `build/`.
+Open <http://127.0.0.1:11437>. `npm start` compiles the unchanged TypeScript
+frontend and builds an optimized Rust binary before starting it. The installed
+service explicitly uses port `11436`; the development default avoids colliding
+with it. Run commands from the repository root.
+
+```sh
+npm run build          # frontend + release Rust binary
+npm test               # Rust validation, HTTP integration, frontend interaction
+npm run test:node      # compatibility tests against the retained Node backend
+npm run typecheck
+npm run check:rust     # formatting and Clippy
+```
+
+A prebuilt deployment needs the Rust binary, `public/`, and `build/client/app.js`.
+Node and Cargo are build/test tools; neither is needed to run that binary.
+`npm run clean` removes `build/`; do not run it against a live deployment without
+rebuilding the assets. Normal builds do not clear live assets first.
 
 ## Configuration
 
-Set environment variables in your shell or systemd service. The app does not
-automatically load `.env` files.
+The app reads environment variables, not `.env` files.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `HOST` | `127.0.0.1` | Listen address |
-| `PORT` | `11436` | Listen port |
+| `PORT` | `11437` | Development port; systemd explicitly uses `11436` |
+| `ASSET_ROOT` | `.` | Repository/deployment root containing `public/` and `build/` |
 | `OLLAMA_BASE_URL` | `http://127.0.0.1:11434` | Ollama endpoint |
 | `OLLAMA_MODEL` | `qwen3:8b` | Installed model |
-| `PUBLIC_ORIGIN` | Unset | Exact allowed browser origin, including scheme, without a trailing slash; when unset, checks the request host |
+| `PUBLIC_ORIGIN` | Unset | Exact allowed browser origin; when unset, compares request host |
+| `OLLAMA_TIMEOUT_MS` | `120000` | Complete upstream deadline, including response body reads |
 
-`PUBLIC_ORIGIN` is an origin check, not authentication. The intended deployment
-uses Tailscale Serve for private access, with Caddy and Node bound to loopback.
-See [installation guide](docs/INSTALL.md) for systemd, Caddy, and boot startup instructions.
-
-## Rust migration
-
-The Rust backend is being built alongside the working TypeScript server in
-`backend/`. The first milestone ports question and answer validation into a
-dependency-free Rust library. It does not serve HTTP or call Ollama yet;
-`npm start` still runs the TypeScript app.
-
-With the stable Rust toolchain installed, run:
-
-```sh
-cargo test --manifest-path backend/Cargo.toml --locked
-cargo run --manifest-path backend/Cargo.toml --locked --example validate -- "  Why is the sky blue?  "
-```
-
-See the [Rust migration guide](docs/RUST_MIGRATION.md) for the milestones,
-compatibility decisions, and a walkthrough of this first learning exercise.
+`PUBLIC_ORIGIN` is an origin check, not authentication. The existing deployment
+uses public Tailscale Funnel directly to loopback port `11436`. Preserve its
+working configuration. See [installation](docs/INSTALL.md) for systemd and
+rollback instructions.
 
 ## Repository layout
 
 ```text
-src/
-  server.ts           Node.js static server and question API
-  client/
-    app.ts            Browser interaction code
-backend/              Rust package under development; not deployed yet
-public/               HTML, CSS, images, icons, and web manifest
-assets/               Original design artwork, not served to browsers
-test/                 Backend and browser tests written in TypeScript
-deploy/               Caddy and systemd configuration templates
-docs/                 Installation and verification guides
-build/                Generated JavaScript; ignored by Git
-package.json          Dependencies and build/run/test commands
-tsconfig*.json        Shared, Node.js, and browser compiler settings
+backend/src/chat.rs          Pure question and answer validation
+backend/src/http.rs          Axum routes, assets, and Ollama integration
+backend/src/main.rs          Configuration, listener, and shutdown
+backend/src/tutor.txt        Unchanged system message
+backend/src/reply-schema.json Unchanged structured response schema
+backend/tests/              Rust validation tests
+src/client/app.ts           Unchanged TypeScript browser code
+src/server.ts               Retained Node reference and rollback backend
+public/                     HTML, CSS, images, icons, and manifest
+assets/                     Original artwork, not served
+test/                      Shared HTTP and frontend tests (TypeScript)
+deploy/                     Service and proxy templates
+docs/                       Migration lessons, installation, verification
+build/                      Generated JavaScript, ignored
+backend/target/             Generated Rust artifacts, ignored
 ```
 
-Node.js and TypeScript do not mandate these directory names. Here, `public/`
-contains source assets and `build/` contains generated output. `dist/` is another
-common name for generated output; this project uses `build/` consistently.
-Keep application code in `src/`, and add subdirectories when there are enough
-related modules to justify them.
+The separate frontend build outputs `build/client/app.js`, served at `/app.js`.
+The Node reference compiles to `build/src/server.js` with `npm run build:node`.
+`npm run start:node` builds and runs that fallback (default port `11436`); stop
+the Rust service first if using the same port. Keep Node until the Rust deployment
+has had a satisfactory observation period.
 
-The Node.js build preserves source paths: `src/server.ts` becomes
-`build/src/server.js`, and `test/*.ts` becomes `build/test/*.js`. The separate
-browser build compiles `src/client/app.ts` to `build/client/app.js`, served at
-`/app.js`. This keeps browser and Node.js types separate without adding a bundler.
+See the [Rust migration guide](docs/RUST_MIGRATION.md) for small learning steps,
+compatibility details, and the documented stricter handling of ill-formed JSON.
+See [verification](docs/VERIFICATION.md) for test coverage and deployment checks.
 
-Edit the TypeScript sources and `public/` assets; do not edit `build/`.
-Deploy `package.json` plus the complete `build/` and `public/` directories in
-their existing relative locations. A prebuilt deployment can run
-`node build/src/server.js` without npm dependencies installed. Keep `package.json`
-so Node.js recognizes the compiled server as an ES module.
-
-See [verification](docs/VERIFICATION.md) for automated and manual checks.
-
-The app does not persist questions or answers. Model answers may be incorrect;
-the tests verify application behavior, not scientific accuracy. Read aloud
-depends on browser support and installed device voices.
+The app does not persist questions or answers. Tests verify application behavior,
+not scientific accuracy. Read aloud depends on browser voices and support.

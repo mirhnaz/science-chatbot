@@ -12,9 +12,9 @@ Environment=PORT=11436
 Environment=OLLAMA_BASE_URL=http://127.0.0.1:11434
 Environment=OLLAMA_MODEL=qwen3:8b
 Environment=PUBLIC_ORIGIN=https://chatbot.example.com
-# Use the absolute path from `command -v node`; systemd does not load shell setup.
 # Run npm ci and npm run build before starting or restarting this service.
-ExecStart=/usr/bin/node /opt/science-chatbot/build/src/server.js
+ExecStart=/opt/science-chatbot/backend/target/release/science-chatbot-server
+TimeoutStopSec=10s
 Restart=on-failure
 RestartSec=5s
 

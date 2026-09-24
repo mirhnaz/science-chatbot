@@ -2,117 +2,143 @@
 
 ## Current checkpoint
 
-The working TypeScript baseline is commit `d6b36d0` on `main`, pushed to GitHub
-before starting the `rust-backend-migration` branch. The first Rust milestone is
-a library in `backend/` plus a command-line example. There is no Rust HTTP server
-yet. The TypeScript app remains the running implementation and reference behavior.
+The backend now uses Rust, Axum, Tokio, and reqwest. The TypeScript frontend,
+HTML, CSS, images, tutor prompt, model, and response schema are unchanged.
+The baseline Node implementation is retained in `src/server.ts` for rollback and
+as the reference used by compatibility tests. It is not the default npm server.
+Baseline commits: `d6b36d0` (TypeScript), `f30e065` (Rust validation).
 
-The frontend remains TypeScript throughout this migration. The user confirmed
-that public access through Tailscale Funnel works; no changes to the home PC,
-systemd, or Funnel are part of this checkpoint.
+The Rust binary defaults to `127.0.0.1:11437` for safe side-by-side development.
+The systemd template explicitly uses `127.0.0.1:11436`, preserving the deployed
+Funnel destination. Do not reconfigure Funnel or Caddy to migrate the backend.
+See [INSTALL.md](INSTALL.md) for deployment and rollback.
 
-## Milestones
+The live service was switched to Rust on 2026-09-24. Local and public HTTPS
+checks, including a real Ollama question, passed. Node remains available solely
+as a tested fallback during the observation period.
 
-1. **Baseline and toolchain:** preserve the Node implementation, create a migration
-   branch, and install stable Rust with rustfmt and Clippy.
-2. **Validation (this checkpoint):** port question and answer validation into
-   ordinary Rust functions with tests, before adding async code or HTTP libraries.
-3. **HTTP and static assets:** add Axum and Tokio, `/healthz`, and the existing
-   asset allowlist. Run Rust on loopback port `11437` alongside Node on `11436`.
-4. **Ollama:** add Serde and reqwest, a shared HTTP client, the unchanged tutor
-   prompt and schema, and the existing API response fields.
-5. **Behavior parity:** adapt the existing HTTP tests to run against either
-   implementation with the same mock Ollama backend. Add coverage for concurrency,
-   cancellation, origin checks, body limits, headers, and shutdown.
-6. **Deployment:** build for the Linux host, verify the public flow, and switch
-   systemd to the Rust binary on `11436`. Preserve Node for rollback until the Rust
-   deployment is proven. Update run/build scripts and remove Node backend code last.
+## Milestones implemented
 
-## Run this checkpoint
+1. Validation: pure functions and 18 passing checks (17 integration tests plus
+   one documentation example).
+2. HTTP: health endpoint, exact asset allowlist, MIME types, cache policy, security
+   headers, and friendly method/route errors.
+3. Ollama: one shared reqwest client, unchanged prompt/schema, validated two-layer
+   JSON response, `answer`, `followUps`, and `elapsedMs` fields.
+4. Behavior: shared HTTP tests against Rust and Node, including real sockets for
+   concurrency, disconnects, timeouts during body reads, and shutdown.
+5. Deployment tooling: optimized build, Rust-default npm scripts, systemd template,
+   and Node rollback instructions. Runtime verification is recorded separately
+   in [VERIFICATION.md](VERIFICATION.md).
 
-Install the stable toolchain using [rustup](https://rust-lang.org/tools/install/).
-The package uses Rust 2024 edition (Rust 1.85 or newer) and has no dependencies.
-Commit `backend/Cargo.lock`; never commit `backend/target/`.
+## Run and check
 
-From the repository root:
+Use the installed stable Rust toolchain and Node.js 22 or newer. The package uses
+Rust 2024 edition with a declared minimum of 1.85; verification currently uses
+Rust 1.98.1. The lockfile selects compatible dependency versions; the minimum
+compiler version has not been separately tested. Commit `backend/Cargo.lock`,
+never `backend/target/`.
 
 ```sh
-cargo test --manifest-path backend/Cargo.toml --locked
-cargo fmt --manifest-path backend/Cargo.toml --check
-cargo clippy --manifest-path backend/Cargo.toml --locked --all-targets -- -D warnings
+npm ci
+npm start                   # builds frontend + release Rust; loopback 11437
+npm test                    # Rust validation + Rust HTTP/frontend checks
+npm run test:node           # shared checks against retained Node reference
+npm run typecheck
+npm run check:rust          # rustfmt + Clippy with warnings denied
+```
+
+For a faster development loop:
+
+```sh
+npm run build:frontend
+cargo run --manifest-path backend/Cargo.toml --locked
 cargo run --manifest-path backend/Cargo.toml --locked --example validate -- "  Why is the sky blue?  "
 ```
 
-The example prints the trimmed question on success. Blank or oversized input
-prints the existing friendly validation message and exits unsuccessfully. It does
-not send a question to Ollama. `npm start` and `npm test` keep their current meaning.
+Run from the repository root, or set `ASSET_ROOT` to its absolute path. Runtime
+configuration is listed in [README.md](../README.md). No `.env` file is loaded.
 
-## Reading the code as a Rust lesson
+## Small Rust lessons
 
-Start with `backend/src/chat.rs`, then `backend/tests/validation.rs`, then the
-`backend/examples/validate.rs` command-line example.
+### 1. Keep validation independent
+
+Start with `backend/src/chat.rs` and `backend/tests/validation.rs`.
 
 ```rust
 pub fn validate_question(input: &str) -> Result<&str, ValidationError>
 ```
 
-- `&str` borrows text; it does not take ownership of the caller's `String`.
-- The successful result is a slice of that input, so trimming needs no new string.
-  Rust infers that the returned reference cannot outlive the input.
-- `Result` makes success and failure explicit through `Ok` and `Err`.
-- `ValidationError` is an enum. Pattern matching covers each failure case, while
-  its `Display` implementation preserves the messages shown by the existing app.
-- `validate_reply` returns owned `String` values. They remain available even when
-  the original model-response strings are dropped.
-- `?` propagates an error to the caller. The `match` in the CLI demonstrates how
-  the caller handles both outcomes.
-- `Vec<String>` stores the incoming variable-length suggestions; the validated
-  reply uses `[String; 3]` to represent its required count.
+`&str` borrows text, and the returned trimmed slice borrows that same text.
+`Result` makes success and failure explicit. The reply validator returns owned
+`String` values because the parsed upstream response will eventually be dropped.
+The fixed `[String; 3]` makes the suggestion count part of the validated type.
 
-Try these exercises before the HTTP milestone:
+### 2. Enter the asynchronous runtime
 
-1. Explain why `validate_question` can return a reference to its argument, but
-   cannot return a reference to a new local `String` created inside the function.
-2. Compare `"🚀".len()`, `"🚀".chars().count()`, and
-   `"🚀".encode_utf16().count()` in a scratch test. Predict each result first.
-3. Add a test where the first and third suggestions are duplicates. Explain why
-   `HashSet::insert` detects the duplicate without a separate lookup.
+Read `backend/src/main.rs`. `#[tokio::main]` sets up the runtime. An `async`
+function returns work that can pause at `.await` while a network operation is
+pending. The runtime can drive other requests during that pause.
 
-Use the [Rust Book's ownership chapter](https://doc.rust-lang.org/book/ch04-00-understanding-ownership.html)
-and [Rustlings](https://rustlings.rust-lang.org/) for supporting exercises.
+The binary binds the configured socket, builds an Axum router, and waits for
+SIGINT or SIGTERM. Axum's graceful shutdown stops accepting connections; our
+cancellation token also stops pending handlers, including incomplete uploads.
+
+### 3. Share state safely
+
+Read `Config`, `AppState`, and `app` in `backend/src/http.rs`. `Arc<AppState>` lets
+handlers share ownership of one configuration, HTTP client, and semaphore.
+Cloning an `Arc` adds an owner; it does not copy the state or create a new client.
+
+The fallback handler deliberately checks methods itself: Axum's default routing
+would otherwise add HEAD behavior and different error bodies. Asset paths come
+only from the fixed allowlist, never directly from a user-provided filesystem path.
+
+### 4. Bound model work by ownership
+
+`try_acquire()` obtains one of two semaphore permits without waiting. A third
+request gets `429` immediately. The `_permit` variable owns its slot until the
+handler returns or is dropped. Rust then releases it automatically.
+
+`tokio::time::timeout` wraps the complete upstream operation, including reading
+its response body. Nothing spawns a detached model task. Real-socket tests verify
+that disconnecting clients closes upstream sockets and returns permits.
+The application can close a request; how quickly Ollama stops computation after
+disconnection remains an upstream concern.
+
+### 5. Translate the JSON boundary deliberately
+
+The handler reads at most 8 KiB before parsing. It validates content type and
+origin first, then uses the original validation functions. Extra ordinary JSON
+fields are ignored. reqwest sends the fixed prompt embedded from `tutor.txt` and
+the schema from `reply-schema.json`; tests compare the complete system message
+with the Node reference.
 
 ## Compatibility decisions
 
 - Question and follow-up limits remain 2,000 and 180 **UTF-16 code units**,
-  respectively, matching JavaScript `String.length`. Rust `str::len()` counts
-  UTF-8 bytes instead; substituting it would reject some previously valid text.
-- Trimming follows JavaScript's whitespace set. In particular, U+FEFF is removed
-  and U+0085 is retained. Rust's default `trim()` behaves differently for these.
-  See [ECMAScript whitespace](https://tc39.es/ecma262/multipage/ecmascript-language-lexical-grammar.html#sec-white-space)
-  and [Rust string encoding](https://doc.rust-lang.org/std/primitive.str.html#method.encode_utf16).
-- Suggestions are trimmed and compared using Unicode lowercase, preserving their
-  display case and order. They need not end in a question mark, since the existing
-  validator does not enforce one. No new maximum answer length is introduced.
-- This library only accepts valid Rust strings. Handling malformed JSON, missing
-  or non-string fields, and JavaScript's possible unpaired UTF-16 surrogates belongs
-  to the JSON-boundary milestone. The current tests do not claim HTTP parity yet.
-- No login, usage quotas, streaming, or prompt changes are included in the migration.
+  matching JavaScript, rather than UTF-8 byte lengths.
+- Trimming matches JavaScript: U+FEFF is removed; U+0085 is retained.
+- Suggestions are trimmed and compared using Unicode lowercase, preserving
+  display case and order. There is no new answer-length limit or requirement
+  that suggestions end with a question mark.
+- Invalid UTF-8 request bytes are decoded with replacement before JSON parsing,
+  as in Node. Escaped **unpaired UTF-16 surrogates** are rejected by Rust's JSON
+  parser with the existing unreadable-question `400`; Node accepts these strings.
+  Serde also bounds JSON nesting and rejects out-of-range JSON numbers. Thus
+  this is tested application-contract compatibility, not identical acceptance
+  of every possible JavaScript JSON value. These cases do not reach Ollama.
+- Missing/non-string questions use the existing validation error. Invalid inner
+  model JSON uses the existing unclear-answer error; malformed outer JSON or
+  transport failure uses the existing offline error.
+- Shutdown returns a friendly `503` to pending requests, closes upstream work,
+  and exits promptly. Node's older shutdown behavior waits for pending work.
+- No login, quotas, streaming, prompt changes, frontend changes, or Funnel
+  configuration changes are part of this migration.
 
-## HTTP contract to preserve in later milestones
+## References
 
-- GET `/healthz` and the explicit static asset routes, with their content types.
-- POST `/api/chat`: `{ "question": "..." }` in; `answer`, `followUps`, and
-  `elapsedMs` out. Ignore additional request fields as the Node server does.
-- Existing friendly JSON errors and HTTP statuses, including `400`, `403`, `404`,
-  `405` (with `Allow: POST`), `413`, `415`, `429`, `502`, and `504`.
-- An 8 KiB body limit, origin validation, security headers, and cache policy.
-- At most two active Ollama calls; a third request is rejected immediately rather
-  than queued. Release concurrency permits on success, failure, timeout, and cancel.
-- The existing model, system prompt, structured reply schema, and non-streaming
-  request. Upstream response parsing must validate both layers of JSON.
-- A 120-second upstream deadline, disconnect handling, and graceful shutdown.
-
-Axum's default extractor errors may not match Node's status codes or JSON shape.
-Translate them deliberately. A timeout or client disconnect must not leave an
-unbounded background model call; test this over real sockets rather than assuming
-that dropping a handler cancels all work.
+- [Rust ownership](https://doc.rust-lang.org/book/ch04-00-understanding-ownership.html)
+- [Axum graceful shutdown](https://docs.rs/axum/0.8.9/axum/serve/struct.Serve.html#method.with_graceful_shutdown)
+- [reqwest client](https://docs.rs/reqwest/0.12.28/reqwest/struct.ClientBuilder.html)
+- [ECMAScript whitespace](https://tc39.es/ecma262/multipage/ecmascript-language-lexical-grammar.html#sec-white-space)

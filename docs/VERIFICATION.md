@@ -1,27 +1,68 @@
 # Verification
 
-Install dependencies and run strict type checks plus automated application checks:
+From the repository root:
 
 ```sh
 npm ci
-npm run typecheck
 npm test
-caddy validate --config deploy/Caddyfile --adapter caddyfile
+npm run test:node
+npm run typecheck
+npm run check:rust
+npm run build
+TEST_BACKEND=rust RUST_SERVER_BIN=backend/target/release/science-chatbot-server node --test build/test/*.test.js
 ```
 
-`npm test` compiles the server, browser source, and tests before running the
-compiled tests. The backend tests use a mock Ollama server. They cover the fixed model and
-tutor prompt, invalid and cross-origin requests, upstream errors and timeouts,
-empty responses, malformed or invalid follow-up suggestions, and serving static
-assets from the compiled deployment layout. They do not require a running model.
-A frontend interaction test checks that
-clicking a suggestion submits its question, clears stale suggestions, prevents
-duplicate requests, and displays new suggestions after the answer.
+`npm test` builds the unchanged frontend, Node reference/test files, and debug
+Rust binary. It runs 18 Rust validation checks (17 tests and one documentation
+example), then 18 HTTP/frontend checks against Rust. The shared Node run passes
+15 checks and skips three Rust-specific checks. Socket tests need permission to
+bind loopback ports. Mock Ollama tests never load the real model.
 
-Deployment checks should cover the local page, `/healthz`, `/api/tags`, a real
-question through the HTTPS URL, and boot startup. See [INSTALL.md](INSTALL.md).
-Check desktop and mobile layouts, Stop, and Read aloud manually. Speech depends
-on installed voices and browser support.
+Coverage includes:
 
-Automated tests verify application behavior, not the factual accuracy of model
-answers. A successful health check does not prove Ollama can generate answers.
+- Byte-identical assets across the allowlist, MIME types, query handling,
+  security headers, caching, source-file exclusion, and friendly route/method errors.
+- Exact copied system prompt, schema, model, trimmed question, and response fields.
+- JSON types, malformed bodies, UTF-16 limits, JavaScript whitespace, content
+  types, host-based origins, and explicitly configured public origins.
+- The 8 KiB limit with chunked uploads, two simultaneous model requests, immediate
+  `429` for a third, and capacity recovery after success/error/timeout/disconnect.
+- Real-socket upstream closure on client disconnect and body-read timeout.
+- Friendly errors for unavailable models, transport failures, malformed outer
+  and inner JSON, and invalid suggestions.
+- Rust-specific graceful shutdown during model work and an unfinished upload,
+  missing-asset errors, and explicit rejection of unpaired Unicode surrogates.
+- Existing frontend interaction: following a suggestion submits it, clears stale
+  suggestions, prevents duplicate requests, and renders new suggestions.
+
+## Host checks during migration
+
+Verified with Rust 1.98.1 on the Linux host:
+
+- Rust release server on `127.0.0.1:11437` alongside Node on `11436`.
+- Both health endpoints healthy; sampled live assets byte-identical.
+- A real question through Rust returned an answer, three follow-ups, and elapsed
+  time from the existing Ollama model.
+- TypeScript type checking, Rust formatting, Clippy, and release-build tests pass.
+
+On 2026-09-24, the installed systemd service was switched to the release Rust
+binary on `127.0.0.1:11436`. It remains enabled and active. The existing Funnel
+mapping still targets that same port; no proxy configuration was changed.
+Both local and public HTTPS health checks passed. The public page, JavaScript,
+CSS, banner, favicon, and manifest matched the local assets byte-for-byte.
+A real question through the public HTTPS URL and its configured Origin returned
+an answer, three follow-ups, and `elapsedMs: 3006`.
+
+The temporary side-by-side Rust process on `11437` was stopped after testing.
+The original Node unit is saved in the ignored local file
+`deploy/science-chatbot-web.node.local.service` and in a timestamped
+`/etc/systemd/system/science-chatbot-web.service.before-rust-*` backup. Node
+source and compiled output remain available for rollback. See
+[INSTALL.md](INSTALL.md) for the restore procedure.
+
+## Remaining manual checks
+
+Desktop/mobile visual behavior, audio playback, and startup after a planned
+reboot require separate checks. The frontend source and assets have not changed.
+Tests verify application behavior, not scientific accuracy, and cannot guarantee
+how quickly Ollama stops computing after its HTTP client disconnects.
