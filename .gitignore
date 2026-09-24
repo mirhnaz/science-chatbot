@@ -1,6 +1,7 @@
 # Dependencies and test output
 node_modules/
 build/
+backend/target/
 coverage/
 .nyc_output/
 

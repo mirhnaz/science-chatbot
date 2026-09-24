@@ -42,6 +42,23 @@ automatically load `.env` files.
 uses Tailscale Serve for private access, with Caddy and Node bound to loopback.
 See [installation guide](docs/INSTALL.md) for systemd, Caddy, and boot startup instructions.
 
+## Rust migration
+
+The Rust backend is being built alongside the working TypeScript server in
+`backend/`. The first milestone ports question and answer validation into a
+dependency-free Rust library. It does not serve HTTP or call Ollama yet;
+`npm start` still runs the TypeScript app.
+
+With the stable Rust toolchain installed, run:
+
+```sh
+cargo test --manifest-path backend/Cargo.toml --locked
+cargo run --manifest-path backend/Cargo.toml --locked --example validate -- "  Why is the sky blue?  "
+```
+
+See the [Rust migration guide](docs/RUST_MIGRATION.md) for the milestones,
+compatibility decisions, and a walkthrough of this first learning exercise.
+
 ## Repository layout
 
 ```text
@@ -49,6 +66,7 @@ src/
   server.ts           Node.js static server and question API
   client/
     app.ts            Browser interaction code
+backend/              Rust package under development; not deployed yet
 public/               HTML, CSS, images, icons, and web manifest
 assets/               Original design artwork, not served to browsers
 test/                 Backend and browser tests written in TypeScript
