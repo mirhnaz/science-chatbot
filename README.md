@@ -6,6 +6,9 @@ questions without conversation history. Each answer includes three clickable,
 self-contained follow-up questions. The tutor uses a kind, patient tone for
 children aged 10–12.
 
+For a child-friendly project explanation, see the
+[classroom diagram and speaking notes](docs/diagrams/README.md).
+
 ## Run locally
 
 Build prerequisites: stable Rust and Node.js 22 or newer. Run Ollama with the

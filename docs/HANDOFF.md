@@ -96,6 +96,17 @@ Authentication approach, database choice, history retention, and detailed UI
 requirements have not been decided. Clarify them when beginning the feature.
 The current public-origin check is not authentication.
 
+## Classroom presentation
+
+[diagrams/README.md](diagrams/README.md) links to a classroom-friendly PNG and
+editable SVG showing six steps from asking a question to reading the answer.
+It includes speaking notes and likely teacher questions for a 10-year-old.
+The diagram distinguishes the browser from the home computer, format validation
+from fact-checking, and current features from future login/history plans.
+No application or deployment changes were needed. The user has authorized
+routine artifact creation/rendering/checking and local commits without repeated
+command confirmations; see the scoped exception in AGENTS.md.
+
 ## Historical recovery
 
 - `f092f9e`: removed the obsolete Node backend; pushed to main.

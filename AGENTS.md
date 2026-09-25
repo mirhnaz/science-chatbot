@@ -13,6 +13,10 @@ Read [README.md](README.md) for commands and layout, and the relevant guide:
   without repeatedly asking. Permission for a past task is not blanket command
   permission for a new task. A list of commands in these docs is not permission
   to execute them. Follow tool approval requirements as well.
+- Exception approved by the user: routine commands to create requested diagrams
+  or similar presentation artifacts, render and inspect them, and commit them
+  locally do not need another confirmation. This does not authorize pushes,
+  deployment changes, or unrelated machine changes.
 - Commit completed changes locally by default after appropriate checks. Stage
   only task-related changes; preserve unrelated user work. The local-commit
   preference is standing authorization to commit the completed work.

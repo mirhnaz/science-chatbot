@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1200" viewBox="0 0 1920 1200" role="img" aria-labelledby="title description">
+<title id="title">How our Science Chatbot works</title>
+<desc id="description">Six numbered steps: ask a science question in a browser; the Rust app on our home computer checks it; the app adds tutor instructions; Qwen, running through Ollama on our home computer, creates a reply; the app checks the reply format; the browser displays the answer and three follow-up questions. An encrypted internet link connects the browser and computer. A dashed arrow shows that a follow-up starts a new question. Additional features include read aloud, cancellation and friendly error messages. AI can make mistakes.</desc>
+<defs>
+<marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0L8 4L0 8Z" fill="#173453"/></marker>
+<marker id="repeat" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0L8 4L0 8Z" fill="#118579"/></marker>
+</defs>
+<rect width="1920" height="1200" fill="#FFFFFF"/>
+<g font-family="Noto Sans, sans-serif">
+<text x="60" y="48" font-size="17" font-weight="700" fill="#118579" text-anchor="start">SCIENCE CHATBOT  /  A CLASSROOM WALKTHROUGH</text>
+<text x="60" y="108" font-size="49" font-weight="700" fill="#173453" text-anchor="start">How our Science Chatbot works</text>
+<text x="62" y="154" font-size="24" font-weight="400" fill="#53677E" text-anchor="start">From a curious question to an answer — and three new things to explore.</text>
+<path d="M1395 187H1434" fill="none" stroke="#173453" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="1448" y="194" font-size="17" font-weight="400" fill="#53677E" text-anchor="start">Follow steps 1–6</text>
+<path d="M1650 187H1689" fill="none" stroke="#118579" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#repeat)" stroke-dasharray="8 7"/>
+<text x="1703" y="194" font-size="17" font-weight="400" fill="#53677E" text-anchor="start">Ask again</text>
+<rect x="48" y="224" width="528" height="653" rx="20" fill="#F0F6FC" stroke="#B7CEE6" stroke-width="2"/>
+<rect x="690" y="224" width="1182" height="653" rx="20" fill="#F0F8F5" stroke="#A7CFBE" stroke-width="2"/>
+<text x="80" y="266" font-size="21" font-weight="700" fill="#2467B2" text-anchor="start">YOUR SCREEN</text>
+<text x="80" y="296" font-size="18" font-weight="400" fill="#53677E" text-anchor="start">The website in your browser</text>
+<text x="730" y="266" font-size="21" font-weight="700" fill="#118579" text-anchor="start">OUR HOME COMPUTER</text>
+<text x="730" y="296" font-size="18" font-weight="400" fill="#53677E" text-anchor="start">The app manages the question; the AI tutor creates the reply.</text>
+<rect x="80" y="322" width="464" height="212" rx="14" fill="white" stroke="#DCE5ED" stroke-width="2"/>
+<rect x="102" y="345" width="62" height="62" rx="13" fill="#2467B2" stroke="none" stroke-width="2"/>
+<g transform="translate(106,349) scale(0.95)" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="7" width="46" height="32" rx="4"/><path d="M20 48H36M28 39V48"/><path d="M14 17H36M14 25H42"/></g>
+<text x="183" y="374" font-size="25" font-weight="700" fill="#173453" text-anchor="start">Ask a question</text>
+<circle cx="517" cy="337" r="22" fill="#173453" stroke="white" stroke-width="4"/>
+<text x="517" y="345" font-size="22" font-weight="700" fill="white" text-anchor="middle">1</text>
+<text x="104" y="439" font-size="20" font-weight="400" fill="#53677E" text-anchor="start">Open the website on a phone or computer.</text>
+<text x="104" y="469" font-size="20" font-weight="400" fill="#53677E" text-anchor="start">Type a question (or choose a topic),</text>
+<text x="104" y="499" font-size="20" font-weight="400" fill="#53677E" text-anchor="start">then press Ask.</text>
+<rect x="730" y="322" width="464" height="212" rx="14" fill="white" stroke="#DCE5ED" stroke-width="2"/>
+<rect x="752" y="345" width="62" height="62" rx="13" fill="#118579" stroke="none" stroke-width="2"/>
+<g transform="translate(756,349) scale(0.95)" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M28 4L47 11V27C47 39 37 46 28 51C19 46 9 39 9 27V11Z"/><path d="M18 27L25 34L39 19"/></g>
+<text x="833" y="374" font-size="25" font-weight="700" fill="#173453" text-anchor="start">Check the question</text>
+<circle cx="1167" cy="337" r="22" fill="#173453" stroke="white" stroke-width="4"/>
+<text x="1167" y="345" font-size="22" font-weight="700" fill="white" text-anchor="middle">2</text>
+<text x="754" y="439" font-size="20" font-weight="400" fill="#53677E" text-anchor="start">Our app checks that the question</text>
+<text x="754" y="469" font-size="20" font-weight="400" fill="#53677E" text-anchor="start">is not empty or too long before</text>
+<text x="754" y="499" font-size="20" font-weight="400" fill="#53677E" text-anchor="start">sending it to the AI tutor.</text>
+<rect x="1368" y="322" width="464" height="212" rx="14" fill="white" stroke="#DCE5ED" stroke-width="2"/>
+<rect x="1390" y="345" width="62" height="62" rx="13" fill="#BF5B24" stroke="none" stroke-width="2"/>
+<g transform="translate(1394,349) scale(0.95)" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="5" width="38" height="47" rx="4"/><path d="M18 16H37M18 25H37M18 34H29M18 43H34"/></g>
+<text x="1471" y="374" font-size="25" font-weight="700" fill="#173453" text-anchor="start">Add tutor instructions</text>
+<circle cx="1805" cy="337" r="22" fill="#173453" stroke="white" stroke-width="4"/>
+<text x="1805" y="345" font-size="22" font-weight="700" fill="white" text-anchor="middle">3</text>
+<text x="1392" y="439" font-size="20" font-weight="400" fill="#53677E" text-anchor="start">Ask for clear, kind science explanations,</text>
+<text x="1392" y="469" font-size="20" font-weight="400" fill="#53677E" text-anchor="start">an everyday example and safe ideas</text>
+<text x="1392" y="499" font-size="20" font-weight="400" fill="#53677E" text-anchor="start">for children aged 10–12.</text>
+<rect x="1368" y="624" width="464" height="212" rx="14" fill="white" stroke="#DCE5ED" stroke-width="2"/>
+<rect x="1390" y="647" width="62" height="62" rx="13" fill="#7752A4" stroke="none" stroke-width="2"/>
+<g transform="translate(1394,651) scale(0.95)" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="15" width="42" height="32" rx="8"/><path d="M28 15V7M4 25V36M52 25V36M20 39H36"/><circle cx="28" cy="5" r="2"/><circle cx="19" cy="27" r="2"/><circle cx="37" cy="27" r="2"/></g>
+<text x="1471" y="676" font-size="25" font-weight="700" fill="#173453" text-anchor="start">AI writes a reply</text>
+<circle cx="1805" cy="639" r="22" fill="#173453" stroke="white" stroke-width="4"/>
+<text x="1805" y="647" font-size="22" font-weight="700" fill="white" text-anchor="middle">4</text>
+<text x="1392" y="741" font-size="20" font-weight="400" fill="#53677E" text-anchor="start">Ollama runs the Qwen AI on our computer.</text>
+<text x="1392" y="771" font-size="20" font-weight="400" fill="#53677E" text-anchor="start">It writes an answer and suggests</text>
+<text x="1392" y="801" font-size="20" font-weight="400" fill="#53677E" text-anchor="start">three new questions to explore.</text>
+<rect x="730" y="624" width="464" height="212" rx="14" fill="white" stroke="#DCE5ED" stroke-width="2"/>
+<rect x="752" y="647" width="62" height="62" rx="13" fill="#118579" stroke="none" stroke-width="2"/>
+<g transform="translate(756,651) scale(0.95)" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="44" height="44" rx="5"/><path d="M14 18L17 21L23 14M14 31L17 34L23 27M30 18H42M30 31H42M14 43H42"/></g>
+<text x="833" y="676" font-size="25" font-weight="700" fill="#173453" text-anchor="start">Check the reply</text>
+<circle cx="1167" cy="639" r="22" fill="#173453" stroke="white" stroke-width="4"/>
+<text x="1167" y="647" font-size="22" font-weight="700" fill="white" text-anchor="middle">5</text>
+<text x="754" y="741" font-size="20" font-weight="400" fill="#53677E" text-anchor="start">Our app checks for an answer and</text>
+<text x="754" y="771" font-size="20" font-weight="400" fill="#53677E" text-anchor="start">exactly three different follow-up questions.</text>
+<text x="754" y="801" font-size="20" font-weight="400" fill="#53677E" text-anchor="start">This checks the format, not the facts.</text>
+<rect x="80" y="624" width="464" height="212" rx="14" fill="white" stroke="#DCE5ED" stroke-width="2"/>
+<rect x="102" y="647" width="62" height="62" rx="13" fill="#2467B2" stroke="none" stroke-width="2"/>
+<g transform="translate(106,651) scale(0.95)" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7H49V39H23L12 49V39H7Z"/><path d="M16 18H40M16 28H34"/></g>
+<text x="183" y="676" font-size="25" font-weight="700" fill="#173453" text-anchor="start">Read and explore</text>
+<circle cx="517" cy="639" r="22" fill="#173453" stroke="white" stroke-width="4"/>
+<text x="517" y="647" font-size="22" font-weight="700" fill="white" text-anchor="middle">6</text>
+<text x="104" y="741" font-size="20" font-weight="400" fill="#53677E" text-anchor="start">Read the answer and click a follow-up</text>
+<text x="104" y="771" font-size="20" font-weight="400" fill="#53677E" text-anchor="start">to explore more. Each question starts</text>
+<text x="104" y="801" font-size="20" font-weight="400" fill="#53677E" text-anchor="start">fresh, without earlier chat history.</text>
+<path d="M552 436H717" fill="none" stroke="#173453" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="632" y="377" font-size="17" font-weight="400" fill="#53677E" text-anchor="middle">Encrypted</text>
+<text x="632" y="401" font-size="17" font-weight="400" fill="#53677E" text-anchor="middle">internet link</text>
+<path d="M1203 436H1355" fill="none" stroke="#173453" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="1280" y="417" font-size="17" font-weight="400" fill="#53677E" text-anchor="middle">Ready for AI</text>
+<path d="M1600 545V611" fill="none" stroke="#173453" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="1620" y="581" font-size="17" font-weight="400" fill="#53677E" text-anchor="start">Create the reply</text>
+<path d="M1358 733H1206" fill="none" stroke="#173453" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="1282" y="712" font-size="17" font-weight="400" fill="#53677E" text-anchor="middle">AI reply</text>
+<path d="M720 733H555" fill="none" stroke="#173453" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow)"/>
+<text x="634" y="712" font-size="16" font-weight="400" fill="#53677E" text-anchor="middle">Answer returns</text>
+<path d="M310 613V547" fill="none" stroke="#118579" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#repeat)" stroke-dasharray="8 7"/>
+<text x="333" y="586" font-size="17" font-weight="700" fill="#118579" text-anchor="start">Ask again</text>
+<text x="80" y="860" font-size="17" font-weight="400" fill="#2467B2" text-anchor="start">Try: “Why is the sky blue?”</text>
+<text x="730" y="860" font-size="17" font-weight="400" fill="#118579" text-anchor="start">Built with Rust  •  AI runs locally on our computer  •  No live web search</text>
+<text x="60" y="927" font-size="20" font-weight="700" fill="#173453" text-anchor="start">HELPFUL FEATURES &amp; GOOD HABITS</text>
+<rect x="60" y="950" width="435" height="169" rx="13" fill="#F7F9FC" stroke="none" stroke-width="2"/>
+<g transform="translate(80,968) scale(0.7)" fill="none" stroke="#2467B2" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 23H16L29 12V44L16 33H7Z M36 20Q44 28 36 36M42 12Q57 28 42 44"/></g>
+<text x="136" y="1000" font-size="23" font-weight="700" fill="#173453" text-anchor="start">Read aloud</text>
+<text x="82" y="1043" font-size="19" font-weight="400" fill="#53677E" text-anchor="start">Hear the answer if your browser</text>
+<text x="82" y="1071" font-size="19" font-weight="400" fill="#53677E" text-anchor="start">has a suitable voice.</text>
+<rect x="515" y="950" width="435" height="169" rx="13" fill="#F7F9FC" stroke="none" stroke-width="2"/>
+<g transform="translate(535,968) scale(0.7)" fill="none" stroke="#7752A4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="28" cy="28" r="23"/><rect x="20" y="20" width="16" height="16" rx="2"/></g>
+<text x="591" y="1000" font-size="23" font-weight="700" fill="#173453" text-anchor="start">Stop waiting</text>
+<text x="537" y="1043" font-size="19" font-weight="400" fill="#53677E" text-anchor="start">Use Stop to cancel a question</text>
+<text x="537" y="1071" font-size="19" font-weight="400" fill="#53677E" text-anchor="start">while the tutor is answering.</text>
+<rect x="970" y="950" width="435" height="169" rx="13" fill="#F7F9FC" stroke="none" stroke-width="2"/>
+<g transform="translate(990,968) scale(0.7)" fill="none" stroke="#BF5B24" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M44 20A19 19 0 1 0 44 38M44 8V21H31"/></g>
+<text x="1046" y="1000" font-size="23" font-weight="700" fill="#173453" text-anchor="start">Try again</text>
+<text x="992" y="1043" font-size="19" font-weight="400" fill="#53677E" text-anchor="start">If the tutor is busy, offline or slow,</text>
+<text x="992" y="1071" font-size="19" font-weight="400" fill="#53677E" text-anchor="start">the app shows a friendly message.</text>
+<rect x="1425" y="950" width="435" height="169" rx="13" fill="#F7F9FC" stroke="none" stroke-width="2"/>
+<g transform="translate(1445,968) scale(0.7)" fill="none" stroke="#118579" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 40C20 33 12 30 12 21A16 16 0 0 1 44 21C44 30 36 33 36 40ZM20 46H36M25 51H31"/></g>
+<text x="1501" y="1000" font-size="23" font-weight="700" fill="#173453" text-anchor="start">Check your facts</text>
+<text x="1447" y="1043" font-size="19" font-weight="400" fill="#53677E" text-anchor="start">AI can make mistakes. Check</text>
+<text x="1447" y="1071" font-size="19" font-weight="400" fill="#53677E" text-anchor="start">important facts with your teacher.</text>
+<text x="60" y="1167" font-size="18" font-weight="700" fill="#173453" text-anchor="start">Created by Ayaan and Naz Mir</text>
+<text x="1860" y="1167" font-size="17" font-weight="400" fill="#53677E" text-anchor="end">Current version: no login or saved conversations</text>
+</g></svg>
