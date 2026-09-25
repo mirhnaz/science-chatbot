@@ -5,18 +5,17 @@ From the repository root:
 ```sh
 npm ci
 npm test
-npm run test:node
 npm run typecheck
 npm run check:rust
 npm run build
-TEST_BACKEND=rust RUST_SERVER_BIN=backend/target/release/science-chatbot-server node --test build/test/*.test.js
+RUST_SERVER_BIN=backend/target/release/science-chatbot-server node --test build/test/*.test.js
 ```
 
-`npm test` builds the unchanged frontend, Node reference/test files, and debug
-Rust binary. It runs 18 Rust validation checks (17 tests and one documentation
-example), then 18 HTTP/frontend checks against Rust. The shared Node run passes
-15 checks and skips three Rust-specific checks. Socket tests need permission to
-bind loopback ports. Mock Ollama tests never load the real model.
+`npm test` builds the unchanged frontend, TypeScript test files, and debug Rust
+binary. It runs 18 Rust validation checks (17 tests and one documentation
+example), then all 18 HTTP/frontend checks against Rust with no backend selector
+or skipped cases. Node runs the test harness and mock Ollama server only. Socket
+tests need permission to bind loopback ports; they never load the real model.
 
 Coverage includes:
 
@@ -54,11 +53,11 @@ A real question through the public HTTPS URL and its configured Origin returned
 an answer, three follow-ups, and `elapsedMs: 3006`.
 
 The temporary side-by-side Rust process on `11437` was stopped after testing.
-The original Node unit is saved in the ignored local file
-`deploy/science-chatbot-web.node.local.service` and in a timestamped
-`/etc/systemd/system/science-chatbot-web.service.before-rust-*` backup. Node
-source and compiled output remain available for rollback. See
-[INSTALL.md](INSTALL.md) for the restore procedure.
+After the user confirmed the deployed app works, the obsolete Node source,
+compiled backend, local Node unit copy, and one-time migration script were
+removed from the repository workspace. System-level historical backups were
+left untouched. The old implementation remains in Git at `e0a8f58`; see
+[INSTALL.md](INSTALL.md) for recovery guidance.
 
 ## Remaining manual checks
 

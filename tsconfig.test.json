@@ -3,10 +3,16 @@
   "compilerOptions": {
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "lib": ["ES2022"],
-    "types": ["node"],
+    "lib": [
+      "ES2022"
+    ],
+    "types": [
+      "node"
+    ],
     "rootDir": ".",
     "outDir": "build"
   },
-  "include": ["src/server.ts", "test/**/*.ts"]
+  "include": [
+    "test/**/*.ts"
+  ]
 }

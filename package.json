@@ -9,19 +9,15 @@
   "scripts": {
     "clean": "node -e \"require('node:fs').rmSync('build', { recursive: true, force: true })\"",
     "build:frontend": "tsc -p tsconfig.client.json",
-    "build:node": "tsc -p tsconfig.json",
     "build:rust": "cargo build --manifest-path backend/Cargo.toml --locked --release",
     "build": "npm run build:frontend && npm run build:rust",
-    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.client.json --noEmit",
+    "typecheck": "tsc -p tsconfig.test.json --noEmit && tsc -p tsconfig.client.json --noEmit",
     "prestart": "npm run build",
     "start": "backend/target/release/science-chatbot-server",
-    "prestart:node": "npm run build:frontend && npm run build:node",
-    "start:node": "node build/src/server.js",
-    "pretest": "npm run build:frontend && npm run build:node && cargo build --manifest-path backend/Cargo.toml --locked",
-    "test": "cargo test --manifest-path backend/Cargo.toml --locked && TEST_BACKEND=rust node --test build/test/*.test.js",
-    "pretest:node": "npm run build:frontend && npm run build:node",
-    "test:node": "TEST_BACKEND=node node --test build/test/*.test.js",
-    "check:rust": "cargo fmt --manifest-path backend/Cargo.toml --check && cargo clippy --manifest-path backend/Cargo.toml --locked --all-targets -- -D warnings"
+    "pretest": "npm run build:frontend && npm run build:tests && cargo build --manifest-path backend/Cargo.toml --locked",
+    "test": "cargo test --manifest-path backend/Cargo.toml --locked && node --test build/test/*.test.js",
+    "check:rust": "cargo fmt --manifest-path backend/Cargo.toml --check && cargo clippy --manifest-path backend/Cargo.toml --locked --all-targets -- -D warnings",
+    "build:tests": "tsc -p tsconfig.test.json"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

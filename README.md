@@ -25,7 +25,6 @@ with it. Run commands from the repository root.
 ```sh
 npm run build          # frontend + release Rust binary
 npm test               # Rust validation, HTTP integration, frontend interaction
-npm run test:node      # compatibility tests against the retained Node backend
 npm run typecheck
 npm run check:rust     # formatting and Clippy
 ```
@@ -64,10 +63,9 @@ backend/src/tutor.txt        Unchanged system message
 backend/src/reply-schema.json Unchanged structured response schema
 backend/tests/              Rust validation tests
 src/client/app.ts           Unchanged TypeScript browser code
-src/server.ts               Retained Node reference and rollback backend
 public/                     HTML, CSS, images, icons, and manifest
 assets/                     Original artwork, not served
-test/                      Shared HTTP and frontend tests (TypeScript)
+test/                      Rust HTTP and frontend tests (TypeScript)
 deploy/                     Service and proxy templates
 docs/                       Migration lessons, installation, verification
 build/                      Generated JavaScript, ignored
@@ -75,10 +73,11 @@ backend/target/             Generated Rust artifacts, ignored
 ```
 
 The separate frontend build outputs `build/client/app.js`, served at `/app.js`.
-The Node reference compiles to `build/src/server.js` with `npm run build:node`.
-`npm run start:node` builds and runs that fallback (default port `11436`); stop
-the Rust service first if using the same port. Keep Node until the Rust deployment
-has had a satisfactory observation period.
+Node.js runs the test harness and the TypeScript compiler; it does not serve the
+application. `npm run build:tests` compiles the test files using
+`tsconfig.test.json`. Keep `node_modules/` for these development dependencies.
+The old Node backend is available in Git history at `e0a8f58`, rather than in
+the active source tree.
 
 See the [Rust migration guide](docs/RUST_MIGRATION.md) for small learning steps,
 compatibility details, and the documented stricter handling of ill-formed JSON.

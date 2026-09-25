@@ -5,7 +5,13 @@ import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { setTimeout as delay } from 'node:timers/promises';
 import { readFile } from 'node:fs/promises';
-import { createApp, TUTOR, type AppOptions } from '../src/server.js';
+interface AppOptions {
+  upstream?: string;
+  model?: string;
+  publicOrigin?: string;
+  timeoutMs?: number;
+  root?: string;
+}
 
 async function readObject(response: Response): Promise<Record<string, unknown>> {
   const value: unknown = await response.json();
@@ -20,47 +26,38 @@ async function listen(server: http.Server) {
   return `http://127.0.0.1:${address.port}`;
 }
 async function close(server: http.Server) { server.closeAllConnections(); await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve())); }
-async function fixture(t: TestContext, handler: http.RequestListener, options: AppOptions & { root?: string } = {}) {
+async function fixture(t: TestContext, handler: http.RequestListener, options: AppOptions = {}) {
   const upstream = http.createServer(handler);
   const base = await listen(upstream);
   t.after(() => close(upstream));
-  let url: string;
-  let stop: () => Promise<void>;
-  if (process.env.TEST_BACKEND === 'rust') {
-    const child = spawn(process.env.RUST_SERVER_BIN || 'backend/target/debug/science-chatbot-server', [], {
-      env: { ...process.env, HOST: '127.0.0.1', PORT: '0', ASSET_ROOT: options.root || process.cwd(),
-        OLLAMA_BASE_URL: options.upstream || base, OLLAMA_MODEL: options.model || 'qwen3:8b',
-        PUBLIC_ORIGIN: options.publicOrigin || '', OLLAMA_TIMEOUT_MS: String(options.timeoutMs ?? 120000) },
-      stdio: ['ignore', 'pipe', 'pipe']
+  const child = spawn(process.env.RUST_SERVER_BIN || 'backend/target/debug/science-chatbot-server', [], {
+    env: { ...process.env, HOST: '127.0.0.1', PORT: '0', ASSET_ROOT: options.root || process.cwd(),
+      OLLAMA_BASE_URL: options.upstream || base, OLLAMA_MODEL: options.model || 'qwen3:8b',
+      PUBLIC_ORIGIN: options.publicOrigin || '', OLLAMA_TIMEOUT_MS: String(options.timeoutMs ?? 120000) },
+    stdio: ['ignore', 'pipe', 'pipe']
+  });
+  const exited = once(child, 'exit');
+  const stop = async () => {
+    if (child.exitCode !== null || child.signalCode !== null) return;
+    child.kill('SIGTERM');
+    const timer = setTimeout(() => child.kill('SIGKILL'), 3000);
+    try { await exited; } finally { clearTimeout(timer); }
+    assert.equal(child.exitCode, 0, 'Rust exits gracefully');
+  };
+  t.after(stop);
+  const url = await new Promise<string>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('Rust server did not start')), 5000);
+    let output = '';
+    let errors = '';
+    child.stderr.on('data', data => { errors += String(data); });
+    child.on('error', error => { clearTimeout(timer); reject(error); });
+    child.on('exit', () => { clearTimeout(timer); reject(new Error(`Rust exited: ${errors}`)); });
+    child.stdout.on('data', data => {
+      output += String(data);
+      const match = output.match(/ready at (http:\/\/[^\s]+)/);
+      if (match) { clearTimeout(timer); resolve(match[1]); }
     });
-    const exited = once(child, 'exit');
-    stop = async () => {
-      if (child.exitCode !== null || child.signalCode !== null) return;
-      child.kill('SIGTERM');
-      const timer = setTimeout(() => child.kill('SIGKILL'), 3000);
-      try { await exited; } finally { clearTimeout(timer); }
-      assert.equal(child.exitCode, 0, 'Rust exits gracefully');
-    };
-    t.after(stop);
-    url = await new Promise<string>((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error('Rust server did not start')), 5000);
-      let output = '';
-      let errors = '';
-      child.stderr.on('data', data => { errors += String(data); });
-      child.on('error', error => { clearTimeout(timer); reject(error); });
-      child.on('exit', () => { clearTimeout(timer); reject(new Error(`Rust exited: ${errors}`)); });
-      child.stdout.on('data', data => {
-        output += String(data);
-        const match = output.match(/ready at (http:\/\/[^\s]+)/);
-        if (match) { clearTimeout(timer); resolve(match[1]); }
-      });
-    });
-  } else {
-    const app = createApp({ upstream: base, ...options });
-    url = await listen(app);
-    stop = () => close(app);
-    t.after(stop);
-  }
+  });
   return { url, stop, post: (body: unknown, headers: Record<string, string> = {}) => fetch(`${url}/api/chat`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: JSON.stringify(body) }) };
 }
 
@@ -112,7 +109,7 @@ test('question becomes a bounded Qwen request and only final content returns', a
   assert.equal(payload.messages[0].role, 'system');
   const prompt = await readFile('backend/src/tutor.txt', 'utf8');
   assert.equal(payload.messages[0].content, prompt);
-  assert.ok(prompt.startsWith(TUTOR + '\n\n'));
+  assert.deepEqual(payload.format, JSON.parse(await readFile('backend/src/reply-schema.json', 'utf8')));
   assert.equal(payload.messages[1].content, 'What is gravity?');
 });
 test('blank, oversized, malformed and cross-origin requests do not reach Ollama', async t => {
@@ -124,7 +121,7 @@ test('blank, oversized, malformed and cross-origin requests do not reach Ollama'
   assert.equal((await f.post({ question: 'Gravity?' }, { Origin: 'https://another-site.example' })).status, 403);
   const malformed = await fetch(`${f.url}/api/chat`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{' });
   assert.equal(malformed.status, 400); assert.equal(calls, 0);
-  for (const path of ['/src/server.ts', '/build/src/server.js', '/src/client/app.ts', '/test/server.test.ts', '/deploy/Caddyfile']) {
+  for (const path of ['/backend/src/main.rs', '/src/client/app.ts', '/test/server.test.ts', '/deploy/Caddyfile']) {
     assert.equal((await fetch(`${f.url}${path}`)).status, 404);
   }
 });
@@ -208,7 +205,7 @@ test('asset allowlist preserves bytes, MIME types, query handling and security h
   }
 });
 
-test('JSON boundary, UTF-16 lengths, trimming and content types match Node', async t => {
+test('JSON boundary preserves UTF-16 lengths, trimming and content types', async t => {
   const questions: string[] = [];
   const f = await fixture(t, async (req, res) => {
     let body = ''; for await (const chunk of req) body += chunk;
@@ -337,7 +334,7 @@ test('deadline covers response body reads and frees capacity on timeout and erro
   assert.equal((await f.post({ question: 'Five?' })).status, 200);
 });
 
-test('Rust shutdown cancels in-flight model calls and exits promptly', { skip: process.env.TEST_BACKEND !== 'rust' }, async t => {
+test('Rust shutdown cancels in-flight model calls and exits promptly', async t => {
   let calls = 0;
   let closed = 0;
   const f = await fixture(t, (req, res) => {
@@ -359,7 +356,7 @@ test('upstream connection failure returns the friendly offline error and release
   }
 });
 
-test('Rust rejects ill-formed Unicode JSON explicitly and handles missing assets', { skip: process.env.TEST_BACKEND !== 'rust' }, async t => {
+test('Rust rejects ill-formed Unicode JSON explicitly and handles missing assets', async t => {
   let calls = 0;
   const f = await fixture(t, (_, res) => { calls++; answer(res); }, { root: '/nonexistent/science-chatbot-test-assets' });
   const missing = await fetch(f.url);
@@ -371,7 +368,7 @@ test('Rust rejects ill-formed Unicode JSON explicitly and handles missing assets
   assert.equal(calls, 0);
 });
 
-test('Rust shutdown also closes an unfinished request body', { skip: process.env.TEST_BACKEND !== 'rust' }, async t => {
+test('Rust shutdown also closes an unfinished request body', async t => {
   const f = await fixture(t, (_, res) => answer(res));
   const req = http.request(f.url + '/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
   req.on('error', () => {});

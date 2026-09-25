@@ -4,8 +4,9 @@
 
 The backend now uses Rust, Axum, Tokio, and reqwest. The TypeScript frontend,
 HTML, CSS, images, tutor prompt, model, and response schema are unchanged.
-The baseline Node implementation is retained in `src/server.ts` for rollback and
-as the reference used by compatibility tests. It is not the default npm server.
+The obsolete Node backend was removed after the Rust deployment was confirmed
+working. Its last retained version is in Git at `e0a8f58`. The TypeScript HTTP
+test harness now exercises only Rust; Node remains a build/test tool.
 Baseline commits: `d6b36d0` (TypeScript), `f30e065` (Rust validation).
 
 The Rust binary defaults to `127.0.0.1:11437` for safe side-by-side development.
@@ -14,8 +15,8 @@ Funnel destination. Do not reconfigure Funnel or Caddy to migrate the backend.
 See [INSTALL.md](INSTALL.md) for deployment and rollback.
 
 The live service was switched to Rust on 2026-09-24. Local and public HTTPS
-checks, including a real Ollama question, passed. Node remains available solely
-as a tested fallback during the observation period.
+checks, including a real Ollama question, passed. The user subsequently confirmed
+the app works and authorized removal of the Node fallback.
 
 ## Milestones implemented
 
@@ -25,10 +26,11 @@ as a tested fallback during the observation period.
    headers, and friendly method/route errors.
 3. Ollama: one shared reqwest client, unchanged prompt/schema, validated two-layer
    JSON response, `answer`, `followUps`, and `elapsedMs` fields.
-4. Behavior: shared HTTP tests against Rust and Node, including real sockets for
+4. Behavior: HTTP tests originally compared Rust and Node; the retained Rust
+   tests include real sockets for
    concurrency, disconnects, timeouts during body reads, and shutdown.
 5. Deployment tooling: optimized build, Rust-default npm scripts, systemd template,
-   and Node rollback instructions. Runtime verification is recorded separately
+   and historical recovery instructions. Runtime verification is recorded separately
    in [VERIFICATION.md](VERIFICATION.md).
 
 ## Run and check
@@ -43,7 +45,6 @@ never `backend/target/`.
 npm ci
 npm start                   # builds frontend + release Rust; loopback 11437
 npm test                    # Rust validation + Rust HTTP/frontend checks
-npm run test:node           # shared checks against retained Node reference
 npm run typecheck
 npm run check:rust          # rustfmt + Clippy with warnings denied
 ```
@@ -111,8 +112,8 @@ disconnection remains an upstream concern.
 The handler reads at most 8 KiB before parsing. It validates content type and
 origin first, then uses the original validation functions. Extra ordinary JSON
 fields are ignored. reqwest sends the fixed prompt embedded from `tutor.txt` and
-the schema from `reply-schema.json`; tests compare the complete system message
-with the Node reference.
+the schema from `reply-schema.json`; tests compare the outgoing system message and schema
+with these embedded source files.
 
 ## Compatibility decisions
 
