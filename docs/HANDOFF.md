@@ -141,9 +141,13 @@ team ID stays out of Git. Choosing a Team in Xcode's UI would write it into
 Verified: a signed Debug build (free Personal Team, automatic provisioning)
 succeeded and was installed on the user's iPad Air 11-inch (M2, 8 GB) with
 `xcrun devicectl`; the 4B GGUF was copied into the app's Documents over the
-cable. **Still unverified:** launching and using the app on the iPad (model
-load time, memory, answer speed, follow-ups, Stop, Read aloud, themes,
-layout, remote mode). The free-profile install expires after 7 days.
+cable. The first launch showed a broken layout: `layoutPriority` gave the
+answer panel almost all the width, and iPadOS 26 squeezed toolbar items into
+glass bubbles. Fixed with a measured 0.9 : 1.2 split (`GeometryReader`), a
+plain header row, and in-panel scrolling; the landscape dark-mode layout was
+checked with `xcrun devicectl device capture screenshot`. **Still
+unverified:** portrait/light layouts, model load time, memory, answer speed,
+follow-ups, Stop, Read aloud, and remote mode. The free-profile install expires after 7 days.
 
 ## Agreed direction, not yet implemented
 

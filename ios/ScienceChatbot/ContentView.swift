@@ -20,44 +20,58 @@ struct ContentView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if sizeClass == .regular {
-                    HStack(alignment: .top, spacing: 18) {
-                        QuestionPanel(chat: chat, engine: engine)
-                            .frame(maxWidth: .infinity)
-                            .layoutPriority(0.9)
+        VStack(spacing: 0) {
+            header
+            if sizeClass == .regular {
+                // Same split as the web's `.9fr 1.2fr` grid. `layoutPriority`
+                // cannot do this: it hands all spare width to one panel.
+                GeometryReader { proxy in
+                    let spacing = 18.0
+                    let width = max(proxy.size.width - spacing, 0)
+                    HStack(alignment: .top, spacing: spacing) {
+                        QuestionPanel(chat: chat, engine: engine, scrolls: true)
+                            .frame(width: width * 0.9 / 2.1)
                         AnswerPanel(chat: chat, engine: engine)
-                            .frame(maxWidth: .infinity)
-                            .layoutPriority(1.2)
-                    }
-                    .padding([.horizontal, .bottom], 24)
-                    .padding(.top, 8)
-                } else {
-                    ScrollView {
-                        VStack(spacing: 16) {
-                            QuestionPanel(chat: chat, engine: engine)
-                            AnswerPanel(chat: chat, engine: engine).frame(minHeight: 460)
-                        }
-                        .padding(16)
+                            .frame(width: width * 1.2 / 2.1)
                     }
                 }
-            }
-            .background(Palette.background.ignoresSafeArea())
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) { Brand() }
-                ToolbarItemGroup(placement: .topBarTrailing) {
-                    Label(engineBadge, systemImage: engineChoice == "remote" ? "desktopcomputer" : "ipad")
-                        .labelStyle(.titleAndIcon)
-                        .font(.footnote)
-                        .foregroundStyle(Palette.muted)
-                    Button("Settings", systemImage: "gearshape") { showSettings = true }
+                .padding([.horizontal, .bottom], 24)
+                .padding(.top, 8)
+            } else {
+                ScrollView {
+                    VStack(spacing: 16) {
+                        QuestionPanel(chat: chat, engine: engine)
+                        AnswerPanel(chat: chat, engine: engine).frame(minHeight: 460)
+                    }
+                    .padding(16)
                 }
             }
-            .toolbarBackground(Palette.background, for: .navigationBar)
-            .sheet(isPresented: $showSettings) { SettingsView() }
         }
+        .background(Palette.background.ignoresSafeArea())
         .tint(Palette.accent)
+        .sheet(isPresented: $showSettings) { SettingsView() }
+    }
+
+    /// A plain header row like the web's compact masthead. Toolbar items would
+    /// be squeezed into separate glass bubbles on iPadOS 26.
+    private var header: some View {
+        HStack(spacing: 12) {
+            Brand()
+            Spacer(minLength: 12)
+            Label(engineBadge, systemImage: engineChoice == "remote" ? "desktopcomputer" : "ipad")
+                .labelStyle(.titleAndIcon)
+                .font(.footnote)
+                .foregroundStyle(Palette.muted)
+                .lineLimit(1)
+            Button {
+                showSettings = true
+            } label: {
+                Image(systemName: "gearshape").font(.title3).frame(width: 44, height: 44)
+            }
+            .accessibilityLabel("Settings")
+        }
+        .padding(.horizontal, sizeClass == .regular ? 24 : 16)
+        .padding(.top, 8)
     }
 
     private var engineBadge: String {
@@ -86,9 +100,23 @@ struct Brand: View {
 struct QuestionPanel: View {
     @Bindable var chat: ChatModel
     let engine: TutorEngine?
+    /// True in the two-panel layout: scroll inside the panel instead of
+    /// growing taller than the screen.
+    var scrolls = false
     @FocusState private var focused: Bool
 
     var body: some View {
+        Group {
+            if scrolls {
+                ScrollView { content }.scrollBounceBehavior(.basedOnSize)
+            } else {
+                content
+            }
+        }
+        .panel()
+    }
+
+    private var content: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 8) {
                 Eyebrow("01 / START WITH A WONDER")
@@ -159,7 +187,7 @@ struct QuestionPanel: View {
                                 .foregroundStyle(Palette.ink)
                                 .multilineTextAlignment(.leading)
                         }
-                        .frame(maxWidth: .infinity, minHeight: 84, alignment: .leading)
+                        .frame(maxWidth: .infinity, minHeight: 84, alignment: .topLeading)
                         .padding(12)
                         .background(Palette.card, in: .rect(cornerRadius: 12))
                         .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Palette.line))
@@ -172,7 +200,6 @@ struct QuestionPanel: View {
             Spacer(minLength: 0)
             Text("Made with love by **Ayaan and Naz**").font(.footnote).foregroundStyle(Palette.muted)
         }
-        .panel()
     }
 }
 
