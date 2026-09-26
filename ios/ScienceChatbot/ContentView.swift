@@ -71,6 +71,10 @@ struct ContentView: View {
                 }
             }
             .animation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(duration: 0.55, bounce: 0.2), value: fresh)
+            // Nord theme (docs/DESIGN.md): Snow Storm / Polar Night background
+            // and text; `.secondary` derives from Ink.
+            .foregroundStyle(Color("Ink"))
+            .background(Color("Background").ignoresSafeArea())
             .overlay(alignment: .top) {
                 if chat.undoSteps != nil {
                     UndoBanner(undo: { chat.undo() }, expire: { chat.clearUndo() })
@@ -225,7 +229,7 @@ struct StarterIdeas: View {
                         }
                         .frame(maxWidth: .infinity, minHeight: 64, alignment: .topLeading)
                         .padding(14)
-                        .background(.background.secondary, in: .rect(cornerRadius: 16))
+                        .background(Color("Surface"), in: .rect(cornerRadius: 16))
                         .contentShape(.rect(cornerRadius: 16))
                     }
                     .buttonStyle(.plain)
@@ -333,6 +337,7 @@ struct ComposeBar: View {
                         .frame(width: 48, height: 48)
                         .buttonStyle(.glassProminent)
                         .buttonBorderShape(.circle)
+                        .foregroundStyle(Color("OnAccent"))
                         .disabled(!canSend)
                         .keyboardShortcut(.return, modifiers: .command)
                 }
@@ -404,6 +409,7 @@ struct TrailView: View {
                 .frame(maxWidth: .infinity)
             }
             .scrollDismissesKeyboard(.interactively)
+            .scrollEdgeEffectStyle(.soft, for: .bottom)
             .onChange(of: chat.steps.last?.id) { _, id in
                 expanded = []
                 if let id { withAnimation { proxy.scrollTo(id, anchor: .top) } }
@@ -434,12 +440,12 @@ struct FoldedStep: View {
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.tint)
                         .padding(.horizontal, 12).padding(.vertical, 6)
-                        .background(.background, in: .capsule)
+                        .background(Color("Background"), in: .capsule)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(14)
-            .background(.background.secondary, in: .rect(cornerRadius: 16))
+            .background(Color("Surface"), in: .rect(cornerRadius: 16))
             .contentShape(.rect(cornerRadius: 16))
         }
         .buttonStyle(.plain)
@@ -469,8 +475,10 @@ struct OpenStep: View {
                 Spacer(minLength: 8)
                 if step.reply != nil {
                     Button(speaking ? "Stop reading" : "Read aloud",
-                           systemImage: speaking ? "stop.fill" : "speaker.wave.2") { speak() }
+                           systemImage: speaking ? "speaker.wave.3.fill" : "speaker.wave.2") { speak() }
                         .labelStyle(.iconOnly)
+                        // Waves pulse while reading; tap again to stop.
+                        .symbolEffect(.variableColor.iterative, isActive: speaking)
                         .buttonStyle(.glass)
                         .buttonBorderShape(.circle)
                 }
@@ -490,7 +498,7 @@ struct OpenStep: View {
                 .padding(.vertical, 12)
             } else if let error = step.error {
                 VStack(alignment: .leading, spacing: 12) {
-                    Label(error, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red)
+                    Label(error, systemImage: "exclamationmark.triangle.fill").foregroundStyle(Color("ErrorText"))
                     if latest {
                         Button("Try again", systemImage: "arrow.clockwise", action: retry)
                             .buttonStyle(.bordered)
@@ -498,7 +506,7 @@ struct OpenStep: View {
                 }
                 .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(.red.opacity(0.08), in: .rect(cornerRadius: 16))
+                .background(Color("ErrorText").opacity(0.1), in: .rect(cornerRadius: 16))
             } else if let reply = step.reply {
                 Text(reply.answer)
                     .font(.title3)

@@ -56,9 +56,8 @@ iPad; the principles and tokens still apply to both.
   content scrolls underneath. Glass is never used for content cards.
 - **Native, not a web page.** Hierarchy comes from type sizes and spacing, not
   outlines or small spaced capitals. No borders around every element.
-- **One accent.** Purple is the only brand colour; everything else uses the
-  platform's text and background colours so Dark Mode and contrast settings
-  work.
+- **One accent.** A Nord frost blue is the only accent; backgrounds, surfaces,
+  and text come from the Nord palette in light and dark (see Colours).
 - **For 10–13 year olds.** No technical wording on the main screen (engine
   names, timings). Large, readable answer text.
 
@@ -100,11 +99,30 @@ iPad; the principles and tokens still apply to both.
 - **Settings**: a sheet with Tutor (menu), Appearance, About, and
   "Advanced (for grown-ups)".
 
+## Colours: Nord
+
+Both apps use the [Nord](https://www.nordtheme.com/) palette. iOS colour sets
+live in `ios/ScienceChatbot/Assets.xcassets`; the web should use the same hex
+values as CSS custom properties. All text pairs meet WCAG AA (4.5:1).
+
+| Role | Light | Dark | Contrast |
+| --- | --- | --- | --- |
+| Background | nord6 `#ECEFF4` | nord0 `#2E3440` | — |
+| Surface (cards, rows) | nord5 `#E5E9F0` | nord1 `#3B4252` | — |
+| Text (Ink) | nord0 `#2E3440` | nord6 `#ECEFF4` | 10.8 / 10.8 |
+| Accent | nord10 deepened `#476791` | nord8 `#88C0D0` | 5.0 / 6.2 |
+| Text on accent | nord6 `#ECEFF4` | nord0 `#2E3440` | 5.0 / 6.2 |
+| Error | nord11 deepened `#9E434B` | nord11 lightened `#E3959C` | 5.4 / 5.4 |
+
+Official nord10 (`#5E81AC`) is only 3.5:1 on nord6, too low for the
+question headings and Dive deeper rows children read, so the light accent is
+a deeper shade of it. Secondary text is the Ink colour at reduced opacity.
+
 ## Tokens
 
 | Token | iOS | Web equivalent |
 | --- | --- | --- |
-| Accent | `Accent` colour set (app accent) | CSS `--accent` |
+| Accent | `Accent` colour set (Nord, see Colours) | CSS `--accent` |
 | Text / secondary text | `.primary` / `.secondary` | `CanvasText` / muted token per theme |
 | Grouped rows | `.background.secondary`, radius 16 | card background token, radius 16px |
 | Readable width | 680 pt | `max-width: 680px` |
