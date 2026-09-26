@@ -238,6 +238,13 @@ Settings header card; "❤️ Made with love by Ayaan and Naz" is on the landing
 screen and in Settings. Still unchecked: theme switching and Settings by hand,
 Dynamic Type, VoiceOver, Reduce Transparency/Increase Contrast, iPhone.
 
+Trail scrolling (verified on the iPad with scroll-geometry logs): SwiftUI
+silently drops programmatic scrolls requested while a layout animation (the
+fold) is running, and the dock's safe-area inset adds no scroll room. The
+trail therefore folds (0.3 s), then scrolls to the new step's measured top
+with `ScrollPosition.scrollTo(y:)`, and the latest step reserves the scroll
+view's full height. `ScrollViewReader`/`scrollTo(id:)` landed short here.
+
 Debugging notes: launch arguments such as `-theme dark` override saved
 settings for one launch. Debug builds accept `-autoAsk` (`xcrun devicectl device
 process launch --device <id> local.sciencechatbot.app -- -autoAsk`), which
