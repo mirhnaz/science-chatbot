@@ -98,6 +98,7 @@ fn error(status: u16, message: &str) -> Response {
 fn asset(path: &str) -> Option<(&'static str, &'static str)> {
     Some(match path {
         "/" => ("public/index.html", "text/html; charset=utf-8"),
+        "/theme.js" => ("build/client/theme.js", "text/javascript; charset=utf-8"),
         "/app.js" => ("build/client/app.js", "text/javascript; charset=utf-8"),
         "/styles.css" => ("public/styles.css", "text/css; charset=utf-8"),
         "/science-banner.png" => ("public/science-banner.png", "image/png"),

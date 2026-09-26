@@ -1,8 +1,9 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#080b18">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f6fb">
   <meta name="description" content="Ask a science question and explore the answer with your own science tutor.">
   <title>Science Chatbot · Your curiosity, explored</title>
   <link rel="icon" href="/favicon.ico?v=2" sizes="16x16 32x32 48x48">
@@ -10,46 +11,57 @@
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2">
   <link rel="manifest" href="/site.webmanifest?v=2">
   <meta name="apple-mobile-web-app-title" content="Science Chatbot">
-  <link rel="stylesheet" href="/styles.css"><script type="module" src="/app.js"></script>
+  <script src="/theme.js"></script>
+  <link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/app.js"></script>
 </head>
 <body>
+  <a class="skip-link" href="#question">Skip to your question</a>
   <main class="app">
-    <header class="masthead"><span class="wordmark">✦ THE CURIOSITY LAB</span><span class="private-label">Made with love by Ayaan and Naz</span></header>
-    <section class="hero" aria-labelledby="title">
-      <h1 id="title" class="sr-only">Science Chatbot</h1>
-      <img src="/science-banner.png" width="2172" height="724" alt="Science Chatbot. Ask anything. Discover something!" fetchpriority="high">
-    </section>
+    <header class="masthead">
+      <div class="brand">
+        <img src="/icon-192.png" width="48" height="48" alt="">
+        <div><h1>Science Chatbot<span class="brand-star" aria-hidden="true">✦</span></h1><p>Big questions. Everyday discoveries.</p></div>
+      </div>
+      <div class="header-tools">
+        <span class="creator">Made with love<br><strong>by Ayaan and Naz</strong></span>
+        <div class="theme-control"><label for="theme">Theme</label><select id="theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select></div>
+      </div>
+    </header>
     <div class="workspace">
-      <section class="question-panel" aria-labelledby="question-heading">
-        <p class="eyebrow"><span aria-hidden="true">01</span> START WITH A WONDER</p>
-        <h2 id="question-heading">What makes you curious?</h2>
+      <section class="question-panel panel" aria-labelledby="question-heading">
+        <div class="panel-heading"><p class="eyebrow">01 / START WITH A WONDER</p><h2 id="question-heading">What makes you curious?</h2></div>
         <form id="question-form">
-          <label for="question">Your science question</label>
-          <textarea id="question" name="question" maxlength="2000" rows="4" placeholder="Why does the Moon change shape?" required aria-describedby="question-help"></textarea>
-          <p id="question-help" class="hint">Big questions and tiny wonders are welcome.</p>
+          <label class="sr-only" for="question">Your science question</label>
+          <textarea id="question" name="question" maxlength="2000" rows="3" placeholder="Why does the Moon change shape?" required aria-describedby="question-help"></textarea>
+          <p id="question-help" class="sr-only">Type a science question or choose an idea below. Press Control or Command and Enter to ask.</p>
           <div class="submit-row"><button class="ask primary" id="ask" type="submit"><span aria-hidden="true">↗</span> Ask a question</button><button id="cancel" class="secondary" type="button" hidden>Stop</button></div>
         </form>
         <section class="topics" aria-labelledby="topics-heading">
-          <div class="topics-header"><h3 id="topics-heading">Need a spark?</h3><button id="surprise" class="secondary" type="button"><span aria-hidden="true">✦</span> Surprise me</button></div>
-          <p id="suggestions-status" class="hint" role="status">Finding new things to explore…</p>
+          <div class="topics-header"><div><h3 id="topics-heading">Need a spark?</h3><p class="topics-help">Pick an idea to get started.</p></div><button id="surprise" class="secondary" type="button"><span aria-hidden="true">✦</span> Surprise me</button></div>
+          <p id="suggestions-status" class="sr-only" role="status">Finding new things to explore…</p>
           <div id="topic-grid" class="topic-grid" aria-busy="true"></div>
         </section>
       </section>
-      <section class="answer-panel" id="answer-panel" aria-labelledby="answer-heading" aria-busy="false">
-        <div class="answer-top"><div><p class="eyebrow"><span aria-hidden="true">02</span> FOLLOW YOUR CURIOSITY</p><h2 id="answer-heading">Let’s discover.</h2></div><span class="bot" aria-hidden="true">✦</span></div>
-        <div id="empty" class="empty-state"><span class="empty-orbit" aria-hidden="true">✧</span><p>Every discovery starts<br>with a question.</p><span>Ask yours. Your answer will appear here.</span></div>
-        <div id="loading" class="loading" hidden><span class="spinner" aria-hidden="true"></span><p>Working on your answer…</p><span>This can take a little longer for the first question.</span></div>
-        <div id="error" class="error" role="alert" hidden></div>
-        <article id="answer" tabindex="-1" hidden><p id="asked-question" class="asked-question"></p><div id="answer-text"></div></article>
+      <section class="answer-panel panel" id="answer-panel" aria-labelledby="answer-heading" aria-busy="false">
+        <div class="answer-top panel-heading"><div><p class="eyebrow">02 / FOLLOW YOUR CURIOSITY</p><h2 id="answer-heading">Let’s discover.</h2></div><span class="bot" aria-hidden="true">✦</span></div>
+        <div id="answer-scroll" class="answer-scroll" role="region" aria-label="Science answer" tabindex="0">
+          <div id="empty" class="empty-state"><div class="orbit-art" aria-hidden="true"><span class="orbit-ring"></span><span class="orbit-ring"></span><span class="orbit-core">✦</span></div><p>A little curiosity.<br>A whole world to explore.</p><span>Ask a question or choose an idea.<br>Your science discovery starts here.</span></div>
+          <div id="loading" class="loading" hidden><span class="spinner" aria-hidden="true"></span><p>Working on your answer…</p><span>The first question can take a little longer.</span></div>
+          <div id="error" class="error" role="alert" hidden></div>
+          <article id="answer" tabindex="-1" hidden><p id="asked-question" class="asked-question"></p><div id="answer-text"></div></article>
+        </div>
         <section id="follow-ups" class="follow-ups" aria-labelledby="follow-up-heading" hidden>
-          <h3 id="follow-up-heading">What would you like to explore next?</h3>
+          <h3 id="follow-up-heading">Keep exploring</h3>
           <div id="follow-up-list" class="follow-up-list"></div>
         </section>
-        <div class="answer-bottom"><p id="status" class="status" role="status" aria-live="polite">Ready when you are.</p><button id="read" class="read secondary" type="button" disabled><span aria-hidden="true">◖))</span> Read aloud</button></div>
-        <p id="speech-note" class="speech-note" hidden></p>
+        <div class="answer-controls">
+          <div class="answer-bottom"><p id="status" class="status" role="status" aria-live="polite">Ready when you are.</p><button id="read" class="read secondary" type="button" disabled><span aria-hidden="true">◖))</span> Read aloud</button></div>
+          <p id="speech-note" class="speech-note" hidden></p>
+        </div>
       </section>
     </div>
-    <footer><span>Stay curious. Keep asking why.</span><span>AI can make mistakes. Check surprising facts with an adult.</span></footer>
+    <footer><span><span class="footer-star" aria-hidden="true">✦</span> Stay curious. Keep asking why.</span><span>AI can make mistakes. Check surprising facts with an adult.</span></footer>
   </main>
 </body>
 </html>

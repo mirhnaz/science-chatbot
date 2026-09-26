@@ -8,6 +8,7 @@ interface AppElements {
   cancel: HTMLButtonElement;
   read: HTMLButtonElement;
   'answer-panel': HTMLElement;
+  'answer-scroll': HTMLDivElement;
   'follow-ups': HTMLElement;
   'follow-up-list': HTMLDivElement;
   empty: HTMLDivElement;
@@ -77,6 +78,7 @@ async function refreshSuggestions() {
   suggestionsLoading = true;
   $('surprise').disabled = true;
   $('topic-grid').setAttribute('aria-busy', 'true');
+  $('suggestions-status').className = 'sr-only';
   $('suggestions-status').textContent = 'Finding new things to explore…';
   const request = new AbortController();
   const timer = setTimeout(() => request.abort(), 8000);
@@ -109,6 +111,7 @@ async function refreshSuggestions() {
     try { sessionStorage.setItem(recentSuggestionsKey, JSON.stringify(recentSuggestions)); } catch { /* Optional storage. */ }
     $('suggestions-status').textContent = 'Pick a question, then press Ask. Or try four new ideas!';
   } catch {
+    $('suggestions-status').className = 'suggestions-error';
     $('suggestions-status').textContent = 'Couldn’t load new ideas. Try Surprise me again, or type your own question.';
   } finally {
     clearTimeout(timer); suggestionsLoading = false;
@@ -141,6 +144,7 @@ async function ask(question: unknown) {
   $('follow-ups').hidden = true; $('follow-up-list').replaceChildren();
   controller = new AbortController();
   const timer = setTimeout(() => controller?.abort('timeout'), 125000);
+  $('answer-scroll').scrollTop = 0;
   $('empty').hidden = true; $('answer').hidden = true; $('error').hidden = true; $('loading').hidden = false;
   $('status').textContent = 'Exploring your question…';
   $('speech-note').hidden = true;
@@ -165,8 +169,9 @@ async function ask(question: unknown) {
     $('follow-ups').hidden = followUps.length !== 3;
     $('status').textContent = `Answered in ${((typeof data.elapsedMs === 'number' ? data.elapsedMs : 0) / 1000).toFixed(1)} seconds.`;
     if (!localVoice()) { $('speech-note').textContent = 'Read aloud is unavailable in this browser. You can still read your answer above.'; $('speech-note').hidden = false; }
+    $('answer-scroll').scrollTop = 0;
     $('answer').focus({ preventScroll: true });
-    if (window.matchMedia('(max-width: 780px)').matches) $('answer-panel').scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
+    if (window.matchMedia('(max-width: 899px)').matches) $('answer-panel').scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
     return { question: normalizedQuestion, answer: answerText, followUps };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Something went wrong. Please try again.';

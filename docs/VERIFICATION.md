@@ -11,9 +11,9 @@ npm run build
 RUST_SERVER_BIN=backend/target/release/science-chatbot-server node --test build/test/*.test.js
 ```
 
-`npm test` builds the unchanged frontend, TypeScript test files, and debug Rust
+`npm test` builds the frontend, TypeScript test files, and debug Rust
 binary. It runs 21 Rust checks (17 validation tests, three question-bank tests, and one
-documentation example), then all 23 HTTP/frontend checks against Rust with no backend selector
+documentation example), then all 27 HTTP/frontend checks against Rust with no backend selector
 or skipped cases. Node runs the test harness and mock Ollama server only. Socket
 tests need permission to bind loopback ports; they never load the real model.
 
@@ -85,6 +85,23 @@ left untouched. The old implementation remains in Git at `e0a8f58`; see
 ## Remaining manual checks
 
 Desktop/mobile visual behavior, audio playback, and startup after a planned
-reboot require separate checks. The frontend source and assets have not changed.
+reboot require separate checks. Safari on the user’s Mac has not been checked directly.
 Tests verify application behavior, not scientific accuracy, and cannot guarantee
 how quickly Ollama stops computing after its HTTP client disconnects.
+
+## Compact layout and themes (2026-09-26)
+
+- Passed 21 Rust checks and 27 HTTP/frontend checks, type checking, rustfmt,
+  Clippy, and the release build. Asset tests include `/theme.js` bytes and MIME.
+- Theme tests cover applying the system/saved theme before DOM ready, selection
+  persistence, OS changes, unavailable/corrupt storage, cross-tab updates/reset.
+- Measured both themes in headless Chromium at 1440×900, 1280×720, 1024×650,
+  900×600, 390×844, 320×640, and 720×450 CSS pixels. No horizontal overflow.
+  Desktop document height equals viewport height, including a long answer.
+  At 1024×650 and larger tested sizes, the question panel needs no scrolling,
+  even with deliberately long starter text. At 900×600 it can scroll internally.
+- Visually inspected light/dark desktop, narrow mobile, and long-answer renders.
+  Follow-ups and read-aloud controls stay below the desktop answer scroll region.
+  Mobile/zoom layouts retain natural page scrolling and do not hide content.
+- These are Chromium viewport checks, not a physical Mac/Safari, actual browser
+  zoom, speech playback, or screen-reader audit. No model/prompt/API changes.

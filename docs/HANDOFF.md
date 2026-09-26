@@ -15,6 +15,9 @@ There is no login, database, persisted history, or response streaming yet.
 - Rust/Axum backend is deployed. Tokio drives async work, reqwest calls Ollama,
   and serde_json handles JSON. The user confirmed the deployed app works.
 - The frontend is plain TypeScript with HTML/CSS; React is not installed.
+- The compact desktop workspace fits typical laptop viewports. Long answers
+  scroll within their panel; small screens and high zoom reflow vertically.
+  Light/Dark/System themes persist locally. See [FRONTEND.md](FRONTEND.md).
 - The old TypeScript/Node backend, compiled Node server, fallback npm scripts,
   local Node unit copy, and one-time migration script have been removed.
 - TypeScript tests run under Node and exercise the Rust binary through real
@@ -41,6 +44,8 @@ There is no login, database, persisted history, or response streaming yet.
 | `backend/src/tutor.txt` | Embedded tutor system message |
 | `backend/src/reply-schema.json` | Embedded structured response schema |
 | `backend/tests/validation.rs` | Rust validation tests |
+| `src/client/theme.ts` | Early theme selection, local preference, system changes |
+| `test/theme.test.ts` | Theme persistence, system changes, storage failure tests |
 | `src/client/app.ts` | Browser interactions, follow-ups, cancellation, read aloud |
 | `test/server.test.ts` | Rust HTTP integration tests and mock Ollama server |
 | `test/client.test.ts` | Browser interaction test |
@@ -60,7 +65,7 @@ topics or advanced concepts from other languages.
   templates exist in the repository, Caddy is not in that verified public path.
 - Development binary default: `127.0.0.1:11437`; Ollama: `127.0.0.1:11434`.
 - `ASSET_ROOT` defaults to the working directory. The runtime needs `public/`
-  and `build/client/app.js`. The service's `PUBLIC_ORIGIN` is configured locally;
+  and both `build/client/app.js` and `build/client/theme.js`. The service's `PUBLIC_ORIGIN` is configured locally;
   do not copy its personal hostname into tracked files.
 - POST `/api/chat` accepts `question`; replies contain `answer`, `followUps`, and
   `elapsedMs`. Existing friendly errors, headers, and asset allowlist matter.
@@ -89,6 +94,18 @@ rotation, frontend assets, health, and a real starter-question answer passed.
 Funnel remains unchanged on port 11436; the temporary 11437 server was stopped.
 Future changes should run relevant checks after command authorization.
 
+
+## Compact UI checkpoint (2026-09-26)
+
+The UI now has a compact header, two desktop panels, and Light/Dark/System
+selection. No new frontend dependencies or framework were needed. All 21 Rust
+checks and 27 HTTP/frontend checks, type checking, rustfmt, Clippy, and the release
+build passed. Chromium measurements covered laptop, mobile, and small/zoom-sized
+viewports, including long answers; see [VERIFICATION.md](VERIFICATION.md).
+The release binary includes the new `/theme.js` asset route. **The live service
+still needs a user-authorized restart** to load that route. Static assets are
+already updated because the live server reads this checkout. No Funnel or unit
+configuration changed. Commit locally; push only when requested.
 
 ## Agreed direction, not yet implemented
 

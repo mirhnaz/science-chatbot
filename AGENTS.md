@@ -57,7 +57,7 @@ Read [README.md](README.md) for commands and layout, and the relevant guide:
 
 Run from the repository root after obtaining command authorization:
 
-- `npm test`: 21 Rust checks and 23 HTTP/frontend checks at this
+- `npm test`: 21 Rust checks and 27 HTTP/frontend checks at this
   checkpoint; uses a mock Ollama server and local sockets.
 - `npm run typecheck`: frontend and test TypeScript checks.
 - `npm run check:rust`: rustfmt and Clippy; relevant to Rust changes.
