@@ -2,9 +2,8 @@
 
 The shared design for Curio. The iPad/iOS app implements it first
 (`ios/Curio/ContentView.swift`), following Apple's Human Interface
-Guidelines for Liquid Glass (iOS/iPadOS 26 and later). The web app will adopt
-the same structure later; the web notes below say how. Until then, the web keeps
-its current two-panel layout ([FRONTEND.md](FRONTEND.md)).
+Guidelines for Liquid Glass (iOS/iPadOS 26 and later). The web page now
+uses the same curiosity column in plain TypeScript ([FRONTEND.md](FRONTEND.md)).
 
 ## The curiosity column (current iPad build)
 

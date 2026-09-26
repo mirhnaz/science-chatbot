@@ -1,6 +1,4 @@
-use curio_server::chat::{
-    TutorReply, ValidationError, validate_question, validate_reply,
-};
+use curio_server::chat::{TutorReply, ValidationError, validate_question, validate_reply};
 
 fn follow_ups() -> Vec<String> {
     [

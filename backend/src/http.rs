@@ -101,7 +101,6 @@ fn asset(path: &str) -> Option<(&'static str, &'static str)> {
         "/theme.js" => ("build/client/theme.js", "text/javascript; charset=utf-8"),
         "/app.js" => ("build/client/app.js", "text/javascript; charset=utf-8"),
         "/styles.css" => ("public/styles.css", "text/css; charset=utf-8"),
-        "/science-banner.png" => ("public/science-banner.png", "image/png"),
         "/favicon.ico" => ("public/favicon.ico", "image/vnd.microsoft.icon"),
         "/favicon-32.png" => ("public/favicon-32.png", "image/png"),
         "/apple-touch-icon.png" => ("public/apple-touch-icon.png", "image/png"),

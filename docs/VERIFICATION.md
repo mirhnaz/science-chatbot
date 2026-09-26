@@ -13,7 +13,7 @@ RUST_SERVER_BIN=backend/target/release/curio-server node --test build/test/*.tes
 
 `npm test` builds the frontend, TypeScript test files, and debug Rust
 binary. It runs 21 Rust checks (17 validation tests, three question-bank tests, and one
-documentation example), then all 27 HTTP/frontend checks against Rust with no backend selector
+documentation example), then all 32 HTTP/frontend checks against Rust with no backend selector
 or skipped cases. Node runs the test harness and mock Ollama server only. Socket
 tests need permission to bind loopback ports; they never load the real model.
 
@@ -105,3 +105,16 @@ how quickly Ollama stops computing after its HTTP client disconnects.
   Mobile/zoom layouts retain natural page scrolling and do not hide content.
 - These are Chromium viewport checks, not a physical Mac/Safari, actual browser
   zoom, speech playback, or screen-reader audit. No model/prompt/API changes.
+
+## Curio web redesign (2026-09-26)
+
+- `npm test` passed 21 Rust checks and 32 HTTP/frontend checks (the browser
+  tests now cover sparks asking at once, the trail folding, Stop, Try again,
+  Ask your own, Undo, and edit-first). Type checking, rustfmt, and Clippy passed.
+- A local development server on 127.0.0.1:11437 with the Mac's Ollama served
+  real answers to headless Chrome at 1280×800 (light and dark) and 390×844
+  (dark): fresh screen, loading, answer, a two-step trail, Ask your own, and
+  Undo. The new step's top landed 8 px below the toolbar at both widths.
+- The retired `/science-banner.png` now returns 404.
+- Not yet verified on the live site; see the deployment plan in
+  [INSTALL.md](INSTALL.md).

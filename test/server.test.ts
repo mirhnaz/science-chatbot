@@ -72,7 +72,7 @@ test('compiled server serves browser assets from the deployment layout', async t
   assert.match(script.headers.get('content-type') || '', /text\/javascript/);
   assert.match(await script.text(), /async function ask\(/);
   assert.equal((await fetch(`${f.url}/styles.css`)).status, 200);
-  assert.equal((await fetch(`${f.url}/science-banner.png`)).status, 200);
+  assert.equal((await fetch(`${f.url}/science-banner.png`)).status, 404, 'the retired banner is no longer served');
   const health = await fetch(`${f.url}/healthz`);
   assert.equal(health.status, 200);
   assert.deepEqual(await health.json(), { status: 'ok' });
@@ -174,7 +174,6 @@ test('asset allowlist preserves bytes, MIME types, query handling and security h
     ['/theme.js', 'build/client/theme.js', 'text/javascript; charset=utf-8'],
     ['/app.js', 'build/client/app.js', 'text/javascript; charset=utf-8'],
     ['/styles.css', 'public/styles.css', 'text/css; charset=utf-8'],
-    ['/science-banner.png', 'public/science-banner.png', 'image/png'],
     ['/favicon.ico', 'public/favicon.ico', 'image/vnd.microsoft.icon'],
     ['/favicon-32.png', 'public/favicon-32.png', 'image/png'],
     ['/apple-touch-icon.png', 'public/apple-touch-icon.png', 'image/png'],
