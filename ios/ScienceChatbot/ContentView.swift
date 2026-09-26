@@ -233,9 +233,11 @@ struct AnswerPanel: View {
                     Text("Let’s discover.").font(.title2.bold()).foregroundStyle(Palette.ink)
                 }
                 Spacer()
-                Text("✦").font(.title).foregroundStyle(Palette.accent)
+                Image("BrandIcon")
+                    .resizable()
+                    .scaledToFit()
                     .frame(width: 42, height: 42)
-                    .background(Palette.accentSoft, in: .rect(cornerRadius: 12))
+                    .clipShape(.rect(cornerRadius: 12))
                     .accessibilityHidden(true)
             }
 
@@ -307,20 +309,16 @@ struct AnswerPanel: View {
     }
 }
 
-/// The web's orbit illustration and welcome text.
+/// The shared rocket-and-atom brand mark and welcome text.
 struct EmptyState: View {
     var body: some View {
         VStack(spacing: 14) {
-            ZStack {
-                ForEach([-30.0, 30.0], id: \.self) { angle in
-                    Ellipse().strokeBorder(Palette.accent.opacity(0.45))
-                        .frame(width: 115, height: 54).rotationEffect(.degrees(angle))
-                }
-                Text("✦").font(.largeTitle).foregroundStyle(Palette.accent)
-                    .frame(width: 56, height: 56).background(Palette.accentSoft, in: .circle)
-            }
-            .frame(height: 120)
-            .accessibilityHidden(true)
+            Image("BrandIcon")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 120, height: 120)
+                .clipShape(.rect(cornerRadius: 28))
+                .accessibilityHidden(true)
             Text("A little curiosity.\nA whole world to explore.")
                 .font(.title3.weight(.semibold)).multilineTextAlignment(.center).foregroundStyle(Palette.ink)
             Text("Ask a question or choose an idea.\nYour science discovery starts here.")
