@@ -54,10 +54,11 @@ struct ContentView: View {
                     TrailView(chat: chat, speakingStep: speakingStep,
                               speak: toggleSpeech, dive: { chat.ask($0, using: engines) },
                               editFollowUp: edit, retry: { chat.retry(using: engines) })
-                        // The system keeps the trail clear of the dock and lets
-                        // it scroll beneath the glass. (Measuring the dock by
-                        // hand caused a layout loop.)
-                        .safeAreaInset(edge: .bottom) {
+                        // A safe-area *bar*: the system keeps the trail clear
+                        // of the dock and fades/blurs it as it scrolls beneath,
+                        // like the toolbar. (Measuring the dock by hand caused
+                        // a layout loop; a plain inset let text clash with it.)
+                        .safeAreaBar(edge: .bottom) {
                             VStack(spacing: 0) {
                                 SomethingNew(chat: chat, askOwn: askOwn, start: startTrail)
                                 compose.matchedGeometryEffect(id: "compose", in: glide)
@@ -202,7 +203,7 @@ struct Hero: View {
     }
 }
 
-/// "Need a spark?": four starter ideas that each start a trail when tapped.
+/// "Sparks": four starter ideas that each start a trail when tapped.
 struct StarterIdeas: View {
     let chat: ChatModel
     let start: (Suggestion) -> Void
@@ -210,7 +211,11 @@ struct StarterIdeas: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Need a spark?").font(.headline).padding(.leading, 6)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Sparks").font(.headline)
+                Text("Pick one to start exploring").font(.subheadline).foregroundStyle(.secondary)
+            }
+            .padding(.leading, 6)
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 260), spacing: 10)], spacing: 10) {
                 ForEach(chat.suggestions) { idea in
                     Button { start(idea) } label: {
@@ -231,7 +236,7 @@ struct StarterIdeas: View {
                     .accessibilityHint("Asks this question")
                 }
             }
-            Button("Show me different ideas", systemImage: "dice") { chat.surprise() }
+            Button("New sparks", systemImage: "dice") { chat.surprise() }
                 .buttonStyle(.glass)
                 .frame(maxWidth: .infinity)
                 .padding(.top, 4)
@@ -242,7 +247,7 @@ struct StarterIdeas: View {
 
 // MARK: Dock
 
-/// "Or try something new": starts a new trail. Sits just above the question box.
+/// "New spark": starts a new trail. Sits just above the question box.
 struct SomethingNew: View {
     let chat: ChatModel
     let askOwn: () -> Void
@@ -250,7 +255,7 @@ struct SomethingNew: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
-            Text("Or try something new").font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
+            Text("New spark").font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
                 .padding(.leading, 6)
             ScrollView(.horizontal) {
                 GlassEffectContainer(spacing: 8) {
@@ -259,7 +264,7 @@ struct SomethingNew: View {
                             .fontWeight(.semibold)
                             .foregroundStyle(.tint)
                             .keyboardShortcut("n", modifiers: .command)
-                        Button("Different ideas", systemImage: "dice") { chat.surprise() }
+                        Button("New sparks", systemImage: "dice") { chat.surprise() }
                             .labelStyle(.iconOnly)
                         ForEach(chat.suggestions.prefix(3)) { idea in
                             Button { start(idea) } label: {
