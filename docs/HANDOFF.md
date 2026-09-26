@@ -167,8 +167,10 @@ page with a warning. The typed AI PC address override was removed; the
 address comes only from `SCIENCE_SERVER_HOST` at build time (kept out of Git
 per the rules above, rather than hard-coded in Swift), and starter taps no
 longer open the keyboard. The remote mode is labelled "mir-ai-pc".
-**Still unverified on the iPad:** a real remote answer, airplane-mode fallback,
-PC-off fallback, voice quality, follow-ups, Stop, and Read aloud.
+The user then reported the simplified Settings and Automatic mode working on
+the iPad. Apple's Premium voices were not good enough for the user; a custom
+text-to-speech approach is under discussion (not started). **Still
+unverified:** PC-off fallback and follow-ups/Stop were not reported separately.
 
 ## Agreed direction, not yet implemented
 
