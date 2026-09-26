@@ -119,6 +119,36 @@ async fn dispatch(state: &AppState, request: Request) -> Response {
         return error(404, "Not found.");
     };
     let path = url.path();
+    if path == "/api/suggestions" {
+        if request.method() != Method::GET {
+            let mut response = error(405, "Use GET.");
+            response
+                .headers_mut()
+                .insert("allow", HeaderValue::from_static("GET"));
+            return response;
+        }
+        if url.query().unwrap_or("").len() > 3000 {
+            return error(400, "Too many recent suggestions.");
+        }
+        let exclusions: Vec<_> = url
+            .query_pairs()
+            .filter(|(key, _)| key == "exclude")
+            .map(|(_, value)| value.into_owned())
+            .collect();
+        let recent: Vec<_> = exclusions
+            .iter()
+            .flat_map(|value| value.split(','))
+            .filter(|id| !id.is_empty())
+            .collect();
+        if recent.len() > crate::suggestions::RECENT_LIMIT || recent.iter().any(|id| id.len() > 64)
+        {
+            return error(400, "Too many recent suggestions.");
+        }
+        return json_response(
+            200,
+            json!({"suggestions": crate::suggestions::select(&recent)}),
+        );
+    }
     if request.method() == Method::GET {
         if path == "/healthz" {
             return json_response(200, json!({"status": "ok"}));

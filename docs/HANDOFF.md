@@ -1,6 +1,6 @@
 # Project handoff
 
-Updated: 2026-09-25. Read [../AGENTS.md](../AGENTS.md) for working rules.
+Updated: 2026-09-26. Read [../AGENTS.md](../AGENTS.md) for working rules.
 This is a checkpoint, not a live service-status report. Check the current Git
 state and relevant files after obtaining command authorization before changing
 anything. Do not assume another agent has the preceding conversation.
@@ -20,15 +20,22 @@ There is no login, database, persisted history, or response streaming yet.
 - TypeScript tests run under Node and exercise the Rust binary through real
   sockets with a mock Ollama server. `node_modules/` is still needed for frontend
   compilation and tests; its presence does not mean a Node backend is running.
-- Work is on `main`. The latest implementation commit at this checkpoint is
-  `f092f9e` (backend cleanup), pushed to `origin/main`. This handoff and AGENTS.md
-  are a subsequent documentation change; check Git for their commit/push state.
+- Work is on `main`. Dynamic starter suggestions are implemented; check Git for
+  the current commit/push state. Pushes remain explicit user requests.
+- “Need a spark?” now loads four curated questions from different topics, with
+  a “Surprise me” refresh button. Selecting a starter fills the input; Ask submits.
+  The bank has 60 questions across 10 topics. No AI call generates these starters.
+  The last 40 displayed catalogue IDs are kept in tab-scoped sessionStorage;
+  blocked storage falls back to in-memory history. This is not saved chat history.
+
 
 ## Code map
 
 | File | Responsibility |
 | --- | --- |
 | `backend/src/chat.rs` | Pure question/reply validation and error types |
+| `backend/src/suggestions.rs` | Starter selection, recent exclusions, and bank tests |
+| `backend/data/questions.json` | Editable curated question bank, embedded at build time |
 | `backend/src/main.rs` | Environment settings, listener, runtime, shutdown signals |
 | `backend/src/http.rs` | Routes, asset allowlist, shared client, concurrency, Ollama, responses |
 | `backend/src/tutor.txt` | Embedded tutor system message |
@@ -73,16 +80,15 @@ locally; do not ask for a password in chat. See [INSTALL.md](INSTALL.md).
 
 ## Verification checkpoint
 
-After backend cleanup, `npm test` passed all 18 Rust validation checks (17 tests
-plus one doc example) and all 18 HTTP/frontend checks with no skipped cases.
-`npm run typecheck` and `git diff --check` also passed. Rust formatting, Clippy,
-release-build tests, and public HTTPS generation passed during the migration;
-Rust source was unchanged by the cleanup. See [VERIFICATION.md](VERIFICATION.md).
+For dynamic suggestions, `npm test` passed 21 Rust checks and 23 HTTP/frontend
+checks. TypeScript type checking, rustfmt, Clippy, and the release build passed.
+Desktop and narrow viewport renders were visually checked. See
+[VERIFICATION.md](VERIFICATION.md) and [QUESTION_BANK.md](QUESTION_BANK.md).
+The user restarted the live service on 2026-09-26. Local/public suggestions
+rotation, frontend assets, health, and a real starter-question answer passed.
+Funnel remains unchanged on port 11436; the temporary 11437 server was stopped.
+Future changes should run relevant checks after command authorization.
 
-No application changes are pending from that cleanup. This documentation update
-does not require repeating the application suite. Future changes should run
-relevant checks after command authorization. Mobile/audio behavior and startup
-after a planned reboot were not separately verified in this session.
 
 ## Agreed direction, not yet implemented
 

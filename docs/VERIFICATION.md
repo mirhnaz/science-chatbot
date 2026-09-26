@@ -12,8 +12,8 @@ RUST_SERVER_BIN=backend/target/release/science-chatbot-server node --test build/
 ```
 
 `npm test` builds the unchanged frontend, TypeScript test files, and debug Rust
-binary. It runs 18 Rust validation checks (17 tests and one documentation
-example), then all 18 HTTP/frontend checks against Rust with no backend selector
+binary. It runs 21 Rust checks (17 validation tests, three question-bank tests, and one
+documentation example), then all 23 HTTP/frontend checks against Rust with no backend selector
 or skipped cases. Node runs the test harness and mock Ollama server only. Socket
 tests need permission to bind loopback ports; they never load the real model.
 
@@ -33,6 +33,29 @@ Coverage includes:
   missing-asset errors, and explicit rejection of unpaired Unicode surrogates.
 - Existing frontend interaction: following a suggestion submits it, clears stale
   suggestions, prevents duplicate requests, and renders new suggestions.
+
+## Dynamic suggestions checks (2026-09-26)
+
+- `npm test`, `npm run typecheck`, and `npm run check:rust` passed; the release
+  binary built successfully.
+- The bank tests check question validity, unique IDs/text, topic diversity, recent
+  exclusions over repeated rounds, and a complete result if exclusions exhaust
+  the available bank.
+- HTTP tests verify four catalogue entries from different topics, repeat avoidance,
+  no Ollama calls, no-store/security headers, method errors, and bounded exclusions.
+- Browser-code tests cover loading, selection without submitting, refresh and
+  duplicate-click prevention, bounded storage/reload history, unavailable/corrupt
+  storage, network failure, malformed data, timeout, preserving drafts/old cards,
+  and an overlapping chat request.
+- Rendered the running development page at 1360×1150 and 390×1250 using headless
+  Chromium and visually checked the question cards, text wrapping, and controls.
+  These are viewport checks, not a physical phone or screen-reader audit.
+- The user restarted the service on 2026-09-26. Local and public HTTPS health
+  and suggestions checks passed: four distinct topics, no repeats from the
+  immediately excluded batch, and no-store caching. Public HTML, JavaScript, and
+  CSS matched the tested files. A real starter question returned an answer and
+  three follow-ups in 2,916 ms. Funnel still points directly to port 11436.
+  The temporary development server on 11437 was stopped afterward.
 
 ## Host checks during migration
 

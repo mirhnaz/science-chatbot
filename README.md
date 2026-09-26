@@ -37,6 +37,21 @@ Node and Cargo are build/test tools; neither is needed to run that binary.
 `npm run clean` removes `build/`; do not run it against a live deployment without
 rebuilding the assets. Normal builds do not clear live assets first.
 
+## Rotating starter questions
+
+“Need a spark?” shows four question cards from different science topics.
+“Surprise me” fetches another set; clicking a card fills the question box without
+submitting it. The child presses Ask when ready.
+
+The Rust backend selects from 60 curated questions across 10 topics in
+`backend/data/questions.json`. This does not call Ollama or occupy a model slot.
+The browser keeps the last 40 displayed IDs in tab-scoped `sessionStorage` to
+avoid recent repeats, including after a reload. Only catalogue IDs are stored,
+not typed questions or answers. If storage is blocked, rotation still works in
+memory until the page is reloaded. Older suggestions may reappear eventually.
+
+See [the question-bank guide](docs/QUESTION_BANK.md) to edit the collection.
+
 ## Configuration
 
 The app reads environment variables, not `.env` files.
@@ -62,6 +77,8 @@ rollback instructions.
 backend/src/chat.rs          Pure question and answer validation
 backend/src/http.rs          Axum routes, assets, and Ollama integration
 backend/src/main.rs          Configuration, listener, and shutdown
+backend/src/suggestions.rs   Diverse starter-question selection
+backend/data/questions.json  Curated starter-question bank
 backend/src/tutor.txt        Unchanged system message
 backend/src/reply-schema.json Unchanged structured response schema
 backend/tests/              Rust validation tests

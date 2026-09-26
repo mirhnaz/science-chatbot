@@ -377,3 +377,31 @@ test('Rust shutdown also closes an unfinished request body', async t => {
   await delay(30);
   await f.stop();
 });
+
+test('starter suggestions rotate across four topics without calling Ollama', async t => {
+  let calls = 0;
+  const f = await fixture(t, (_, res) => { calls++; answer(res); });
+  const bank: { id: string; topic: string; icon: string; question: string }[] = JSON.parse(await readFile('backend/data/questions.json', 'utf8'));
+  let recent: string[] = [];
+  for (let batch = 0; batch < 20; batch++) {
+    const res = await fetch(`${f.url}/api/suggestions?exclude=${encodeURIComponent(recent.join(','))}`);
+    assert.equal(res.status, 200);
+    assert.equal(res.headers.get('cache-control'), 'no-store');
+    assert.equal(res.headers.get('x-content-type-options'), 'nosniff');
+    const data = await res.json() as { suggestions: typeof bank };
+    assert.equal(data.suggestions.length, 4);
+    assert.equal(new Set(data.suggestions.map(q => q.topic)).size, 4);
+    for (const q of data.suggestions) {
+      assert.deepEqual(q, bank.find(item => item.id === q.id));
+      assert.ok(!recent.includes(q.id));
+    }
+    recent = [...recent, ...data.suggestions.map(q => q.id)].slice(-40);
+  }
+  assert.equal(calls, 0);
+  const wrongMethod = await fetch(f.url + '/api/suggestions', { method: 'POST' });
+  assert.equal(wrongMethod.status, 405);
+  assert.equal(wrongMethod.headers.get('allow'), 'GET');
+  assert.equal((await fetch(f.url + '/api/suggestions?exclude=' + Array(41).fill('space-1').join(','))).status, 400);
+  assert.equal((await fetch(f.url + '/api/suggestions?exclude=' + 'x'.repeat(65))).status, 400);
+  assert.equal((await fetch(f.url + '/api/suggestions?exclude=' + 'x'.repeat(3001))).status, 400);
+});

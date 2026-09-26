@@ -1,5 +1,8 @@
 interface AppElements {
   question: HTMLTextAreaElement;
+  'topic-grid': HTMLDivElement;
+  'suggestions-status': HTMLParagraphElement;
+  'surprise': HTMLButtonElement;
   'question-form': HTMLFormElement;
   ask: HTMLButtonElement;
   cancel: HTMLButtonElement;
@@ -50,12 +53,69 @@ function $<K extends keyof AppElements>(id: K): AppElements[K] {
   if (!element) throw new Error(`Missing page element: ${id}`);
   return element as AppElements[K];
 }
-const topics = {
-  electricity: 'How does electricity make a light bulb glow?',
-  light: 'Why is the sky blue?',
-  gravity: 'What is gravity? Answer for a 10 year old.',
-  sound: 'How does sound travel from a drum to my ears?'
-};
+interface StarterSuggestion { id: string; topic: string; icon: string; question: string }
+const recentSuggestionsKey = 'science-chatbot.recent-suggestions.v1';
+const recentSuggestionsLimit = 40;
+let recentSuggestions: string[] = [];
+try {
+  const stored: unknown = JSON.parse(sessionStorage.getItem(recentSuggestionsKey) || '[]');
+  if (Array.isArray(stored)) recentSuggestions = stored.filter((id): id is string => typeof id === 'string' && /^[a-z0-9-]{1,64}$/.test(id)).slice(-recentSuggestionsLimit);
+} catch { /* Browsers may disable storage; in-memory rotation still works. */ }
+let suggestionsLoading = false;
+
+function isStarter(value: unknown): value is StarterSuggestion {
+  if (!value || typeof value !== 'object') return false;
+  const item = value as Record<string, unknown>;
+  return typeof item.id === 'string' && /^[a-z0-9-]{1,64}$/.test(item.id)
+    && typeof item.topic === 'string' && !!item.topic.trim()
+    && typeof item.icon === 'string' && !!item.icon.trim()
+    && typeof item.question === 'string' && !!item.question.trim() && item.question.length <= 2000;
+}
+
+async function refreshSuggestions() {
+  if (suggestionsLoading || controller) return;
+  suggestionsLoading = true;
+  $('surprise').disabled = true;
+  $('topic-grid').setAttribute('aria-busy', 'true');
+  $('suggestions-status').textContent = 'Finding new things to explore…';
+  const request = new AbortController();
+  const timer = setTimeout(() => request.abort(), 8000);
+  try {
+    const exclude = encodeURIComponent(recentSuggestions.join(','));
+    const response = await fetch(`/api/suggestions?exclude=${exclude}`, { signal: request.signal });
+    if (!response.ok) throw new Error('Suggestions unavailable');
+    const data: unknown = await response.json();
+    const items = data && typeof data === 'object' ? (data as Record<string, unknown>).suggestions : undefined;
+    if (!Array.isArray(items) || items.length !== 4 || !items.every(isStarter)
+      || new Set(items.map(item => item.id)).size !== 4 || new Set(items.map(item => item.topic)).size !== 4) throw new Error('Invalid suggestions');
+    const buttons = items.map(item => {
+      const button = document.createElement('button');
+      button.type = 'button'; button.className = 'topic'; button.disabled = !!controller;
+      const label = document.createElement('span'); label.className = 'topic-label';
+      const icon = document.createElement('span'); icon.className = 'topic-icon'; icon.textContent = item.icon; icon.setAttribute('aria-hidden', 'true');
+      const topic = document.createElement('span'); topic.textContent = item.topic;
+      label.append(icon, topic);
+      const question = document.createElement('span'); question.className = 'topic-question'; question.textContent = item.question;
+      button.append(label, question);
+      button.addEventListener('click', () => {
+        if (controller) return;
+        $('question').value = item.question;
+        $('question').setCustomValidity(''); $('question').focus();
+      });
+      return button;
+    });
+    $('topic-grid').replaceChildren(...buttons);
+    recentSuggestions = [...new Set([...recentSuggestions, ...items.map(item => item.id)])].slice(-recentSuggestionsLimit);
+    try { sessionStorage.setItem(recentSuggestionsKey, JSON.stringify(recentSuggestions)); } catch { /* Optional storage. */ }
+    $('suggestions-status').textContent = 'Pick a question, then press Ask. Or try four new ideas!';
+  } catch {
+    $('suggestions-status').textContent = 'Couldn’t load new ideas. Try Surprise me again, or type your own question.';
+  } finally {
+    clearTimeout(timer); suggestionsLoading = false;
+    $('surprise').disabled = !!controller;
+    $('topic-grid').setAttribute('aria-busy', 'false');
+  }
+}
 let controller: AbortController | null = null;
 let answerText = '', speaking = false;
 const synthesis = window.speechSynthesis;
@@ -64,6 +124,7 @@ function updateRead() { $('read').disabled = !answerText || !!controller || !loc
 function stopSpeech() { synthesis?.cancel(); speaking = false; $('read').innerHTML = '<span aria-hidden="true">◖))</span> Read aloud'; }
 function setBusy(busy: boolean) {
   $('ask').disabled = busy;
+  $('surprise').disabled = busy || suggestionsLoading;
   $('question').disabled = busy;
   document.querySelectorAll<HTMLButtonElement>('.topic, .follow-up').forEach(el => { el.disabled = busy; });
   $('cancel').hidden = !busy;
@@ -121,12 +182,8 @@ async function ask(question: unknown) {
 $('question-form').addEventListener('submit', (event) => { event.preventDefault(); if (!$('question').value.trim()) { $('question').setCustomValidity('Type a science question first.'); $('question').reportValidity(); return; } void ask($('question').value); });
 $('question').addEventListener('input', () => $('question').setCustomValidity(''));
 $('question').addEventListener('keydown', (event) => { if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') $('question-form').requestSubmit(); });
-document.querySelectorAll<HTMLButtonElement>('[data-topic]').forEach(button => button.addEventListener('click', () => {
-  const topic = button.dataset.topic;
-  if (!topic || !Object.hasOwn(topics, topic)) return;
-  $('question').value = topics[topic as keyof typeof topics];
-  $('question').setCustomValidity(''); $('question').focus();
-}));
+$('surprise').addEventListener('click', () => { void refreshSuggestions(); });
+void refreshSuggestions();
 $('cancel').addEventListener('click', () => controller?.abort());
 $('read').addEventListener('click', () => {
   if (speaking) return stopSpeech();

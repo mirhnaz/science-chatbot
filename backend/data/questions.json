@@ -1,0 +1,362 @@
+[
+  {
+    "id": "space-1",
+    "topic": "Space",
+    "icon": "🚀",
+    "question": "Why do astronauts float in space?"
+  },
+  {
+    "id": "space-2",
+    "topic": "Space",
+    "icon": "🚀",
+    "question": "Why does the Moon look different throughout the month?"
+  },
+  {
+    "id": "space-3",
+    "topic": "Space",
+    "icon": "🚀",
+    "question": "How do rockets move in space without air?"
+  },
+  {
+    "id": "space-4",
+    "topic": "Space",
+    "icon": "🚀",
+    "question": "Why do stars seem to twinkle?"
+  },
+  {
+    "id": "space-5",
+    "topic": "Space",
+    "icon": "🚀",
+    "question": "What makes a comet grow a tail?"
+  },
+  {
+    "id": "space-6",
+    "topic": "Space",
+    "icon": "🚀",
+    "question": "Why is Mars called the red planet?"
+  },
+  {
+    "id": "animals-1",
+    "topic": "Animals",
+    "icon": "🦋",
+    "question": "How do butterflies change from caterpillars?"
+  },
+  {
+    "id": "animals-2",
+    "topic": "Animals",
+    "icon": "🦋",
+    "question": "How do bats find their way in the dark?"
+  },
+  {
+    "id": "animals-3",
+    "topic": "Animals",
+    "icon": "🦋",
+    "question": "Why do some animals hibernate?"
+  },
+  {
+    "id": "animals-4",
+    "topic": "Animals",
+    "icon": "🦋",
+    "question": "How do fish breathe underwater?"
+  },
+  {
+    "id": "animals-5",
+    "topic": "Animals",
+    "icon": "🦋",
+    "question": "How do birds stay warm in winter?"
+  },
+  {
+    "id": "animals-6",
+    "topic": "Animals",
+    "icon": "🦋",
+    "question": "Why do octopuses change color?"
+  },
+  {
+    "id": "plants-1",
+    "topic": "Plants",
+    "icon": "🌱",
+    "question": "How do plants know which way to grow?"
+  },
+  {
+    "id": "plants-2",
+    "topic": "Plants",
+    "icon": "🌱",
+    "question": "Why do leaves change color in autumn?"
+  },
+  {
+    "id": "plants-3",
+    "topic": "Plants",
+    "icon": "🌱",
+    "question": "How do seeds travel to new places?"
+  },
+  {
+    "id": "plants-4",
+    "topic": "Plants",
+    "icon": "🌱",
+    "question": "How can a cactus survive with very little water?"
+  },
+  {
+    "id": "plants-5",
+    "topic": "Plants",
+    "icon": "🌱",
+    "question": "Why do flowers have different colors?"
+  },
+  {
+    "id": "plants-6",
+    "topic": "Plants",
+    "icon": "🌱",
+    "question": "How do roots take water into a plant?"
+  },
+  {
+    "id": "weather-1",
+    "topic": "Weather",
+    "icon": "🌦️",
+    "question": "How do clouds stay in the sky?"
+  },
+  {
+    "id": "weather-2",
+    "topic": "Weather",
+    "icon": "🌦️",
+    "question": "What causes thunder after lightning?"
+  },
+  {
+    "id": "weather-3",
+    "topic": "Weather",
+    "icon": "🌦️",
+    "question": "Why do snowflakes have six sides?"
+  },
+  {
+    "id": "weather-4",
+    "topic": "Weather",
+    "icon": "🌦️",
+    "question": "Where does wind come from?"
+  },
+  {
+    "id": "weather-5",
+    "topic": "Weather",
+    "icon": "🌦️",
+    "question": "How does morning dew form on grass?"
+  },
+  {
+    "id": "weather-6",
+    "topic": "Weather",
+    "icon": "🌦️",
+    "question": "Why can we sometimes see our breath on cold days?"
+  },
+  {
+    "id": "light-1",
+    "topic": "Light",
+    "icon": "🌈",
+    "question": "Why is the sky blue?"
+  },
+  {
+    "id": "light-2",
+    "topic": "Light",
+    "icon": "🌈",
+    "question": "How does a prism split light into colors?"
+  },
+  {
+    "id": "light-3",
+    "topic": "Light",
+    "icon": "🌈",
+    "question": "Why does a straw look bent in a glass of water?"
+  },
+  {
+    "id": "light-4",
+    "topic": "Light",
+    "icon": "🌈",
+    "question": "How do mirrors reflect our faces?"
+  },
+  {
+    "id": "light-5",
+    "topic": "Light",
+    "icon": "🌈",
+    "question": "Why do shadows change length during the day?"
+  },
+  {
+    "id": "light-6",
+    "topic": "Light",
+    "icon": "🌈",
+    "question": "How does a rainbow form after rain?"
+  },
+  {
+    "id": "sound-1",
+    "topic": "Sound",
+    "icon": "🎵",
+    "question": "How does sound travel from a drum to our ears?"
+  },
+  {
+    "id": "sound-2",
+    "topic": "Sound",
+    "icon": "🎵",
+    "question": "Why do we hear echoes in some places?"
+  },
+  {
+    "id": "sound-3",
+    "topic": "Sound",
+    "icon": "🎵",
+    "question": "How do guitar strings make different notes?"
+  },
+  {
+    "id": "sound-4",
+    "topic": "Sound",
+    "icon": "🎵",
+    "question": "Why does a bigger drum usually make a deeper sound?"
+  },
+  {
+    "id": "sound-5",
+    "topic": "Sound",
+    "icon": "🎵",
+    "question": "How does a speaker turn electricity into sound?"
+  },
+  {
+    "id": "sound-6",
+    "topic": "Sound",
+    "icon": "🎵",
+    "question": "Why does our voice sound different in a recording?"
+  },
+  {
+    "id": "electricity-1",
+    "topic": "Electricity",
+    "icon": "⚡",
+    "question": "How does electricity make a light bulb glow?"
+  },
+  {
+    "id": "electricity-2",
+    "topic": "Electricity",
+    "icon": "⚡",
+    "question": "Why can a rubbed balloon make hair stand up?"
+  },
+  {
+    "id": "electricity-3",
+    "topic": "Electricity",
+    "icon": "⚡",
+    "question": "How does a battery power a toy?"
+  },
+  {
+    "id": "electricity-4",
+    "topic": "Electricity",
+    "icon": "⚡",
+    "question": "Why do electrical wires have plastic covers?"
+  },
+  {
+    "id": "electricity-5",
+    "topic": "Electricity",
+    "icon": "⚡",
+    "question": "How do solar panels turn sunlight into electricity?"
+  },
+  {
+    "id": "electricity-6",
+    "topic": "Electricity",
+    "icon": "⚡",
+    "question": "Why does a switch turn a light on and off?"
+  },
+  {
+    "id": "earth-1",
+    "topic": "Earth",
+    "icon": "🌍",
+    "question": "Why do volcanoes erupt?"
+  },
+  {
+    "id": "earth-2",
+    "topic": "Earth",
+    "icon": "🌍",
+    "question": "How are fossils formed?"
+  },
+  {
+    "id": "earth-3",
+    "topic": "Earth",
+    "icon": "🌍",
+    "question": "Why is ocean water salty?"
+  },
+  {
+    "id": "earth-4",
+    "topic": "Earth",
+    "icon": "🌍",
+    "question": "How do rivers slowly change the shape of the land?"
+  },
+  {
+    "id": "earth-5",
+    "topic": "Earth",
+    "icon": "🌍",
+    "question": "What causes earthquakes?"
+  },
+  {
+    "id": "earth-6",
+    "topic": "Earth",
+    "icon": "🌍",
+    "question": "How do caves form inside rocks?"
+  },
+  {
+    "id": "matter-1",
+    "topic": "Matter",
+    "icon": "🧊",
+    "question": "Why does ice float on water?"
+  },
+  {
+    "id": "matter-2",
+    "topic": "Matter",
+    "icon": "🧊",
+    "question": "Why does sugar dissolve in water?"
+  },
+  {
+    "id": "matter-3",
+    "topic": "Matter",
+    "icon": "🧊",
+    "question": "How does liquid water turn into water vapor?"
+  },
+  {
+    "id": "matter-4",
+    "topic": "Matter",
+    "icon": "🧊",
+    "question": "Why do soap bubbles look round?"
+  },
+  {
+    "id": "matter-5",
+    "topic": "Matter",
+    "icon": "🧊",
+    "question": "Why does metal feel colder than wood in the same room?"
+  },
+  {
+    "id": "matter-6",
+    "topic": "Matter",
+    "icon": "🧊",
+    "question": "Why do some liquids flow more slowly than others?"
+  },
+  {
+    "id": "motion-1",
+    "topic": "Forces & motion",
+    "icon": "🧲",
+    "question": "Why do magnets attract some metals but not others?"
+  },
+  {
+    "id": "motion-2",
+    "topic": "Forces & motion",
+    "icon": "🧲",
+    "question": "How does a parachute slow a fall?"
+  },
+  {
+    "id": "motion-3",
+    "topic": "Forces & motion",
+    "icon": "🧲",
+    "question": "Why does a ball bounce?"
+  },
+  {
+    "id": "motion-4",
+    "topic": "Forces & motion",
+    "icon": "🧲",
+    "question": "How does a seesaw balance two people of different weights?"
+  },
+  {
+    "id": "motion-5",
+    "topic": "Forces & motion",
+    "icon": "🧲",
+    "question": "Why do things fall toward the ground?"
+  },
+  {
+    "id": "motion-6",
+    "topic": "Forces & motion",
+    "icon": "🧲",
+    "question": "How do bicycle brakes slow the wheels?"
+  }
+]

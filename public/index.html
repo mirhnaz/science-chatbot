@@ -29,12 +29,11 @@
           <p id="question-help" class="hint">Big questions and tiny wonders are welcome.</p>
           <div class="submit-row"><button class="ask primary" id="ask" type="submit"><span aria-hidden="true">↗</span> Ask a question</button><button id="cancel" class="secondary" type="button" hidden>Stop</button></div>
         </form>
-        <div class="topics"><h3>Need a spark?</h3><div class="topic-grid">
-          <button class="topic" type="button" data-topic="electricity"><span aria-hidden="true">⚡</span>Electricity</button>
-          <button class="topic" type="button" data-topic="light"><span aria-hidden="true">💡</span>Light</button>
-          <button class="topic" type="button" data-topic="gravity"><span aria-hidden="true">🌍</span>Gravity</button>
-          <button class="topic" type="button" data-topic="sound"><span aria-hidden="true">🔊</span>Sound</button>
-        </div></div>
+        <section class="topics" aria-labelledby="topics-heading">
+          <div class="topics-header"><h3 id="topics-heading">Need a spark?</h3><button id="surprise" class="secondary" type="button"><span aria-hidden="true">✦</span> Surprise me</button></div>
+          <p id="suggestions-status" class="hint" role="status">Finding new things to explore…</p>
+          <div id="topic-grid" class="topic-grid" aria-busy="true"></div>
+        </section>
       </section>
       <section class="answer-panel" id="answer-panel" aria-labelledby="answer-heading" aria-busy="false">
         <div class="answer-top"><div><p class="eyebrow"><span aria-hidden="true">02</span> FOLLOW YOUR CURIOSITY</p><h2 id="answer-heading">Let’s discover.</h2></div><span class="bot" aria-hidden="true">✦</span></div>
