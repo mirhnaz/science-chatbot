@@ -12,6 +12,10 @@ struct TrailStep: Identifiable {
     var error: String?
     /// The next question asked from this step (shown as ↳ when folded).
     var chosen: String?
+    /// Seconds from asking to the answer arriving, as the child waited.
+    var seconds: Double?
+    /// Which engine answered, for example "mir-ai-pc" or "On this iPad".
+    var source: String?
 
     var isLoading: Bool { reply == nil && error == nil }
 }
@@ -112,11 +116,12 @@ final class ChatModel {
             finish(id, error: "The tutor isn’t set up yet. Ask a grown-up to check Settings → Advanced.")
             return
         }
+        let started = Date()
         task = Task {
             do {
-                let reply = try await Self.firstAnswer(step.question, from: engines)
+                let (reply, source) = try await Self.firstAnswer(step.question, from: engines)
                 try Task.checkCancellation()
-                finish(id, reply: reply)
+                finish(id, reply: reply, seconds: Date().timeIntervalSince(started), source: source)
             } catch is CancellationError {
                 // cancel() or a new trail already updated the steps
             } catch {
@@ -125,17 +130,20 @@ final class ChatModel {
         }
     }
 
-    private func finish(_ id: UUID, reply: TutorReply? = nil, error: String? = nil) {
+    private func finish(_ id: UUID, reply: TutorReply? = nil, error: String? = nil,
+                        seconds: Double? = nil, source: String? = nil) {
         guard let index = steps.firstIndex(where: { $0.id == id }) else { return }
         steps[index].reply = reply
         steps[index].error = error
+        steps[index].seconds = seconds
+        steps[index].source = source
     }
 
     /// Tries each engine in order; moves on only for "can't reach it" errors.
-    private static func firstAnswer(_ question: String, from engines: [TutorEngine]) async throws -> TutorReply {
+    private static func firstAnswer(_ question: String, from engines: [TutorEngine]) async throws -> (TutorReply, String) {
         for (index, engine) in engines.enumerated() {
             do {
-                return try await engine.ask(question)
+                return (try await engine.ask(question), engine.name)
             } catch let error as TutorError where error.allowsFallback && index < engines.count - 1 {
                 try Task.checkCancellation()
                 continue

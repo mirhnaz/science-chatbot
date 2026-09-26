@@ -165,6 +165,7 @@ main { width: 100%; }
 .speak[aria-pressed="true"] { animation: pulse 1.2s ease-in-out infinite; }
 @keyframes pulse { 50% { transform: scale(1.08); } }
 .answer { font-size: 1.2rem; line-height: 1.6; margin-top: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.answered-in { margin-top: 10px; font-size: .8rem; color: var(--muted); }
 .loading { display: flex; align-items: center; gap: 12px; color: var(--muted); padding: 14px 0; }
 .spinner { width: 20px; height: 20px; border: 3px solid var(--surface-hover); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }

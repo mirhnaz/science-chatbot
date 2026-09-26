@@ -59,7 +59,8 @@ iPad; the principles and tokens still apply to both.
   platform's text and background colours so Dark Mode and contrast settings
   work.
 - **For 10–13 year olds.** No technical wording on the main screen (engine
-  names, timings). Large, readable answer text.
+  names). Each answer shows a small "Answered in N seconds" to spot delays
+  ("· on this iPad" when answered offline). Large, readable answer text.
 
 ## Layout
 

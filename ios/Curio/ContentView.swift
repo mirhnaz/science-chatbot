@@ -603,6 +603,13 @@ struct OpenStep: View {
                     .font(.title3)
                     .lineSpacing(6)
                     .textSelection(.enabled)
+                if let seconds = step.seconds {
+                    // Shows unusual delays at a glance; names the iPad when
+                    // it answered offline instead of mir-ai-pc.
+                    Text(answeredLabel(seconds: seconds, source: step.source))
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
                 if latest {
                     DiveDeeper(questions: reply.followUps, ask: dive, edit: editFollowUp)
                         .padding(.top, 8)
@@ -615,6 +622,12 @@ struct OpenStep: View {
         }
         .padding(.bottom, 8)
     }
+}
+
+/// "Answered in 3.2 seconds", plus "· on this iPad" for offline answers.
+func answeredLabel(seconds: Double, source: String?) -> String {
+    let time = String(format: "Answered in %.1f seconds", seconds)
+    return source == EngineChoice.local.label ? "\(time) · on this iPad" : time
 }
 
 /// "Dive deeper": the latest answer's follow-ups, in the accent colour.

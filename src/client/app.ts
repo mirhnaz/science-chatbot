@@ -22,6 +22,8 @@ interface Step {
   error?: string;
   /** The next question asked from this step (shown as ↳ when folded). */
   chosen?: string;
+  /** Seconds from asking to the answer arriving, as the child waited. */
+  seconds?: number;
 }
 
 // Optional browser tool integration; unavailable browsers use the normal UI.
@@ -237,6 +239,7 @@ async function ask(question: unknown, options: { newTrail?: boolean; topic?: str
 
   const current = new AbortController();
   controller = current;
+  const started = Date.now();
   const timer = setTimeout(() => current.abort('timeout'), 125000);
   $('status').textContent = 'Exploring your question…';
   if (wasFresh || options.newTrail) show(() => render()); else render();
@@ -247,6 +250,7 @@ async function ask(question: unknown, options: { newTrail?: boolean; topic?: str
     if (!response.ok) throw new Error(typeof data.error === 'string' ? data.error : 'Something went wrong. Please try again.');
     if (typeof data.answer !== 'string' || !data.answer.trim()) throw new Error('No answer came back. Please try again.');
     step.answer = data.answer;
+    step.seconds = (Date.now() - started) / 1000;
     step.followUps = Array.isArray(data.followUps) ? data.followUps.filter((q: unknown): q is string => typeof q === 'string' && !!q.trim()).slice(0, 3) : [];
     $('status').textContent = `Answered in ${((typeof data.elapsedMs === 'number' ? data.elapsedMs : 0) / 1000).toFixed(1)} seconds.`;
     return { question: asked, answer: step.answer, followUps: step.followUps };
@@ -371,6 +375,8 @@ function openStep(step: Step, latest: boolean, first: boolean) {
     article.append(loading);
   } else {
     article.append(element('div', 'answer', step.answer));
+    // Shows unusual delays at a glance (network included).
+    if (step.seconds !== undefined) article.append(element('p', 'answered-in', `Answered in ${step.seconds.toFixed(1)} seconds`));
     if (latest && step.followUps?.length) {
       const dive = element('section', 'dive');
       dive.append(element('h3', undefined, 'Dive deeper'));

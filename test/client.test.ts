@@ -105,6 +105,7 @@ test('a spark asks at once and starts a trail; the box moves to the dock', async
   b.requests[1].complete(reply()); await flush();
   assert.equal(byClass(b.trail(), 'follow-up').length, 3);
   assert.equal(b.get('cancel').hidden, true);
+  assert.match(byClass(b.trail(), 'answered-in')[0].textContent, /^Answered in \d+\.\d seconds$/);
 });
 
 test('Dive deeper adds a step, folds the previous one, and ignores double taps', async () => {
