@@ -107,6 +107,27 @@ still needs a user-authorized restart** to load that route. Static assets are
 already updated because the live server reads this checkout. No Funnel or unit
 configuration changed. Commit locally; push only when requested.
 
+## iPad/iOS app checkpoint (2026-09-26)
+
+`ios/` adds a native SwiftUI app for personal sideloading (not App Store). Ollama
+cannot run inside an iOS app, so the offline mode embeds llama.cpp (pinned
+xcframework `b11200`) with `Qwen3-4B-Instruct-2507-Q4_K_M.gguf`; a GBNF grammar
+replaces Ollama's `format` schema. A second mode calls this Rust server's
+`/api/chat` over HTTPS. The app bundles `tutor.txt` and `questions.json` by
+reference and ports the `chat.rs` reply rules to Swift. The UI uses the web
+palette and layout with native iOS controls. No backend, frontend, or
+deployment changes were made. See [../ios/README.md](../ios/README.md).
+
+Verified on the user's Mac (Xcode 27, over SSH, in a scratch copy):
+`swift test` passed 9 ScienceCore tests; the app compiled for generic iOS
+without signing; a macOS harness running the unmodified `LocalEngine.swift`
+against Ollama's local `qwen3:8b` blob produced valid, schema-shaped answers
+(English and Spanish/emoji) in about 6–7 s each. **Not yet verified:** running on
+the iPad, the 4B model's memory use and speed there, model download/import,
+remote mode, and visual appearance (the Mac's Xcode simulator/device
+components reported as out of date). llama.cpp aborts on process *exit* unless
+the model is unloaded first; iOS apps do not exit that way, but keep it in mind.
+
 ## Agreed direction, not yet implemented
 
 The user expects login, conversation history, and more functionality over time.

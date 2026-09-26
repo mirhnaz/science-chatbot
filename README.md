@@ -37,6 +37,13 @@ Node and Cargo are build/test tools; neither is needed to run that binary.
 `npm run clean` removes `build/`; do not run it against a live deployment without
 rebuilding the assets. Normal builds do not clear live assets first.
 
+## iPad and iPhone app
+
+`ios/` contains a native SwiftUI app that answers either **on the iPad with no
+internet** (llama.cpp running a smaller Qwen3 model inside the app) or through
+this Rust server on the AI PC. It is built and installed from a Mac with Xcode
+for personal testing; see [ios/README.md](ios/README.md).
+
 ## Rotating starter questions
 
 “Need a spark?” shows four question cards from different science topics.
@@ -86,6 +93,7 @@ src/client/app.ts           Unchanged TypeScript browser code
 public/                     HTML, CSS, images, icons, and manifest
 assets/                     Original artwork, not served
 test/                      Rust HTTP and frontend tests (TypeScript)
+ios/                        Native iPad/iPhone app (SwiftUI, on-device llama.cpp)
 deploy/                     Service and proxy templates
 docs/                       Migration lessons, installation, verification
 build/                      Generated JavaScript, ignored
