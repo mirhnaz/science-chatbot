@@ -12,6 +12,21 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
+                // Header card, like the account card in the iPad's Settings.
+                Section {
+                    HStack(spacing: 16) {
+                        BrandMark(size: 64)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("Science Chatbot").font(.title3.bold())
+                            Text("Big questions. Everyday discoveries.")
+                                .font(.subheadline).foregroundStyle(.secondary)
+                            MadeWithLove()
+                        }
+                    }
+                    .padding(.vertical, 6)
+                    .accessibilityElement(children: .combine)
+                }
+
                 Section {
                     Picker("Answer questions using", selection: $engineChoice) {
                         ForEach(EngineChoice.allCases) { Text($0.label).tag($0.rawValue) }
@@ -22,7 +37,6 @@ struct SettingsView: View {
                 } footer: {
                     Text(modeHelp)
                 }
-                .listRowBackground(Color("Surface"))
 
                 Section("Appearance") {
                     Picker("Theme", selection: $theme) {
@@ -31,14 +45,6 @@ struct SettingsView: View {
                         Text("Dark").tag("dark")
                     }
                 }
-                .listRowBackground(Color("Surface"))
-
-                Section {
-                    LabeledContent("Made with love by", value: "Ayaan and Naz")
-                } header: {
-                    Text("About")
-                }
-                .listRowBackground(Color("Surface"))
 
                 Section {
                     NavigationLink {
@@ -47,10 +53,7 @@ struct SettingsView: View {
                         Label("Advanced (for grown-ups)", systemImage: "exclamationmark.triangle")
                     }
                 }
-                .listRowBackground(Color("Surface"))
             }
-            .scrollContentBackground(.hidden)
-            .background(Color("Background"))
             .navigationTitle("Settings")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -92,7 +95,6 @@ struct AdvancedSettingsView: View {
                     Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
                 }
             }
-            .listRowBackground(Color("Surface"))
 
             Section {
                 if models.models.isEmpty {
@@ -121,7 +123,6 @@ struct AdvancedSettingsView: View {
             } footer: {
                 Text("Recommended: \(ModelStore.recommendedName). After it is on the iPad, no internet is needed.")
             }
-            .listRowBackground(Color("Surface"))
 
             Section {
                 LabeledContent("Address", value: ServerAddress.url ?? "Not set in this build")
@@ -143,7 +144,6 @@ struct AdvancedSettingsView: View {
             } footer: {
                 Text("The address is built into the app (SCIENCE_SERVER_HOST in ios/Local.xcconfig).")
             }
-            .listRowBackground(Color("Surface"))
 
             Section {
                 Toggle("Natural voice (\(NaturalVoice.name))", isOn: $useNatural)
@@ -177,10 +177,7 @@ struct AdvancedSettingsView: View {
             } footer: {
                 Text("The natural voice runs on this iPad, offline, for English answers. Other languages, or no natural voice, use the Apple voice. For better Apple voices, download a Premium or Enhanced voice in the iPad’s Settings → Accessibility → Read & Speak → Voices.")
             }
-            .listRowBackground(Color("Surface"))
         }
-        .scrollContentBackground(.hidden)
-        .background(Color("Background"))
         .navigationTitle("Advanced")
         .fileImporter(isPresented: $importing, allowedContentTypes: [.data]) { result in
             if case .success(let url) = result { models.importModel(from: url) }

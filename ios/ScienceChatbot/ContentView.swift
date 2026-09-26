@@ -71,10 +71,6 @@ struct ContentView: View {
                 }
             }
             .animation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(duration: 0.55, bounce: 0.2), value: fresh)
-            // Nord theme (docs/DESIGN.md): Snow Storm / Polar Night background
-            // and text; `.secondary` derives from Ink.
-            .foregroundStyle(Color("Ink"))
-            .background(Color("Background").ignoresSafeArea())
             .overlay(alignment: .top) {
                 if chat.undoSteps != nil {
                     UndoBanner(undo: { chat.undo() }, expire: { chat.clearUndo() })
@@ -87,6 +83,14 @@ struct ContentView: View {
             .navigationBarTitleDisplayMode(.inline)
             .navigationSubtitle(subtitle)
             .toolbar {
+                // The brand mark stays visible once a trail starts (the fresh
+                // screen shows the large one). Plain, not a glass button.
+                if !fresh {
+                    ToolbarItem(placement: .topBarLeading) {
+                        BrandMark(size: 34)
+                    }
+                    .sharedBackgroundVisibility(.hidden)
+                }
                 ToolbarItem(placement: .primaryAction) {
                     Button("Settings", systemImage: "gearshape") { showSettings = true }
                 }
@@ -177,6 +181,8 @@ struct FreshSession<Compose: View>: View {
                 Hero()
                 compose
                 StarterIdeas(chat: chat, start: start, edit: edit)
+                MadeWithLove()
+                    .padding(.top, 28)
             }
             .frame(maxWidth: 720)
             .padding(.horizontal, 16)
@@ -189,16 +195,34 @@ struct FreshSession<Compose: View>: View {
     }
 }
 
-/// Shown before the first question: the one place the brand mark appears.
+/// The app icon as a decorative mark, with iOS-style rounded corners.
+struct BrandMark: View {
+    var size: CGFloat
+
+    var body: some View {
+        Image("BrandIcon")
+            .resizable()
+            .scaledToFit()
+            .frame(width: size, height: size)
+            .clipShape(.rect(cornerRadius: size * 0.225))
+            .accessibilityHidden(true)
+    }
+}
+
+/// "❤️ Made with love by Ayaan and Naz".
+struct MadeWithLove: View {
+    var body: some View {
+        Text("❤️ Made with love by **Ayaan and Naz**")
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+    }
+}
+
+/// Shown before the first question, with the large brand mark.
 struct Hero: View {
     var body: some View {
         VStack(spacing: 16) {
-            Image("BrandIcon")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 96, height: 96)
-                .clipShape(.rect(cornerRadius: 22))
-                .accessibilityHidden(true)
+            BrandMark(size: 96)
             Text("A little curiosity.\nA whole world to explore.")
                 .font(.largeTitle.bold())
                 .multilineTextAlignment(.center)
@@ -229,7 +253,7 @@ struct StarterIdeas: View {
                         }
                         .frame(maxWidth: .infinity, minHeight: 64, alignment: .topLeading)
                         .padding(14)
-                        .background(Color("Surface"), in: .rect(cornerRadius: 16))
+                        .background(.background.secondary, in: .rect(cornerRadius: 16))
                         .contentShape(.rect(cornerRadius: 16))
                     }
                     .buttonStyle(.plain)
@@ -337,7 +361,6 @@ struct ComposeBar: View {
                         .frame(width: 48, height: 48)
                         .buttonStyle(.glassProminent)
                         .buttonBorderShape(.circle)
-                        .foregroundStyle(Color("OnAccent"))
                         .disabled(!canSend)
                         .keyboardShortcut(.return, modifiers: .command)
                 }
@@ -440,12 +463,12 @@ struct FoldedStep: View {
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.tint)
                         .padding(.horizontal, 12).padding(.vertical, 6)
-                        .background(Color("Background"), in: .capsule)
+                        .background(.background, in: .capsule)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(14)
-            .background(Color("Surface"), in: .rect(cornerRadius: 16))
+            .background(.background.secondary, in: .rect(cornerRadius: 16))
             .contentShape(.rect(cornerRadius: 16))
         }
         .buttonStyle(.plain)
@@ -498,7 +521,7 @@ struct OpenStep: View {
                 .padding(.vertical, 12)
             } else if let error = step.error {
                 VStack(alignment: .leading, spacing: 12) {
-                    Label(error, systemImage: "exclamationmark.triangle.fill").foregroundStyle(Color("ErrorText"))
+                    Label(error, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red)
                     if latest {
                         Button("Try again", systemImage: "arrow.clockwise", action: retry)
                             .buttonStyle(.bordered)
@@ -506,7 +529,7 @@ struct OpenStep: View {
                 }
                 .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Color("ErrorText").opacity(0.1), in: .rect(cornerRadius: 16))
+                .background(.red.opacity(0.08), in: .rect(cornerRadius: 16))
             } else if let reply = step.reply {
                 Text(reply.answer)
                     .font(.title3)

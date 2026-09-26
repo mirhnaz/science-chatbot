@@ -229,11 +229,14 @@ mode, iPhone.
 
 Later the same day: starters were renamed **Sparks** / **New spark**, the
 dock became a `safeAreaBar` with a soft scroll edge (text had clashed with
-it), the speaker animates while reading, and the app adopted the **Nord**
-palette in light and dark (colour sets in `Assets.xcassets`, table in
-[DESIGN.md](DESIGN.md)); light and dark screenshots were checked on the iPad.
-Still unchecked: Settings screens in Nord, Dynamic Type, VoiceOver, Reduce
-Transparency/Increase Contrast, iPhone.
+it), and the speaker animates while reading. A **Nord** palette was tried
+(`54d7a6f`) and reverted at the user's request; the app uses system colours
+with the purple accent. The theme now sets `overrideUserInterfaceStyle` on
+the windows, because `.preferredColorScheme(nil)` does not reliably return to
+System. The app icon shows at the top left of the trail toolbar and in a
+Settings header card; "❤️ Made with love by Ayaan and Naz" is on the landing
+screen and in Settings. Still unchecked: theme switching and Settings by hand,
+Dynamic Type, VoiceOver, Reduce Transparency/Increase Contrast, iPhone.
 
 Debugging notes: launch arguments such as `-theme dark` override saved
 settings for one launch. Debug builds accept `-autoAsk` (`xcrun devicectl device
