@@ -217,8 +217,22 @@ starters for fresh sessions, a trail of folded steps with the latest open,
 "Dive deeper" under the latest answer, "Try something new" chips and "Ask your
 own" above the question box (each starts a new trail, with Undo), per-answer
 Read aloud, and Reduce Motion support. `ChatModel` now holds trail steps.
-Built cleanly and installed; **not yet checked on the iPad** (it was locked):
-all states, animations, dark mode, portrait, iPhone.
+The first build hung on the iPad (watchdog `0x8BADF00D`, main thread in
+SwiftUI layout): the dock's measured height fed back into the trail's bottom
+margin through a shared `ZStack`. Fixed by putting the dock in
+`safeAreaInset(edge: .bottom)` and giving the fresh session its own centred
+layout, with `matchedGeometryEffect` moving the question box between them.
+Verified on the iPad via `-autoAsk` screenshots: fresh → loading → folded
+first step with ↳ → latest answer with Dive deeper and the chip row.
+**Still to check by hand:** taps, rotation, Undo, Read aloud per answer, dark
+mode, iPhone.
+
+Debugging notes: Debug builds accept `-autoAsk` (`xcrun devicectl device
+process launch --device <id> local.sciencechatbot.app -- -autoAsk`), which
+asks the first spark and then a follow-up. Hang/crash reports are listed with
+`xcrun devicectl device info files --domain-type systemCrashLogs` and copied
+with `device copy from`. The iOS Simulator cannot build the app because the
+pinned llama.cpp framework has no simulator slice.
 
 ## Agreed direction, not yet implemented
 

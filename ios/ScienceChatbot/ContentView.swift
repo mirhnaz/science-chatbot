@@ -18,8 +18,8 @@ struct ContentView: View {
     @State private var speech = Speech()
     @State private var speakingStep: UUID?
     @State private var showSettings = false
-    @State private var dockHeight = 0.0
     @FocusState private var composing: Bool
+    @Namespace private var glide
 
     private var choice: EngineChoice { EngineChoice(rawValue: engineChoice) ?? .automatic }
 
@@ -44,40 +44,31 @@ struct ContentView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack(alignment: .bottom) {
-                if !fresh {
-                    TrailView(chat: chat, speakingStep: speakingStep, bottomInset: dockHeight,
+            Group {
+                if fresh {
+                    FreshSession(chat: chat, start: startTrail, edit: edit) {
+                        compose.matchedGeometryEffect(id: "compose", in: glide)
+                    }
+                    .transition(.opacity)
+                } else {
+                    TrailView(chat: chat, speakingStep: speakingStep,
                               speak: toggleSpeech, dive: { chat.ask($0, using: engines) },
                               editFollowUp: edit, retry: { chat.retry(using: engines) })
+                        // The system keeps the trail clear of the dock and lets
+                        // it scroll beneath the glass. (Measuring the dock by
+                        // hand caused a layout loop.)
+                        .safeAreaInset(edge: .bottom) {
+                            VStack(spacing: 0) {
+                                SomethingNew(chat: chat, askOwn: askOwn, start: startTrail)
+                                compose.matchedGeometryEffect(id: "compose", in: glide)
+                            }
+                            .frame(maxWidth: 720)
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 8)
+                        }
                         .transition(.opacity)
                 }
-                // The same question box moves from the centre to the bottom,
-                // which shows children where questions go.
-                VStack(spacing: 0) {
-                    if fresh {
-                        Spacer(minLength: 24)
-                        Hero()
-                    } else {
-                        Spacer(minLength: 0)
-                        SomethingNew(chat: chat, askOwn: askOwn, start: startTrail)
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                    }
-                    ComposeBar(chat: chat, focused: $composing,
-                               placeholder: fresh ? "Ask a science question…" : "Ask more about this…") {
-                        chat.ask(using: engines)
-                    }
-                    if fresh {
-                        StarterIdeas(chat: chat, start: startTrail, edit: edit)
-                            .transition(.opacity)
-                        Spacer(minLength: 24)
-                    }
-                }
-                .frame(maxWidth: 720)
-                .padding(.horizontal, 16)
-                .padding(.bottom, 8)
-                .onGeometryChange(for: Double.self) { $0.size.height } action: { dockHeight = $0 }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .animation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(duration: 0.55, bounce: 0.2), value: fresh)
             .overlay(alignment: .top) {
                 if chat.undoSteps != nil {
@@ -99,6 +90,28 @@ struct ContentView: View {
         .onChange(of: chat.isLoading) { _, loading in if loading { stopSpeech() } }
         .onChange(of: speech.isSpeaking) { _, speaking in if !speaking { speakingStep = nil } }
         .sheet(isPresented: $showSettings) { SettingsView() }
+        #if DEBUG
+        .task {
+            // Debug builds only: `-autoAsk` asks the first spark, then a
+            // follow-up, so layouts can be checked without tapping.
+            guard ProcessInfo.processInfo.arguments.contains("-autoAsk"),
+                  let idea = chat.suggestions.first else { return }
+            try? await Task.sleep(for: .seconds(2))
+            startTrail(idea)
+            while chat.isLoading { try? await Task.sleep(for: .milliseconds(300)) }
+            try? await Task.sleep(for: .seconds(1))
+            if let next = chat.steps.last?.reply?.followUps.first { chat.ask(next, using: engines) }
+        }
+        #endif
+    }
+
+    /// The one question box. It moves between the centre (fresh session) and
+    /// the bottom (trail), which shows children where questions go.
+    private var compose: some View {
+        ComposeBar(chat: chat, focused: $composing,
+                   placeholder: fresh ? "Ask a science question…" : "Ask more about this…") {
+            chat.ask(using: engines)
+        }
     }
 
     /// Only what a child needs: working, offline, not set up, or trail length.
@@ -144,6 +157,32 @@ struct ContentView: View {
 }
 
 // MARK: Fresh session
+
+/// A fresh session: hero, the question box, and starter ideas, centred.
+/// Scrolls if the screen is short (small windows, large text, keyboard).
+struct FreshSession<Compose: View>: View {
+    let chat: ChatModel
+    let start: (Suggestion) -> Void
+    let edit: (String) -> Void
+    @ViewBuilder let compose: Compose
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 0) {
+                Hero()
+                compose
+                StarterIdeas(chat: chat, start: start, edit: edit)
+            }
+            .frame(maxWidth: 720)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 24)
+            .frame(maxWidth: .infinity)
+        }
+        .defaultScrollAnchor(.center, for: .alignment)
+        .scrollBounceBehavior(.basedOnSize)
+        .scrollDismissesKeyboard(.interactively)
+    }
+}
 
 /// Shown before the first question: the one place the brand mark appears.
 struct Hero: View {
@@ -220,11 +259,16 @@ struct SomethingNew: View {
                             .fontWeight(.semibold)
                             .foregroundStyle(.tint)
                             .keyboardShortcut("n", modifiers: .command)
-                        ForEach(chat.suggestions.prefix(2)) { idea in
-                            Button("\(idea.icon) \(idea.question)") { start(idea) }
-                        }
                         Button("Different ideas", systemImage: "dice") { chat.surprise() }
                             .labelStyle(.iconOnly)
+                        ForEach(chat.suggestions.prefix(3)) { idea in
+                            Button { start(idea) } label: {
+                                Text("\(idea.icon) \(idea.question)")
+                                    .lineLimit(1)
+                                    .frame(maxWidth: 260)
+                            }
+                            .accessibilityLabel(idea.question)
+                        }
                     }
                     .buttonStyle(.glass)
                     .disabled(chat.isLoading)
@@ -324,7 +368,6 @@ struct UndoBanner: View {
 struct TrailView: View {
     let chat: ChatModel
     let speakingStep: UUID?
-    let bottomInset: Double
     let speak: (TrailStep) -> Void
     let dive: (String) -> Void
     let editFollowUp: (String) -> Void
@@ -355,7 +398,6 @@ struct TrailView: View {
                 .padding(.top, 12)
                 .frame(maxWidth: .infinity)
             }
-            .contentMargins(.bottom, bottomInset + 24, for: .scrollContent)
             .scrollDismissesKeyboard(.interactively)
             .onChange(of: chat.steps.last?.id) { _, id in
                 expanded = []
