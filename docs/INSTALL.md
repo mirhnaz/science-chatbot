@@ -75,6 +75,44 @@ mapping; do not run a new Serve/Funnel configuration command.
 
 Installed units are not automatically updated by edits to this repository.
 
+## Switch an existing install to Curio
+
+Installs made before the rename run `science-chatbot-web.service` with the
+`science-chatbot-server` binary. The new page uses the same routes and API, so
+the old binary can serve it while the new one builds. On mir-omarchy-pc
+(checkout `/home/mir/dev/science-chatbot`, port 11436, Funnel unchanged):
+
+```sh
+cd /home/mir/dev/science-chatbot
+git pull --ff-only && npm run build:frontend   # new page is live within seconds
+PATH="$HOME/.cargo/bin:$PATH" npm run build:rust  # builds curio-server; old binary keeps running
+
+# New unit from the live one: same settings (including PUBLIC_ORIGIN), new name and binary.
+sudo sh -c 'sed -e "s/Science Chatbot Web App/Curio Web App/" \
+  -e "s#release/science-chatbot-server#release/curio-server#" \
+  /etc/systemd/system/science-chatbot-web.service > /etc/systemd/system/curio-web.service'
+systemd-analyze verify /etc/systemd/system/curio-web.service
+sudo systemctl daemon-reload
+sudo systemctl disable --now science-chatbot-web.service
+sudo systemctl enable --now curio-web.service   # a few seconds offline
+systemctl status curio-web.service --no-pager
+curl -s http://127.0.0.1:11436/healthz
+```
+
+Between `git pull` and the frontend build (a few seconds) the page may not
+load. Then check the public page and ask a real question.
+
+**Roll back** (the old binary stays in `backend/target/release/` until
+`cargo clean`):
+
+```sh
+sudo systemctl disable --now curio-web.service
+sudo systemctl enable --now science-chatbot-web.service
+```
+
+Once Curio has run well for a while, remove the old unit with
+`sudo rm /etc/systemd/system/science-chatbot-web.service && sudo systemctl daemon-reload`.
+
 ## Recover an earlier version
 
 Keep a known-good release binary and matching frontend assets before deploying
