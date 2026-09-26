@@ -144,12 +144,9 @@ struct ContentView: View {
     private func askOwn() {
         stopSpeech()
         chat.startEmptyTrail()
-        // Focus after the question box has moved to the centre; focusing
-        // during the move is ignored.
-        Task {
-            try? await Task.sleep(for: .milliseconds(650))
-            composing = true
-        }
+        // No automatic keyboard: it would hide the Sparks. The question box
+        // is centred and ready to tap.
+        composing = false
     }
 
     /// Long-press "Edit before asking": fills the box instead of asking.
