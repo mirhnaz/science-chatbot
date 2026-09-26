@@ -21,7 +21,8 @@ cases as `backend/tests/validation.rs`.
 ## Layout
 
 ```text
-project.yml          XcodeGen spec; generates ScienceChatbot.xcodeproj (not committed)
+ScienceChatbot.xcodeproj  Xcode project (committed; edit it in Xcode)
+Signing.xcconfig     Signing defaults; includes the ignored Signing.local.xcconfig
 ScienceCore/         Swift package: validation, reply decoding, JSON grammar, starter questions
 LlamaFramework/      Swift package wrapping llama.cpp's prebuilt xcframework (pinned release)
 ScienceChatbot/      App: SwiftUI screens, local and remote engines, model files, read aloud
@@ -40,16 +41,27 @@ ScienceChatbot/      App: SwiftUI screens, local and remote engines, model files
 
 Requirements: Xcode with the iOS platform installed, and an Apple ID.
 
-```sh
-brew install xcodegen          # once
-cd ios
-xcodegen                       # creates ScienceChatbot.xcodeproj
-open ScienceChatbot.xcodeproj
+The Xcode project is committed and managed in Xcode; add or remove files
+there. `tutor.txt` and `questions.json` are referenced from `../backend/` as
+app resources, not copied.
+
+Your Apple team ID stays out of Git. Create `ios/Signing.local.xcconfig`
+(ignored) containing one line:
+
+```text
+DEVELOPMENT_TEAM = ABCDE12345
 ```
 
-In Xcode, select the **ScienceChatbot** target → **Signing & Capabilities**
-→ Team: your Apple ID (“Personal Team”). If the bundle identifier is taken,
-change `local.sciencechatbot.app` to something unique.
+The team ID is the `OU=` value printed by
+`security find-certificate -c "Apple Development" -p | openssl x509 -noout -subject`,
+or pick your Personal Team once in Xcode → Signing & Capabilities and copy it.
+Choosing a Team in that screen instead writes it into `project.pbxproj`; do not
+commit that change. If the bundle identifier is taken, change
+`local.sciencechatbot.app` to something unique.
+
+```sh
+open ios/ScienceChatbot.xcodeproj
+```
 
 Connect the iPad with a cable, trust the Mac, and turn on
 **Settings → Privacy & Security → Developer Mode** on the iPad (it restarts).
@@ -60,7 +72,16 @@ Management** on the iPad.
 With a free Apple ID the installed app stops opening after **7 days**; run it
 again from Xcode to renew. A paid developer account extends this to a year.
 
-Re-run `xcodegen` after pulling changes that add or remove Swift files.
+From the command line (the device ID comes from `xcrun devicectl list devices`):
+
+```sh
+cd ios
+xcodebuild -project ScienceChatbot.xcodeproj -scheme ScienceChatbot \
+  -destination 'id=<device-id>' -derivedDataPath /tmp/sc-build \
+  -allowProvisioningUpdates build
+xcrun devicectl device install app --device <device-id> \
+  "/tmp/sc-build/Build/Products/Debug-iphoneos/Science Chatbot.app"
+```
 
 ## Put the model on the iPad
 
@@ -74,7 +95,9 @@ Answers are a little simpler than the 8B model's. Choose one method:
    Mac from
    <https://huggingface.co/unsloth/Qwen3-4B-Instruct-2507-GGUF>, then in Finder
    select the iPad → **Files** → drag the `.gguf` onto *Science Chatbot*.
-   In the app, open Settings → *Refresh list*.
+   In the app, open Settings → *Refresh list*. Or copy it from the Mac's
+   terminal with the app installed:
+   `xcrun devicectl device copy to --device <device-id> --domain-type appDataContainer --domain-identifier local.sciencechatbot.app --source <file>.gguf --destination Documents/<file>.gguf`
 3. **Files app**: Settings → *Import model file…* and pick a `.gguf`.
 
 Then choose **On this iPad** in Settings. The first question loads the model
@@ -94,7 +117,7 @@ Native apps send no browser `Origin` header, so no server change is needed.
 
 ```sh
 cd ios/ScienceCore && swift test        # validation, grammar, decoding, starters
-cd ios && xcodegen && xcodebuild -project ScienceChatbot.xcodeproj \
+cd ios && xcodebuild -project ScienceChatbot.xcodeproj \
   -scheme ScienceChatbot -destination 'generic/platform=iOS' \
   CODE_SIGNING_ALLOWED=NO build         # compile check without signing
 ```

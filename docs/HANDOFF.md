@@ -128,6 +128,23 @@ remote mode, and visual appearance (the Mac's Xcode simulator/device
 components reported as out of date). llama.cpp aborts on process *exit* unless
 the model is unloaded first; iOS apps do not exit that way, but keep it in mind.
 
+### Xcode project and first device install (2026-09-26)
+
+XcodeGen was retired at the user's request (sole developer). The generated
+`ios/ScienceChatbot.xcodeproj` and `ios/ScienceChatbot/Info.plist` are now
+committed and edited in Xcode; `ios/project.yml` was deleted. Signing uses
+`ios/Signing.xcconfig`, which optionally includes the ignored
+`ios/Signing.local.xcconfig` holding the personal `DEVELOPMENT_TEAM`, so the
+team ID stays out of Git. Choosing a Team in Xcode's UI would write it into
+`project.pbxproj` instead; avoid committing that.
+
+Verified: a signed Debug build (free Personal Team, automatic provisioning)
+succeeded and was installed on the user's iPad Air 11-inch (M2, 8 GB) with
+`xcrun devicectl`; the 4B GGUF was copied into the app's Documents over the
+cable. **Still unverified:** launching and using the app on the iPad (model
+load time, memory, answer speed, follow-ups, Stop, Read aloud, themes,
+layout, remote mode). The free-profile install expires after 7 days.
+
 ## Agreed direction, not yet implemented
 
 The user expects login, conversation history, and more functionality over time.
