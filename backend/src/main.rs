@@ -1,4 +1,4 @@
-use science_chatbot_server::http::{Config, app};
+use curio_server::http::{Config, app};
 use std::{env, error::Error, path::PathBuf, time::Duration};
 use tokio::net::TcpListener;
 use tokio_util::sync::CancellationToken;
@@ -25,7 +25,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let listener = TcpListener::bind((host.as_str(), port)).await?;
     let shutdown = CancellationToken::new();
     let router = app(config, shutdown.clone())?;
-    println!("Science Chatbot ready at http://{}", listener.local_addr()?);
+    println!("Curio ready at http://{}", listener.local_addr()?);
     let mut terminate = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())?;
     axum::serve(listener, router)
         .with_graceful_shutdown(async move {

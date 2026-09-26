@@ -1,6 +1,6 @@
 //! A small CLI exercise; this does not start a server or contact Ollama.
 
-use science_chatbot_server::chat::validate_question;
+use curio_server::chat::validate_question;
 use std::process::ExitCode;
 
 fn main() -> ExitCode {

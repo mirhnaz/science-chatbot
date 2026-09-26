@@ -1,0 +1,13 @@
+[Unit]
+Description=Curio Caddy Proxy
+
+[Service]
+Type=simple
+ExecStartPre=/usr/bin/caddy validate --config %h/.config/curio/Caddyfile --adapter caddyfile
+ExecStart=/usr/bin/caddy run --config %h/.config/curio/Caddyfile --adapter caddyfile
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=30s
+
+[Install]
+WantedBy=default.target

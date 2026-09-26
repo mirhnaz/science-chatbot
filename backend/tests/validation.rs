@@ -1,4 +1,4 @@
-use science_chatbot_server::chat::{
+use curio_server::chat::{
     TutorReply, ValidationError, validate_question, validate_reply,
 };
 

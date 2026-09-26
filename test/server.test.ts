@@ -30,7 +30,7 @@ async function fixture(t: TestContext, handler: http.RequestListener, options: A
   const upstream = http.createServer(handler);
   const base = await listen(upstream);
   t.after(() => close(upstream));
-  const child = spawn(process.env.RUST_SERVER_BIN || 'backend/target/debug/science-chatbot-server', [], {
+  const child = spawn(process.env.RUST_SERVER_BIN || 'backend/target/debug/curio-server', [], {
     env: { ...process.env, HOST: '127.0.0.1', PORT: '0', ASSET_ROOT: options.root || process.cwd(),
       OLLAMA_BASE_URL: options.upstream || base, OLLAMA_MODEL: options.model || 'qwen3:8b',
       PUBLIC_ORIGIN: options.publicOrigin || '', OLLAMA_TIMEOUT_MS: String(options.timeoutMs ?? 120000) },
@@ -359,7 +359,7 @@ test('upstream connection failure returns the friendly offline error and release
 
 test('Rust rejects ill-formed Unicode JSON explicitly and handles missing assets', async t => {
   let calls = 0;
-  const f = await fixture(t, (_, res) => { calls++; answer(res); }, { root: '/nonexistent/science-chatbot-test-assets' });
+  const f = await fixture(t, (_, res) => { calls++; answer(res); }, { root: '/nonexistent/curio-test-assets' });
   const missing = await fetch(f.url);
   assert.equal(missing.status, 500);
   assert.deepEqual(await missing.json(), { error: 'The page could not be loaded.' });

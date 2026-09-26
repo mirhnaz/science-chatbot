@@ -1,5 +1,5 @@
 {
-  "name": "science-chatbot",
+  "name": "curio",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -13,7 +13,7 @@
     "build": "npm run build:frontend && npm run build:rust",
     "typecheck": "tsc -p tsconfig.test.json --noEmit && tsc -p tsconfig.client.json --noEmit",
     "prestart": "npm run build",
-    "start": "backend/target/release/science-chatbot-server",
+    "start": "backend/target/release/curio-server",
     "pretest": "npm run build:frontend && npm run build:tests && cargo build --manifest-path backend/Cargo.toml --locked",
     "test": "cargo test --manifest-path backend/Cargo.toml --locked && node --test build/test/*.test.js",
     "check:rust": "cargo fmt --manifest-path backend/Cargo.toml --check && cargo clippy --manifest-path backend/Cargo.toml --locked --all-targets -- -D warnings",

@@ -1,10 +1,10 @@
 [package]
-name = "science-chatbot-server"
+name = "curio-server"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.85"
 publish = false
-description = "Rust backend migration for the Science Chatbot"
+description = "Rust backend for Curio"
 
 [lints.rust]
 unsafe_code = "forbid"

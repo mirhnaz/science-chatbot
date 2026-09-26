@@ -53,7 +53,7 @@ impl Error for ValidationError {}
 /// outlive it; Rust infers that lifetime relationship from this signature.
 ///
 /// ```
-/// use science_chatbot_server::chat::validate_question;
+/// use curio_server::chat::validate_question;
 ///
 /// let input = String::from("  What is gravity?  ");
 /// assert_eq!(validate_question(&input), Ok("What is gravity?"));

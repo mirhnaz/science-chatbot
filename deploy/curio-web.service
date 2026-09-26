@@ -1,19 +1,19 @@
 [Unit]
-Description=Science Chatbot Web App
+Description=Curio Web App
 After=network.target
 
 [Service]
 Type=simple
 # Template: set User, WorkingDirectory, ExecStart, and PUBLIC_ORIGIN locally.
-User=science-chatbot
-WorkingDirectory=/opt/science-chatbot
+User=curio
+WorkingDirectory=/opt/curio
 Environment=HOST=127.0.0.1
 Environment=PORT=11436
 Environment=OLLAMA_BASE_URL=http://127.0.0.1:11434
 Environment=OLLAMA_MODEL=qwen3:8b
-Environment=PUBLIC_ORIGIN=https://chatbot.example.com
+Environment=PUBLIC_ORIGIN=https://curio.example.com
 # Run npm ci and npm run build before starting or restarting this service.
-ExecStart=/opt/science-chatbot/backend/target/release/science-chatbot-server
+ExecStart=/opt/curio/backend/target/release/curio-server
 TimeoutStopSec=10s
 Restart=on-failure
 RestartSec=5s
