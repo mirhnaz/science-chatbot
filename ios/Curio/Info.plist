@@ -24,6 +24,11 @@
 	<true/>
 	<key>ScienceServerHost</key>
 	<string>$(SCIENCE_SERVER_HOST)</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Fredoka.ttf</string>
+		<string>Nunito.ttf</string>
+	</array>
 	<key>UIFileSharingEnabled</key>
 	<true/>
 	<key>UILaunchScreen</key>

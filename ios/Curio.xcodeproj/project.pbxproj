@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A1C0510E0000000000000001 /* CurioTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0510E0000000000000002 /* CurioTheme.swift */; };
+		A1C0510E0000000000000003 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0510E0000000000000004 /* HomeView.swift */; };
 		14ECCAFD67004EC54F1A55B8 /* ChatModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C1FAE2985C7B6DEDAC0CAC7 /* ChatModel.swift */; };
 		17DA2F7BD9365218E0111EC0 /* KokoroFramework in Frameworks */ = {isa = PBXBuildFile; productRef = AD173C740F0663329D1DF01B /* KokoroFramework */; };
 		2AB4726B43025D37406DD75C /* TutorEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 747BC80080FBC496ADAC6E59 /* TutorEngine.swift */; };
@@ -16,6 +18,8 @@
 		4CD577A46103241B28F53109 /* questions.json in Resources */ = {isa = PBXBuildFile; fileRef = EDF52CCE772F2659CBB58973 /* questions.json */; };
 		5E9D1D54B1631216BCD8D9BC /* LocalEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D915168E0CA058C9F138059 /* LocalEngine.swift */; };
 		77C23C41241224B9B00D4AE7 /* Speech.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A8239AA4721DD4FE59AEB6 /* Speech.swift */; };
+		A1C0510E0000000000000005 /* Fredoka.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A1C0510E0000000000000006 /* Fredoka.ttf */; };
+		A1C0510E0000000000000007 /* Nunito.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A1C0510E0000000000000008 /* Nunito.ttf */; };
 		8B47A1C8920191F4D619ACFF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FAB26B4F62FED9798C4C9848 /* Assets.xcassets */; };
 		9AEB7EFFCF555F4CF6D9781B /* LlamaFramework in Frameworks */ = {isa = PBXBuildFile; productRef = 6B7460FF07288AA0992A4D0E /* LlamaFramework */; };
 		A6EF7523266D6AAB7AE3EC77 /* tutor.txt in Resources */ = {isa = PBXBuildFile; fileRef = E12547E2EFB35175E491887F /* tutor.txt */; };
@@ -29,6 +33,8 @@
 /* Begin PBXFileReference section */
 		2D915168E0CA058C9F138059 /* LocalEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalEngine.swift; sourceTree = "<group>"; };
 		3F2D0C1564104C23AF3B613B /* App.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = App.xcconfig; sourceTree = "<group>"; };
+		A1C0510E0000000000000002 /* CurioTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurioTheme.swift; sourceTree = "<group>"; };
+		A1C0510E0000000000000004 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		5A9672358DBE787F24899222 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		5DC7B15AA78E520137D7E6C4 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
 		69CBFB52AA72DBA38604AA78 /* Curio.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Curio.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -46,6 +52,8 @@
 		E12547E2EFB35175E491887F /* tutor.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = tutor.txt; sourceTree = "<group>"; };
 		EDF52CCE772F2659CBB58973 /* questions.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = questions.json; sourceTree = "<group>"; };
 		F8A8239AA4721DD4FE59AEB6 /* Speech.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Speech.swift; sourceTree = "<group>"; };
+		A1C0510E0000000000000006 /* Fredoka.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = Fonts/Fredoka.ttf; sourceTree = "<group>"; };
+		A1C0510E0000000000000008 /* Nunito.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = Fonts/Nunito.ttf; sourceTree = "<group>"; };
 		FAB26B4F62FED9798C4C9848 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -95,8 +103,12 @@
 			children = (
 				8859FDC805BA135BC64B2C70 /* App.swift */,
 				FAB26B4F62FED9798C4C9848 /* Assets.xcassets */,
+				A1C0510E0000000000000008 /* Nunito.ttf */,
+				A1C0510E0000000000000006 /* Fredoka.ttf */,
 				9C1FAE2985C7B6DEDAC0CAC7 /* ChatModel.swift */,
 				5A9672358DBE787F24899222 /* ContentView.swift */,
+				A1C0510E0000000000000004 /* HomeView.swift */,
+				A1C0510E0000000000000002 /* CurioTheme.swift */,
 				7AA43593DB2BD41DC1BE745D /* Info.plist */,
 				2D915168E0CA058C9F138059 /* LocalEngine.swift */,
 				9742A41C47D7419076FDA162 /* ModelStore.swift */,
@@ -224,6 +236,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				8B47A1C8920191F4D619ACFF /* Assets.xcassets in Resources */,
+				A1C0510E0000000000000007 /* Nunito.ttf in Resources */,
+				A1C0510E0000000000000005 /* Fredoka.ttf in Resources */,
 				4CD577A46103241B28F53109 /* questions.json in Resources */,
 				A6EF7523266D6AAB7AE3EC77 /* tutor.txt in Resources */,
 			);
@@ -239,6 +253,8 @@
 				C7742B5D5D64CC9ABFD1D70A /* App.swift in Sources */,
 				14ECCAFD67004EC54F1A55B8 /* ChatModel.swift in Sources */,
 				3667258F494F8DDBB90402E9 /* ContentView.swift in Sources */,
+				A1C0510E0000000000000003 /* HomeView.swift in Sources */,
+				A1C0510E0000000000000001 /* CurioTheme.swift in Sources */,
 				5E9D1D54B1631216BCD8D9BC /* LocalEngine.swift in Sources */,
 				2B372D440549F52DFF4DF3C1 /* ModelStore.swift in Sources */,
 				EA27D9F149954A2F90882C06 /* RemoteEngine.swift in Sources */,

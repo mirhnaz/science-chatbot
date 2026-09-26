@@ -5,6 +5,10 @@ The shared design for Curio. The iPad/iOS app implements it first
 Guidelines for Liquid Glass (iOS/iPadOS 26 and later). The web page now
 uses the same curiosity column in plain TypeScript ([FRONTEND.md](FRONTEND.md)).
 
+> **Superseded where they conflict** by the 2026-09 redesign (Home, Trail,
+> Trail complete): [design/redesign-2026-09/curio-redesign-handoff.md](design/redesign-2026-09/curio-redesign-handoff.md).
+> It applies to iPhone and iPad. Tokens below are reconciled with it.
+
 ## The curiosity column (current iPad build)
 
 [design/curiosity-column.png](design/curiosity-column.png) (source:
@@ -107,15 +111,45 @@ iPad; the principles and tokens still apply to both.
 
 ## Tokens
 
-| Token | iOS | Web equivalent |
+Reconciled with the 2026-09 redesign
+([design/redesign-2026-09/curio-redesign-handoff.md](design/redesign-2026-09/curio-redesign-handoff.md));
+the redesign wins where they conflict. It applies to the iOS app on both
+iPhone and iPad. "Was" records the replaced value.
+
+| Token | Value | Was (earlier design) |
 | --- | --- | --- |
-| Accent | `Accent` colour set (app accent) | CSS `--accent` |
-| Text / secondary text | `.primary` / `.secondary` | `CanvasText` / muted token per theme |
-| Grouped rows | `.background.secondary`, radius 16 | card background token, radius 16px |
-| Readable width | 680 pt | `max-width: 680px` |
-| Compose bar width | 720 pt max | `max-width: 720px` |
-| Answer text | `.title3`, line spacing 6 | ~20px, line-height ~1.55 |
-| Font | San Francisco (system) | `system-ui, -apple-system, sans-serif` |
+| Ground (page background) | `#FFF9F0` | system background |
+| Surface (cards, chips, buttons) | `#FFFFFF` | `.background.secondary`; controls on glass |
+| Border | `#EDE6DA`, 1.5 px | no borders ("hierarchy from type, not outlines") |
+| Ink | `#211E3B` | `.primary` |
+| Muted / labels | `#5B5775` / `#6B6785` | `.secondary` |
+| Placeholder, disabled icon | `#7A7690` | system |
+| Accent (brand, Space) | `#4F46C9` | `#4E45B6` (dark `#C1B2FF`) |
+| Accent tint / trail connector | `#E6E1FF` / `#CFC8FF` | accent at 9 % opacity |
+| Weather | fill `#DCEBFB`, fg `#1D5FA8` | — (emoji only) |
+| Animals | fill `#DBF3E3`, fg `#1F7A45` | — |
+| Space | fill `#E6E1FF`, fg `#4F46C9` | — |
+| Sound | fill `#FFE3D6`, fg `#B8452E` | — |
+| Success check | `#1F7A45` | — |
+| Locked stamp outline | `#D6CFC2`, 2 px dashed | — |
+| Heart (credit line) | `#E0554A` | ❤️ emoji |
+| Display type | Fredoka 500/600/700 | San Francisco |
+| Body type | Nunito 600/700/800 | San Francisco |
+| Answer text | 17/26, Nunito 600 | `.title3`, line spacing 6 |
+| Radius | cards 20, illustration 18, chips 14, bars/pills 24–26 | 16 everywhere |
+| Touch targets | ≥ 44 px; bar controls 48 | system |
+| Icons | 2 px stroke, round caps (Lucide-style); no emoji in chrome | SF Symbols and emoji |
+| Readable width (iPad) | 680 pt | unchanged, kept |
+| Bottom bar width (iPad) | 720 pt max | unchanged, kept |
+
+Principles superseded by the redesign: "controls on glass" (controls are now
+solid white with a border), "no borders or small spaced capitals" (section
+labels are 11–12 px uppercase), "platform colours so Dark Mode works" (fixed
+warm palette), and "Answered in N seconds" (dropped as an engineering metric).
+
+Gaps the redesign leaves open: the six other bank topics (Earth, Electricity,
+Forces & motion, Light, Matter, Plants) have no category colours, and there
+are no Dark Mode values.
 
 ## Web notes (for the later rollout)
 

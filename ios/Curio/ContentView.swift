@@ -1,15 +1,12 @@
 import ScienceCore
 import SwiftUI
 
-/// The curiosity column (docs/DESIGN.md, docs/design/curiosity-column.png).
-///
-/// One column, no sidebar. A fresh session centres the question box with
-/// starter ideas; after the first question the box moves to the bottom and
-/// the trail (one topic's chain of questions) grows above it. "Dive deeper"
-/// follow-ups sit under the latest answer; "try something new" chips sit
-/// above the question box and start a new trail. Controls (toolbar, chips,
-/// question box) are on Liquid Glass; the trail scrolls beneath.
+/// The 2026-09 redesign (docs/design/redesign-2026-09/): Home, then a Trail
+/// of up to `ChatModel.trailLength` steps. Leaving a trail keeps it, and Home
+/// offers to continue it. Each screen draws its own header on the warm ground.
 struct ContentView: View {
+    enum Screen { case home, trail }
+
     @Environment(ModelStore.self) private var models
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.horizontalSizeClass) private var sizeClass
@@ -19,8 +16,8 @@ struct ContentView: View {
     @State private var speech = Speech()
     @State private var speakingStep: UUID?
     @State private var showSettings = false
+    @State private var screen = Screen.home
     @FocusState private var composing: Bool
-    @Namespace private var glide
 
     private var choice: EngineChoice { EngineChoice(rawValue: engineChoice) ?? .automatic }
 
@@ -41,27 +38,17 @@ struct ContentView: View {
         }
     }
 
-    private var fresh: Bool { chat.steps.isEmpty }
-
     var body: some View {
         NavigationStack {
             Group {
-                if fresh && sizeClass != .compact {
-                    FreshSession(chat: chat, start: startTrail, edit: edit) {
-                        compose.matchedGeometryEffect(id: "compose", in: glide)
-                    }
-                    .transition(.opacity)
-                } else if fresh {
-                    // iPhone: Sparks scroll above, the question box stays at
-                    // the bottom within thumb reach, like Messages.
-                    FreshSession(chat: chat, start: startTrail, edit: edit) { EmptyView() }
-                        .safeAreaBar(edge: .bottom) {
-                            compose.matchedGeometryEffect(id: "compose", in: glide)
-                                .padding(.horizontal, 16)
-                                .padding(.bottom, 8)
-                        }
+                switch screen {
+                case .home:
+                    HomeView(chat: chat, resume: { go(.trail) }, start: startTrail, edit: edit,
+                             openSettings: { showSettings = true })
+                        .safeAreaBar(edge: .bottom) { bar(placeholder: "Ask anything…", send: askFromHome) }
+                        .toolbar(.hidden, for: .navigationBar)
                         .transition(.opacity)
-                } else {
+                case .trail:
                     TrailView(chat: chat, speakingStep: speakingStep,
                               speak: toggleSpeech, dive: { text in continueTrail { chat.ask(text, using: engines) } },
                               editFollowUp: edit, retry: { continueTrail { chat.retry(using: engines) } })
@@ -72,16 +59,26 @@ struct ContentView: View {
                         .safeAreaBar(edge: .bottom) {
                             VStack(spacing: 0) {
                                 SomethingNew(chat: chat, askOwn: askOwn, start: startTrail)
-                                compose.matchedGeometryEffect(id: "compose", in: glide)
+                                bar(placeholder: "Ask more about this…") {
+                                    continueTrail { chat.ask(using: engines) }
+                                }
                             }
-                            .frame(maxWidth: 720)
-                            .padding(.horizontal, 16)
-                            .padding(.bottom, 8)
+                        }
+                        .navigationTitle(chat.steps.first?.question ?? "Curio")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .navigationSubtitle(subtitle)
+                        .toolbar {
+                            ToolbarItem(placement: .topBarLeading) {
+                                Button("Home", systemImage: "chevron.left") { go(.home) }
+                            }
+                            ToolbarItem(placement: .primaryAction) {
+                                Button("Settings", systemImage: "gearshape") { showSettings = true }
+                            }
                         }
                         .transition(.opacity)
                 }
             }
-            .animation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(duration: 0.55, bounce: 0.2), value: fresh)
+            .background(Curio.ground)
             .overlay(alignment: .top) {
                 if chat.undoSteps != nil {
                     UndoBanner(undo: { chat.undo() }, expire: { chat.clearUndo() })
@@ -90,53 +87,37 @@ struct ContentView: View {
                 }
             }
             .animation(.snappy, value: chat.undoSteps != nil)
-            .navigationTitle(chat.steps.first?.question ?? "Curio")
-            .navigationBarTitleDisplayMode(.inline)
-            .navigationSubtitle(subtitle)
-            .toolbar {
-                // The brand mark stays visible once a trail starts (the fresh
-                // screen shows the large one). Plain, not a glass button.
-                if !fresh {
-                    ToolbarItem(placement: .topBarLeading) {
-                        BrandMark(size: 34)
-                    }
-                    .sharedBackgroundVisibility(.hidden)
-                }
-                ToolbarItem(placement: .primaryAction) {
-                    Button("Settings", systemImage: "gearshape") { showSettings = true }
-                }
-            }
         }
         .onChange(of: chat.isLoading) { _, loading in if loading { stopSpeech() } }
         .onChange(of: speech.isSpeaking) { _, speaking in if !speaking { speakingStep = nil } }
+        .onChange(of: chat.steps.isEmpty) { _, empty in if empty { go(.home) } }
         .sheet(isPresented: $showSettings) { SettingsView() }
         #if DEBUG
         .task {
             // Debug builds only: `-autoAsk` asks the first spark, then a
             // follow-up, so layouts can be checked without tapping.
-            guard ProcessInfo.processInfo.arguments.contains("-autoAsk"),
-                  let idea = chat.suggestions.first else { return }
+            // `-autoHome` then returns Home to show the resume card.
+            let arguments = ProcessInfo.processInfo.arguments
+            guard arguments.contains("-autoAsk"), let idea = chat.suggestions.first else { return }
             try? await Task.sleep(for: .seconds(2))
             startTrail(idea)
             while chat.isLoading { try? await Task.sleep(for: .milliseconds(300)) }
             try? await Task.sleep(for: .seconds(1))
             if let next = chat.steps.last?.reply?.followUps.first { continueTrail { chat.ask(next, using: engines) } }
-            // `-autoAskOwn`: then tap "Ask your own" to open an empty trail.
-            guard ProcessInfo.processInfo.arguments.contains("-autoAskOwn") else { return }
+            guard arguments.contains("-autoHome") else { return }
             while chat.isLoading { try? await Task.sleep(for: .milliseconds(300)) }
             try? await Task.sleep(for: .seconds(2))
-            askOwn()
+            go(.home)
         }
         #endif
     }
 
-    /// The one question box. It moves between the centre (fresh session) and
-    /// the bottom (trail), which shows children where questions go.
-    private var compose: some View {
-        ComposeBar(chat: chat, focused: $composing,
-                   placeholder: fresh ? "Ask a science question…" : "Ask more about this…") {
-            continueTrail { chat.ask(using: engines) }
-        }
+    /// The bottom bar, at the readable width on iPad.
+    private func bar(placeholder: String, send: @escaping () -> Void) -> some View {
+        BottomBar(chat: chat, focused: $composing, placeholder: placeholder, send: send)
+            .frame(maxWidth: 720)
+            .padding(.horizontal, 20)
+            .padding(.bottom, 8)
     }
 
     /// Only what a child needs: working, offline, not set up, or trail length.
@@ -145,6 +126,11 @@ struct ContentView: View {
         guard let first = engines.first else { return "Not set up yet" }
         if !(first is RemoteEngine) { return "Offline mode" }
         return chat.steps.count > 1 ? "\(chat.steps.count) steps" : ""
+    }
+
+    private func go(_ next: Screen) {
+        guard next != screen else { return }
+        withAnimation(reduceMotion ? .easeInOut(duration: 0.2) : .smooth(duration: 0.35)) { screen = next }
     }
 
     /// Adds a step to the trail inside the same smooth animation that folds
@@ -156,13 +142,21 @@ struct ContentView: View {
     private func startTrail(_ idea: Suggestion) {
         stopSpeech()
         chat.startTrail(with: idea, using: engines)
+        go(.trail)
+    }
+
+    /// A question typed on Home starts a new trail (Undo brings back the old).
+    private func askFromHome() {
+        stopSpeech()
+        let typed = chat.question
+        chat.startEmptyTrail()
+        chat.ask(typed, using: engines)
+        go(.trail)
     }
 
     private func askOwn() {
         stopSpeech()
         chat.startEmptyTrail()
-        // No automatic keyboard: it would hide the Sparks. The question box
-        // is centred and ready to tap.
         composing = false
     }
 
@@ -189,48 +183,6 @@ struct ContentView: View {
     }
 }
 
-// MARK: Fresh session
-
-/// A fresh session: hero, the question box, and starter ideas, centred.
-/// Scrolls if the screen is short (small windows, large text, keyboard).
-struct FreshSession<Compose: View>: View {
-    let chat: ChatModel
-    let start: (Suggestion) -> Void
-    let edit: (String) -> Void
-    @ViewBuilder let compose: Compose
-    /// Visible height of the scroll view (without toolbar and keyboard).
-    @State private var visibleHeight = 0.0
-
-    var body: some View {
-        ScrollView {
-            // At least as tall as the screen and centred with spacers, so when
-            // it fits there is nothing to scroll and it can never be left
-            // scrolled up (`defaultScrollAnchor` only centres once, and the
-            // switch from a trail left it offset).
-            VStack(spacing: 0) {
-                Spacer(minLength: 0)
-                Hero()
-                compose
-                StarterIdeas(chat: chat, start: start, edit: edit)
-                MadeWithLove()
-                    .padding(.top, 28)
-                Spacer(minLength: 0)
-            }
-            .frame(maxWidth: 720)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 24)
-            .frame(maxWidth: .infinity, minHeight: visibleHeight)
-        }
-        // The scroll view's own size does not depend on its content, so
-        // measuring it cannot loop.
-        .onGeometryChange(for: Double.self) { proxy in
-            proxy.size.height - proxy.safeAreaInsets.top - proxy.safeAreaInsets.bottom
-        } action: { visibleHeight = max($0, 0) }
-        .scrollBounceBehavior(.basedOnSize)
-        .scrollDismissesKeyboard(.interactively)
-    }
-}
-
 /// The app icon as a decorative mark, with iOS-style rounded corners.
 struct BrandMark: View {
     var size: CGFloat
@@ -242,76 +194,6 @@ struct BrandMark: View {
             .frame(width: size, height: size)
             .clipShape(.rect(cornerRadius: size * 0.225))
             .accessibilityHidden(true)
-    }
-}
-
-/// "❤️ Made with love by Ayaan and Naz".
-struct MadeWithLove: View {
-    var body: some View {
-        Text("❤️ Made with love by **Ayaan and Naz**")
-            .font(.footnote)
-            .foregroundStyle(.secondary)
-    }
-}
-
-/// Shown before the first question, with the large brand mark.
-struct Hero: View {
-    @Environment(\.horizontalSizeClass) private var sizeClass
-
-    var body: some View {
-        let compact = sizeClass == .compact
-        VStack(spacing: compact ? 10 : 16) {
-            BrandMark(size: compact ? 64 : 96)
-            Text("A little curiosity.\nA whole world to explore.")
-                .font(compact ? .title.bold() : .largeTitle.bold())
-                .multilineTextAlignment(.center)
-        }
-        .padding(.bottom, compact ? 8 : 24)
-    }
-}
-
-/// "Sparks": four starter ideas that each start a trail when tapped.
-struct StarterIdeas: View {
-    let chat: ChatModel
-    let start: (Suggestion) -> Void
-    let edit: (String) -> Void
-    @Environment(\.horizontalSizeClass) private var sizeClass
-
-    var body: some View {
-        let compact = sizeClass == .compact
-        VStack(alignment: .leading, spacing: 10) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Sparks").font(.headline)
-                Text("Pick one to start exploring").font(.subheadline).foregroundStyle(.secondary)
-            }
-            .padding(.leading, 6)
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 260), spacing: 10)], spacing: compact ? 8 : 10) {
-                ForEach(chat.suggestions) { idea in
-                    Button { start(idea) } label: {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("\(idea.icon) \(idea.topic)").font(.footnote).foregroundStyle(.secondary)
-                            Text(idea.question).font(.body).multilineTextAlignment(.leading)
-                        }
-                        .frame(maxWidth: .infinity, minHeight: compact ? nil : 64, alignment: .topLeading)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, compact ? 10 : 14)
-                        .background(.background.secondary, in: .rect(cornerRadius: 16))
-                        .contentShape(.rect(cornerRadius: 16))
-                    }
-                    .buttonStyle(.plain)
-                    .hoverEffect(.highlight)
-                    .contextMenu {
-                        Button("Edit before asking", systemImage: "pencil") { edit(idea.question) }
-                    }
-                    .accessibilityHint("Asks this question")
-                }
-            }
-            Button("New sparks", systemImage: "dice") { chat.surprise() }
-                .buttonStyle(.glass)
-                .frame(maxWidth: .infinity)
-                .padding(.top, 4)
-        }
-        .padding(.top, compact ? 16 : 20)
     }
 }
 
@@ -353,69 +235,6 @@ struct SomethingNew: View {
             .scrollIndicators(.hidden)
         }
         .padding(.bottom, 10)
-    }
-}
-
-/// The question box on the glass layer, with a round send (or stop) button.
-struct ComposeBar: View {
-    @Bindable var chat: ChatModel
-    var focused: FocusState<Bool>.Binding
-    let placeholder: String
-    let send: () -> Void
-
-    private var canSend: Bool {
-        !chat.question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-    }
-
-    var body: some View {
-        GlassEffectContainer(spacing: 10) {
-            HStack(alignment: .bottom, spacing: 10) {
-                TextField(placeholder, text: $chat.question, axis: .vertical)
-                    .lineLimit(1...5)
-                    .focused(focused)
-                    .submitLabel(.send)
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 13)
-                    // Filled with a thin outline, like system search fields:
-                    // plain glass disappeared on a white background.
-                    .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 24))
-                    .overlay(RoundedRectangle(cornerRadius: 24).strokeBorder(Color(.separator)))
-                    .accessibilityLabel("Your science question")
-                    .onChange(of: chat.question) { _, text in
-                        // Return sends, like Messages; a vertical field would
-                        // otherwise insert a new line.
-                        if text.contains("\n") {
-                            chat.question = text.replacingOccurrences(of: "\n", with: "")
-                            if canSend, !chat.isLoading { submit() }
-                        } else if text.utf16.count > maxQuestionLength {
-                            chat.question = String(text.utf16.prefix(maxQuestionLength)) ?? text
-                        }
-                    }
-
-                if chat.isLoading {
-                    Button("Stop", systemImage: "stop.fill") { chat.cancel() }
-                        .labelStyle(.iconOnly)
-                        .font(.title3)
-                        .frame(width: 48, height: 48)
-                        .buttonStyle(.glass)
-                        .buttonBorderShape(.circle)
-                } else {
-                    Button("Ask", systemImage: "arrow.up") { submit() }
-                        .labelStyle(.iconOnly)
-                        .font(.title3.bold())
-                        .frame(width: 48, height: 48)
-                        .buttonStyle(.glassProminent)
-                        .buttonBorderShape(.circle)
-                        .disabled(!canSend)
-                        .keyboardShortcut(.return, modifiers: .command)
-                }
-            }
-        }
-    }
-
-    private func submit() {
-        focused.wrappedValue = false
-        send()
     }
 }
 

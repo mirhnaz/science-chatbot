@@ -6,7 +6,7 @@ import ScienceCore
 struct TrailStep: Identifiable {
     let id = UUID()
     let question: String
-    /// Starter topic, for example "⚡ Electricity", when a trail began from one.
+    /// Starter topic, for example "Electricity", when a trail began from one.
     var topic: String?
     var reply: TutorReply?
     var error: String?
@@ -27,6 +27,9 @@ struct TrailStep: Identifiable {
 /// the engines and returns here when finished.
 @MainActor @Observable
 final class ChatModel {
+    /// Steps in a full trail; after the last answer the trail is complete.
+    static let trailLength = 5
+
     var question = ""
     private(set) var steps: [TrailStep] = []
     private(set) var suggestions: [Suggestion] = []
@@ -37,6 +40,17 @@ final class ChatModel {
     private var task: Task<Void, Never>?
 
     var isLoading: Bool { steps.last?.isLoading ?? false }
+
+    /// Steps with an answer, for the progress dots.
+    var answeredSteps: Int { steps.count(where: { $0.reply != nil }) }
+
+    var isComplete: Bool { answeredSteps >= Self.trailLength }
+
+    /// A trail the child can pick up again from Home.
+    var hasUnfinishedTrail: Bool { !steps.isEmpty && !isComplete }
+
+    /// The starter topic, or nil for a question the child typed.
+    var topic: String? { steps.first?.topic }
 
     init() {
         surprise()
@@ -64,7 +78,7 @@ final class ChatModel {
     func startTrail(with idea: Suggestion, using engines: [TutorEngine]) {
         replaceTrail()
         surprise()
-        run(TrailStep(question: idea.question, topic: "\(idea.icon) \(idea.topic)"), using: engines)
+        run(TrailStep(question: idea.question, topic: idea.topic), using: engines)
     }
 
     /// "Ask your own": a new, empty trail with the question box ready.

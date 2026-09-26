@@ -68,3 +68,5 @@ Choose checks appropriate to the change. Documentation-only changes need link,
 content, and diff checks, not a server restart or a complete application test run.
 Report actual results and any limitations; a health check alone does not verify
 Ollama generation. Detailed coverage is in [docs/VERIFICATION.md](docs/VERIFICATION.md).
+
+Current design direction: docs/design/redesign-2026-09/curio-redesign-handoff.md (supersedes earlier screen layouts in docs/DESIGN.md where they conflict).

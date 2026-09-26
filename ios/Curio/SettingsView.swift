@@ -8,6 +8,7 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage("engineMode") private var engineChoice = EngineChoice.automatic.rawValue
     @AppStorage("theme") private var theme = "system"
+    @AppStorage("childName") private var childName = ""
 
     var body: some View {
         NavigationStack {
@@ -25,6 +26,16 @@ struct SettingsView: View {
                     }
                     .padding(.vertical, 6)
                     .accessibilityElement(children: .combine)
+                }
+
+                Section {
+                    TextField("Your first name", text: $childName)
+                        .textContentType(.givenName)
+                        .autocorrectionDisabled()
+                } header: {
+                    Text("You")
+                } footer: {
+                    Text("Curio uses it to say hello. It stays on this device.")
                 }
 
                 Section {
