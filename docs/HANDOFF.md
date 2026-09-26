@@ -288,8 +288,8 @@ before every question. Measured the same evening: Qwen on the RTX 5080 answers
 in 0.8–1.0 s; over the tailnet the whole request takes about 0.8 s, but
 through the public Funnel relay 2.5–3.7 s (connect 0.25 s, TLS 1.3–2.4 s). The
 iPad showed 5–6.6 s, so it was using the public Funnel path. Installing
-Tailscale on the iPad (same account) should make MagicDNS resolve the host
-to the tailnet address and cut this to about 1 s; not yet done or verified.
+Tailscale on the iPad would cut this to about 1 s, but the user decided not
+to pursue it: the iPad keeps using the public Funnel path.
 
 ## Agreed direction, not yet implemented
 
