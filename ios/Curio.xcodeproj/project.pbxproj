@@ -8,21 +8,21 @@
 
 /* Begin PBXBuildFile section */
 		14ECCAFD67004EC54F1A55B8 /* ChatModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C1FAE2985C7B6DEDAC0CAC7 /* ChatModel.swift */; };
+		17DA2F7BD9365218E0111EC0 /* KokoroFramework in Frameworks */ = {isa = PBXBuildFile; productRef = AD173C740F0663329D1DF01B /* KokoroFramework */; };
 		2AB4726B43025D37406DD75C /* TutorEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 747BC80080FBC496ADAC6E59 /* TutorEngine.swift */; };
 		2B372D440549F52DFF4DF3C1 /* ModelStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9742A41C47D7419076FDA162 /* ModelStore.swift */; };
 		2F74D875F0EDFB545B8BB277 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DC7B15AA78E520137D7E6C4 /* NetworkMonitor.swift */; };
 		3667258F494F8DDBB90402E9 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A9672358DBE787F24899222 /* ContentView.swift */; };
 		4CD577A46103241B28F53109 /* questions.json in Resources */ = {isa = PBXBuildFile; fileRef = EDF52CCE772F2659CBB58973 /* questions.json */; };
 		5E9D1D54B1631216BCD8D9BC /* LocalEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D915168E0CA058C9F138059 /* LocalEngine.swift */; };
-		E3AAEDB922DD002A7A8A4979 /* NaturalVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = C53A33C4CBFB63EF1224D089 /* NaturalVoice.swift */; };
 		77C23C41241224B9B00D4AE7 /* Speech.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A8239AA4721DD4FE59AEB6 /* Speech.swift */; };
 		8B47A1C8920191F4D619ACFF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FAB26B4F62FED9798C4C9848 /* Assets.xcassets */; };
 		9AEB7EFFCF555F4CF6D9781B /* LlamaFramework in Frameworks */ = {isa = PBXBuildFile; productRef = 6B7460FF07288AA0992A4D0E /* LlamaFramework */; };
-		17DA2F7BD9365218E0111EC0 /* KokoroFramework in Frameworks */ = {isa = PBXBuildFile; productRef = AD173C740F0663329D1DF01B /* KokoroFramework */; };
 		A6EF7523266D6AAB7AE3EC77 /* tutor.txt in Resources */ = {isa = PBXBuildFile; fileRef = E12547E2EFB35175E491887F /* tutor.txt */; };
 		C40160D4A3DB610B3869F1F4 /* ScienceCore in Frameworks */ = {isa = PBXBuildFile; productRef = E689AF3302410BA320BF5CBE /* ScienceCore */; };
 		C7742B5D5D64CC9ABFD1D70A /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8859FDC805BA135BC64B2C70 /* App.swift */; };
 		DC4F51F8EC35618EED02F1F9 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D93A94107CE05F1BB3343D5E /* SettingsView.swift */; };
+		E3AAEDB922DD002A7A8A4979 /* NaturalVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = C53A33C4CBFB63EF1224D089 /* NaturalVoice.swift */; };
 		EA27D9F149954A2F90882C06 /* RemoteEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEC8D6D8EB59AA236DB2D166 /* RemoteEngine.swift */; };
 /* End PBXBuildFile section */
 
@@ -31,20 +31,20 @@
 		3F2D0C1564104C23AF3B613B /* App.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = App.xcconfig; sourceTree = "<group>"; };
 		5A9672358DBE787F24899222 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		5DC7B15AA78E520137D7E6C4 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
-		69CBFB52AA72DBA38604AA78 /* Curio.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Curio.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		69CBFB52AA72DBA38604AA78 /* Curio.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Curio.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		747BC80080FBC496ADAC6E59 /* TutorEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorEngine.swift; sourceTree = "<group>"; };
 		7AA43593DB2BD41DC1BE745D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		8859FDC805BA135BC64B2C70 /* App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
 		9742A41C47D7419076FDA162 /* ModelStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelStore.swift; sourceTree = "<group>"; };
 		9936692D2D25150F727E4D00 /* ScienceCore */ = {isa = PBXFileReference; lastKnownFileType = folder; path = ScienceCore; sourceTree = SOURCE_ROOT; };
 		9C1FAE2985C7B6DEDAC0CAC7 /* ChatModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatModel.swift; sourceTree = "<group>"; };
-		BEC8D6D8EB59AA236DB2D166 /* RemoteEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteEngine.swift; sourceTree = "<group>"; };
-		D4BA6F97377721ABAB8C05DE /* LlamaFramework */ = {isa = PBXFileReference; lastKnownFileType = folder; path = LlamaFramework; sourceTree = SOURCE_ROOT; };
 		9F73EA24488179E7236BA81C /* KokoroFramework */ = {isa = PBXFileReference; lastKnownFileType = folder; path = KokoroFramework; sourceTree = SOURCE_ROOT; };
+		BEC8D6D8EB59AA236DB2D166 /* RemoteEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteEngine.swift; sourceTree = "<group>"; };
+		C53A33C4CBFB63EF1224D089 /* NaturalVoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NaturalVoice.swift; sourceTree = "<group>"; };
+		D4BA6F97377721ABAB8C05DE /* LlamaFramework */ = {isa = PBXFileReference; lastKnownFileType = folder; path = LlamaFramework; sourceTree = SOURCE_ROOT; };
 		D93A94107CE05F1BB3343D5E /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		E12547E2EFB35175E491887F /* tutor.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = tutor.txt; sourceTree = "<group>"; };
 		EDF52CCE772F2659CBB58973 /* questions.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = questions.json; sourceTree = "<group>"; };
-		C53A33C4CBFB63EF1224D089 /* NaturalVoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NaturalVoice.swift; sourceTree = "<group>"; };
 		F8A8239AA4721DD4FE59AEB6 /* Speech.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Speech.swift; sourceTree = "<group>"; };
 		FAB26B4F62FED9798C4C9848 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -440,13 +440,13 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		51D40D55C3A23E89853BA53F /* XCLocalSwiftPackageReference "KokoroFramework" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = KokoroFramework;
-		};
 		3684F0E2C7ADE77AE28685D1 /* XCLocalSwiftPackageReference "LlamaFramework" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = LlamaFramework;
+		};
+		51D40D55C3A23E89853BA53F /* XCLocalSwiftPackageReference "KokoroFramework" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = KokoroFramework;
 		};
 		985C3CCABB95026B33800C68 /* XCLocalSwiftPackageReference "ScienceCore" */ = {
 			isa = XCLocalSwiftPackageReference;
@@ -455,13 +455,13 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		AD173C740F0663329D1DF01B /* KokoroFramework */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = KokoroFramework;
-		};
 		6B7460FF07288AA0992A4D0E /* LlamaFramework */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = LlamaFramework;
+		};
+		AD173C740F0663329D1DF01B /* KokoroFramework */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = KokoroFramework;
 		};
 		E689AF3302410BA320BF5CBE /* ScienceCore */ = {
 			isa = XCSwiftPackageProductDependency;

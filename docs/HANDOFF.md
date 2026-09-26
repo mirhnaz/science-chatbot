@@ -270,9 +270,14 @@ after the user signed in to Xcode and approved keychain access, the old
 Science Chatbot app was removed, the Qwen GGUF was copied into Curio's
 Documents over the cable, and the user re-downloaded the Michael voice.
 
-**Live state:** mir-omarchy-pc still runs `science-chatbot-web.service` with
-the old `science-chatbot-server` binary until the planned switch (see
-[INSTALL.md](INSTALL.md)). Do not pull there until that switch is scheduled.
+**Live state (verified 2026-09-26 20:49 IST):** mir-omarchy-pc runs
+`curio-web.service` (enabled) with `backend/target/release/curio-server` on
+127.0.0.1:11436; `science-chatbot-web.service` is stopped and disabled but its
+unit file and old binary remain for rollback (see [INSTALL.md](INSTALL.md)).
+Funnel is unchanged. Publicly: `/healthz` 200, the Curio page and its
+`app.js`, `theme.js`, and `styles.css` matched the repository, the retired
+banner returned 404, and a real question was answered in 3.1 s with three
+follow-ups. The user created the unit and switched services with sudo.
 
 ## Agreed direction, not yet implemented
 
