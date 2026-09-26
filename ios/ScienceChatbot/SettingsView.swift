@@ -60,7 +60,9 @@ struct SettingsView: View {
 /// Model files, the AI PC connection check, and voices.
 struct AdvancedSettingsView: View {
     @Environment(ModelStore.self) private var models
+    @Environment(NaturalVoiceStore.self) private var naturalVoice
     @AppStorage(Speech.voiceKey) private var voiceID = ""
+    @AppStorage(Speech.naturalKey) private var useNatural = true
     @State private var importing = false
     @State private var connection: String?
     @State private var speech = Speech()
@@ -126,19 +128,36 @@ struct AdvancedSettingsView: View {
             }
 
             Section {
-                Picker("Voice", selection: $voiceID) {
+                Toggle("Natural voice (\(NaturalVoice.name))", isOn: $useNatural)
+                    .disabled(!naturalVoice.isInstalled)
+                if let progress = naturalVoice.progress {
+                    ProgressView(value: progress) { Text("Downloading the natural voice") }
+                    Button("Cancel download", role: .cancel) { naturalVoice.cancel() }
+                } else if naturalVoice.isInstalled {
+                    Button("Delete natural voice", systemImage: "trash", role: .destructive) {
+                        speech.stop()
+                        naturalVoice.delete()
+                    }
+                } else {
+                    Button("Download natural voice (\(NaturalVoice.downloadSize))", systemImage: "arrow.down.circle") {
+                        naturalVoice.download()
+                    }
+                }
+                if let message = naturalVoice.message { Text(message).font(.footnote) }
+
+                Picker("Apple voice", selection: $voiceID) {
                     Text("Automatic (best installed)").tag("")
                     ForEach(Speech.voices(language: Speech.deviceLanguage), id: \.identifier) { voice in
                         Text("\(voice.name) · \(voice.quality.label) · \(voice.language)").tag(voice.identifier)
                     }
                 }
                 Button("Preview voice", systemImage: "speaker.wave.2") {
-                    speech.preview(AVSpeechSynthesisVoice(identifier: voiceID))
+                    speech.preview(natural: useNatural, voice: AVSpeechSynthesisVoice(identifier: voiceID))
                 }
             } header: {
                 Text("Read aloud")
             } footer: {
-                Text("For more natural voices, download a Premium or Enhanced voice in the iPad’s Settings → Accessibility → Read & Speak → Voices, then return here. Siri’s own voice is not available to apps.")
+                Text("The natural voice runs on this iPad, offline, for English answers. Other languages, or no natural voice, use the Apple voice. For better Apple voices, download a Premium or Enhanced voice in the iPad’s Settings → Accessibility → Read & Speak → Voices.")
             }
         }
         .navigationTitle("Advanced")

@@ -25,6 +25,7 @@ ScienceChatbot.xcodeproj  Xcode project (committed; edit it in Xcode)
 App.xcconfig         Shared build settings; includes the ignored Local.xcconfig
 ScienceCore/         Swift package: validation, reply decoding, JSON grammar, starter questions
 LlamaFramework/      Swift package wrapping llama.cpp's prebuilt xcframework (pinned release)
+KokoroFramework/     Swift package: sherpa-onnx + ONNX Runtime (pinned) and a small Kokoro wrapper
 ScienceChatbot/      App: SwiftUI screens, local and remote engines, model files, read aloud
 ```
 
@@ -34,6 +35,8 @@ ScienceChatbot/      App: SwiftUI screens, local and remote engines, model files
 | `ScienceChatbot/RemoteEngine.swift` | `POST /api/chat` and `/healthz` on the Rust server |
 | `ScienceChatbot/ModelStore.swift` | Finds, imports, and downloads model files in Documents |
 | `ScienceChatbot/ChatModel.swift` | Screen state: question, reply, loading, cancel, starters |
+| `ScienceChatbot/NaturalVoice.swift` | Kokoro voice files (download, checksums) and sentence generation |
+| `ScienceChatbot/Speech.swift` | Read aloud: natural voice with gapless sentence queue, Apple voice fallback |
 | `ScienceChatbot/Theme.swift` | Web colour palette (light and dark) and panel styles |
 | `ScienceCore/.../ReplyGrammar.swift` | GBNF grammar: the on-device version of Ollama's `format` schema |
 
@@ -135,10 +138,27 @@ Settings is kept simple for 10–13 year olds: **Tutor** mode and
 
 ## Read aloud
 
-Apps cannot use Siri's own voice. The app picks the best installed voice
-(Premium, then Enhanced, then Standard) for the answer's language, or the voice
-chosen in Settings → Advanced → Read aloud. Download natural voices on the iPad in
-Settings → Accessibility → Read & Speak → Voices.
+English answers use a natural neural voice, Kokoro's **Michael**
+(`am_michael`, speaker 16 of `kokoro-multi-lang-v1_0`), generated on the iPad
+with [sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx) and no internet.
+The answer is split into sentences; each one is generated while the previous
+one plays, so there are no pauses between them. Stop halts it immediately.
+
+The voice files (about 375 MB: `model.onnx`, `voices.bin`, `tokens.txt`,
+`lexicon-us-en.txt`, and `espeak-ng-data/`) are downloaded in Settings →
+Advanced → Read aloud from a pinned Hugging Face revision of
+`csukuangfj/kokoro-multi-lang-v1_0`; the large files are checked against
+their SHA-256. They live in `Documents/Kokoro/`. The full model was chosen
+over int8: on Apple chips int8 generated about 2.5× slower for similar sound.
+
+Other languages, a missing voice, the switch turned off, or a load failure use
+Apple's voices: the best installed (Premium, then Enhanced, then Standard) for
+the answer's language, or the one chosen in Settings. Apps cannot use Siri's
+own voice.
+
+`KokoroFramework/Package.swift` pins sherpa-onnx `v1.13.8` and ONNX Runtime
+`1.28.2` by URL and checksum, copied from those projects' own `Package.swift`
+files. Update each URL and checksum together.
 
 ## Adding files
 

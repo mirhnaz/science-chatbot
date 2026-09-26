@@ -182,6 +182,21 @@ fast-forwarded on mir-omarchy-pc; no restart was needed because the server
 reads `public/` from disk. All public icon files, the manifest, and `/` matched
 the repository byte-for-byte afterwards.
 
+### Natural voice with Kokoro (2026-09-26)
+
+Apple's Premium voices sounded robotic with abrupt pauses to the user. On the
+Mac (M5 Max), sherpa-onnx 1.13.8 rendered Kokoro v1.0 samples; the user chose
+`am_michael` (speaker 16). The full model ran about 5× faster than real time
+and the int8 one about 2×, with similar sound, so the full model was chosen.
+(Kokoro v1.1 in sherpa-onnx is mostly Chinese voices; v1.0 has the English
+set.) Implemented: `ios/KokoroFramework` (prebuilt sherpa-onnx and ONNX Runtime
+pinned by checksum, plus a small C-API wrapper), in-app download of the English
+files from a pinned Hugging Face revision with SHA-256 checks, and sentence-by-
+sentence gapless playback with Apple-voice fallback, all behind Settings →
+Advanced → Read aloud. It builds cleanly and was installed on the iPad. **Not
+yet verified on the iPad:** the download, first-sentence delay, generation
+speed on the M2, memory alongside Qwen, and Stop.
+
 ## Agreed direction, not yet implemented
 
 The user expects login, conversation history, and more functionality over time.
