@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		A1C0510E0000000000000001 /* CurioTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0510E0000000000000002 /* CurioTheme.swift */; };
 		A1C0510E0000000000000003 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0510E0000000000000004 /* HomeView.swift */; };
+		A1C0510E0000000000000009 /* TrailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0510E000000000000000A /* TrailView.swift */; };
+		A1C0510E000000000000000B /* CompleteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0510E000000000000000C /* CompleteView.swift */; };
 		14ECCAFD67004EC54F1A55B8 /* ChatModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C1FAE2985C7B6DEDAC0CAC7 /* ChatModel.swift */; };
 		17DA2F7BD9365218E0111EC0 /* KokoroFramework in Frameworks */ = {isa = PBXBuildFile; productRef = AD173C740F0663329D1DF01B /* KokoroFramework */; };
 		2AB4726B43025D37406DD75C /* TutorEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 747BC80080FBC496ADAC6E59 /* TutorEngine.swift */; };
@@ -35,6 +37,8 @@
 		3F2D0C1564104C23AF3B613B /* App.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = App.xcconfig; sourceTree = "<group>"; };
 		A1C0510E0000000000000002 /* CurioTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurioTheme.swift; sourceTree = "<group>"; };
 		A1C0510E0000000000000004 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		A1C0510E000000000000000A /* TrailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrailView.swift; sourceTree = "<group>"; };
+		A1C0510E000000000000000C /* CompleteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompleteView.swift; sourceTree = "<group>"; };
 		5A9672358DBE787F24899222 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		5DC7B15AA78E520137D7E6C4 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
 		69CBFB52AA72DBA38604AA78 /* Curio.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Curio.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -107,6 +111,8 @@
 				A1C0510E0000000000000006 /* Fredoka.ttf */,
 				9C1FAE2985C7B6DEDAC0CAC7 /* ChatModel.swift */,
 				5A9672358DBE787F24899222 /* ContentView.swift */,
+				A1C0510E000000000000000C /* CompleteView.swift */,
+				A1C0510E000000000000000A /* TrailView.swift */,
 				A1C0510E0000000000000004 /* HomeView.swift */,
 				A1C0510E0000000000000002 /* CurioTheme.swift */,
 				7AA43593DB2BD41DC1BE745D /* Info.plist */,
@@ -253,6 +259,8 @@
 				C7742B5D5D64CC9ABFD1D70A /* App.swift in Sources */,
 				14ECCAFD67004EC54F1A55B8 /* ChatModel.swift in Sources */,
 				3667258F494F8DDBB90402E9 /* ContentView.swift in Sources */,
+				A1C0510E000000000000000B /* CompleteView.swift in Sources */,
+				A1C0510E0000000000000009 /* TrailView.swift in Sources */,
 				A1C0510E0000000000000003 /* HomeView.swift in Sources */,
 				A1C0510E0000000000000001 /* CurioTheme.swift in Sources */,
 				5E9D1D54B1631216BCD8D9BC /* LocalEngine.swift in Sources */,

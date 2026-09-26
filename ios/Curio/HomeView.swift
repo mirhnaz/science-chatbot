@@ -159,7 +159,6 @@ struct SparksGrid: View {
                         .contentShape(.capsule)
                 }
                 .buttonStyle(.plain)
-                .disabled(chat.isLoading)
                 .accessibilityHint("Shows four different sparks")
             }
             LazyVGrid(columns: columns, spacing: 12) {

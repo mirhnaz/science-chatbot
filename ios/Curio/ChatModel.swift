@@ -32,9 +32,15 @@ final class ChatModel {
 
     var question = ""
     private(set) var steps: [TrailStep] = []
+    /// Identifies the current trail, so it earns only one stamp.
+    private(set) var trailID = UUID()
     private(set) var suggestions: [Suggestion] = []
     /// The trail replaced by "something new", kept briefly for Undo.
     private(set) var undoSteps: [TrailStep]?
+    private var undoTrailID: UUID?
+    private var undoFinished = false
+    /// The child tapped Finish and saw Trail complete.
+    private(set) var isFinished = false
 
     private var recent = RecentSuggestions()
     private var task: Task<Void, Never>?
@@ -46,8 +52,13 @@ final class ChatModel {
 
     var isComplete: Bool { answeredSteps >= Self.trailLength }
 
-    /// A trail the child can pick up again from Home.
-    var hasUnfinishedTrail: Bool { !steps.isEmpty && !isComplete }
+    /// A trail the child can pick up again from Home: until Finish is
+    /// tapped, even after the last answer.
+    var hasUnfinishedTrail: Bool { !steps.isEmpty && !isFinished }
+
+    func markFinished() {
+        isFinished = true
+    }
 
     /// The starter topic, or nil for a question the child typed.
     var topic: String? { steps.first?.topic }
@@ -81,7 +92,7 @@ final class ChatModel {
         run(TrailStep(question: idea.question, topic: idea.topic), using: engines)
     }
 
-    /// "Ask your own": a new, empty trail with the question box ready.
+    /// A new, empty trail, before asking a question typed on Home.
     func startEmptyTrail() {
         replaceTrail()
         question = ""
@@ -91,6 +102,8 @@ final class ChatModel {
         guard let previous = undoSteps else { return }
         task?.cancel()
         steps = previous
+        if let undoTrailID { trailID = undoTrailID }
+        isFinished = undoFinished
         undoSteps = nil
     }
 
@@ -119,6 +132,10 @@ final class ChatModel {
     private func replaceTrail() {
         task?.cancel()
         undoSteps = steps.contains { $0.reply != nil } ? steps : nil
+        undoTrailID = trailID
+        undoFinished = isFinished
+        trailID = UUID()
+        isFinished = false
         steps = []
     }
 
