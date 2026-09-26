@@ -26,6 +26,23 @@ question box. Agreed so far:
   button; until then, a replaced trail can be restored with Undo.
 - Read aloud moves onto each answer; the toolbar keeps only Settings.
 
+### Future: trails as a map of a child's interests
+
+Trails are meant to grow into more than history. After a child has used the
+app for a considerable time, their saved trails show **which topics they return
+to most, which trails they follow deepest, and what they are curious about**.
+Ideas to build on later (none are implemented or scheduled):
+
+- A "My curiosity" view: most frequent topics and trails, and the longest
+  (deepest) trails.
+- Suggesting starters from the child's own interests, not only at random.
+- Continuing an old trail from where it stopped.
+- A parent or teacher summary.
+
+This needs saved history, so it depends on login/history and a decision about
+what is stored, for how long, and who can see it. Children's data must stay
+private and minimal; decide retention and consent before building it.
+
 The sections below describe the current build.
 
 ## Principles

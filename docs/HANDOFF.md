@@ -209,8 +209,16 @@ technical text on the main screen; readable width. `Theme.swift` and the web
 colour sets were removed; Settings uses a menu picker, a Done checkmark, and an
 About section. [DESIGN.md](DESIGN.md) records the design and how the web
 should adopt it later (web unchanged for now). Verified: clean build and an
-iPad screenshot of the empty state. **Not yet checked:** the answer screen,
-dark mode, portrait, iPhone layout, and phase 3 polish.
+iPad screenshot of the empty state; the user then confirmed it worked.
+
+The user then chose the **curiosity column** (mock-up in `docs/design/`),
+which replaces that sidebar layout: a single column, a centred question box and
+starters for fresh sessions, a trail of folded steps with the latest open,
+"Dive deeper" under the latest answer, "Try something new" chips and "Ask your
+own" above the question box (each starts a new trail, with Undo), per-answer
+Read aloud, and Reduce Motion support. `ChatModel` now holds trail steps.
+Built cleanly and installed; **not yet checked on the iPad** (it was locked):
+all states, animations, dark mode, portrait, iPhone.
 
 ## Agreed direction, not yet implemented
 
@@ -219,6 +227,19 @@ Keep the current TypeScript frontend for now. Introduce React + TypeScript +
 Vite when building the account/history screens, with Rust continuing to own the
 backend APIs. No Next.js server is planned. This roadmap is not authorization to
 start those features without a concrete next request.
+
+The user wants **trails** (one topic's chain of questions, see
+[DESIGN.md](DESIGN.md)) to become the unit of history, and later to show a
+child's most frequent and deepest trails and main interests. Not scheduled;
+depends on history and on privacy decisions for children's data.
+
+### Todo (not scheduled)
+
+- Record the questions children actually ask and use them to grow the starter
+  bank (`backend/data/questions.json`). Needs privacy decisions first: what is
+  stored, consent, retention, and a review step before a child's question
+  becomes a starter.
+- Trails as a map of interests (above and in [DESIGN.md](DESIGN.md)).
 
 Authentication approach, database choice, history retention, and detailed UI
 requirements have not been decided. Clarify them when beginning the feature.

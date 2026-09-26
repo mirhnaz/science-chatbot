@@ -1,20 +1,25 @@
 import ScienceCore
 import SwiftUI
 
-/// iPadOS layout: a sidebar of starter ideas and a detail column with the
-/// answer. Controls live on the Liquid Glass layer (toolbar and the compose
-/// bar at the bottom); content scrolls underneath. On iPhone the split view
-/// collapses to one column that opens on the answer, with Ideas one tap back.
-/// docs/DESIGN.md describes the same layout for the web.
+/// The curiosity column (docs/DESIGN.md, docs/design/curiosity-column.png).
+///
+/// One column, no sidebar. A fresh session centres the question box with
+/// starter ideas; after the first question the box moves to the bottom and
+/// the trail (one topic's chain of questions) grows above it. "Dive deeper"
+/// follow-ups sit under the latest answer; "try something new" chips sit
+/// above the question box and start a new trail. Controls (toolbar, chips,
+/// question box) are on Liquid Glass; the trail scrolls beneath.
 struct ContentView: View {
     @Environment(ModelStore.self) private var models
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @AppStorage("engineMode") private var engineChoice = EngineChoice.automatic.rawValue
     @State private var chat = ChatModel()
     @State private var network = NetworkMonitor()
     @State private var speech = Speech()
+    @State private var speakingStep: UUID?
     @State private var showSettings = false
-    @State private var selectedIdea: Suggestion.ID?
-    @State private var compactColumn = NavigationSplitViewColumn.detail
+    @State private var dockHeight = 0.0
+    @FocusState private var composing: Bool
 
     private var choice: EngineChoice { EngineChoice(rawValue: engineChoice) ?? .automatic }
 
@@ -35,189 +40,209 @@ struct ContentView: View {
         }
     }
 
+    private var fresh: Bool { chat.steps.isEmpty }
+
     var body: some View {
-        NavigationSplitView(preferredCompactColumn: $compactColumn) {
-            IdeasList(chat: chat, selection: $selectedIdea)
-                .navigationTitle("Ideas")
-                .toolbar {
-                    ToolbarItem {
-                        Button("Surprise me", systemImage: "dice") {
-                            selectedIdea = nil
-                            chat.surprise()
-                        }
+        NavigationStack {
+            ZStack(alignment: .bottom) {
+                if !fresh {
+                    TrailView(chat: chat, speakingStep: speakingStep, bottomInset: dockHeight,
+                              speak: toggleSpeech, dive: { chat.ask($0, using: engines) },
+                              editFollowUp: edit, retry: { chat.retry(using: engines) })
+                        .transition(.opacity)
+                }
+                // The same question box moves from the centre to the bottom,
+                // which shows children where questions go.
+                VStack(spacing: 0) {
+                    if fresh {
+                        Spacer(minLength: 24)
+                        Hero()
+                    } else {
+                        Spacer(minLength: 0)
+                        SomethingNew(chat: chat, askOwn: askOwn, start: startTrail)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+                    ComposeBar(chat: chat, focused: $composing,
+                               placeholder: fresh ? "Ask a science question…" : "Ask more about this…") {
+                        chat.ask(using: engines)
+                    }
+                    if fresh {
+                        StarterIdeas(chat: chat, start: startTrail, edit: edit)
+                            .transition(.opacity)
+                        Spacer(minLength: 24)
                     }
                 }
-        } detail: {
-            AnswerView(chat: chat, speech: speech) { followUp in
-                ask(followUp)
+                .frame(maxWidth: 720)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 8)
+                .onGeometryChange(for: Double.self) { $0.size.height } action: { dockHeight = $0 }
             }
-            .navigationTitle("Science Chatbot")
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .animation(reduceMotion ? .easeInOut(duration: 0.2) : .spring(duration: 0.55, bounce: 0.2), value: fresh)
+            .overlay(alignment: .top) {
+                if chat.undoSteps != nil {
+                    UndoBanner(undo: { chat.undo() }, expire: { chat.clearUndo() })
+                        .padding(.top, 8)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+            }
+            .animation(.snappy, value: chat.undoSteps != nil)
+            .navigationTitle(chat.steps.first?.question ?? "Science Chatbot")
             .navigationBarTitleDisplayMode(.inline)
             .navigationSubtitle(subtitle)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        if let answer = chat.reply?.answer { speech.toggle(answer) }
-                    } label: {
-                        Label(speech.isSpeaking ? "Stop reading" : "Read aloud",
-                              systemImage: speech.isSpeaking ? "stop.fill" : "speaker.wave.2")
-                    }
-                    .disabled(chat.reply == nil || chat.isLoading)
-                }
-                ToolbarSpacer(.fixed, placement: .primaryAction)
-                ToolbarItem(placement: .primaryAction) {
                     Button("Settings", systemImage: "gearshape") { showSettings = true }
                 }
             }
-            .safeAreaInset(edge: .bottom) {
-                ComposeBar(chat: chat) { ask(nil) }
-            }
         }
-        .onChange(of: selectedIdea) { _, id in
-            // Like the web: a starter fills the box; the child presses send.
-            if let idea = chat.suggestions.first(where: { $0.id == id }) {
-                chat.question = idea.question
-                compactColumn = .detail
-            }
-        }
-        .onChange(of: chat.isLoading) { _, loading in if loading { speech.stop() } }
+        .onChange(of: chat.isLoading) { _, loading in if loading { stopSpeech() } }
+        .onChange(of: speech.isSpeaking) { _, speaking in if !speaking { speakingStep = nil } }
         .sheet(isPresented: $showSettings) { SettingsView() }
     }
 
-    private func ask(_ text: String?) {
-        selectedIdea = nil
-        chat.ask(text, using: engines)
-    }
-
-    /// Only what a child needs: working, offline, or not set up.
+    /// Only what a child needs: working, offline, not set up, or trail length.
     private var subtitle: String {
         if chat.isLoading { return "Thinking…" }
         guard let first = engines.first else { return "Not set up yet" }
-        return first is RemoteEngine ? "" : "Offline mode"
-    }
-}
-
-/// Starter ideas in the sidebar, like "Need a spark?" on the web.
-struct IdeasList: View {
-    let chat: ChatModel
-    @Binding var selection: Suggestion.ID?
-
-    var body: some View {
-        List(selection: $selection) {
-            Section {
-                ForEach(chat.suggestions) { idea in
-                    Label {
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(idea.topic).font(.caption).foregroundStyle(.secondary)
-                            Text(idea.question)
-                        }
-                        .padding(.vertical, 4)
-                    } icon: {
-                        Text(idea.icon)
-                    }
-                    .tag(idea.id)
-                    .accessibilityHint("Puts this question in the question box")
-                }
-            } header: {
-                Text("Need a spark?")
-            } footer: {
-                Text("Pick an idea, or tap the dice for new ones.")
-            }
-        }
-        .listStyle(.sidebar)
-    }
-}
-
-/// The answer column: empty state, progress, error, or the reply with its
-/// follow-up questions. Kept to a readable width like a book page.
-struct AnswerView: View {
-    let chat: ChatModel
-    let speech: Speech
-    let askFollowUp: (String) -> Void
-
-    var body: some View {
-        ScrollView {
-            content
-                .frame(maxWidth: 680, alignment: .leading)
-                .padding(.horizontal, 24)
-                .padding(.vertical, 20)
-                .frame(maxWidth: .infinity)
-        }
-        .scrollDismissesKeyboard(.interactively)
+        if !(first is RemoteEngine) { return "Offline mode" }
+        return chat.steps.count > 1 ? "\(chat.steps.count) steps" : ""
     }
 
-    @ViewBuilder private var content: some View {
-        if chat.isLoading {
-            VStack(spacing: 12) {
-                ProgressView().controlSize(.large)
-                Text("Working on your answer…").font(.headline)
-                Text("The first question can take a little longer.")
-                    .font(.subheadline).foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity, minHeight: 360)
-        } else if let error = chat.errorText {
-            Label(error, systemImage: "exclamationmark.triangle.fill")
-                .foregroundStyle(.red)
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(.red.opacity(0.1), in: .rect(cornerRadius: 16))
-        } else if let reply = chat.reply {
-            VStack(alignment: .leading, spacing: 16) {
-                Text(chat.askedQuestion)
-                    .font(.title2.bold())
-                    .foregroundStyle(.tint)
-                Text(reply.answer)
-                    .font(.title3)
-                    .lineSpacing(6)
-                    .textSelection(.enabled)
-                FollowUps(questions: reply.followUps, ask: askFollowUp)
-                    .padding(.top, 12)
-            }
+    private func startTrail(_ idea: Suggestion) {
+        stopSpeech()
+        chat.startTrail(with: idea, using: engines)
+    }
+
+    private func askOwn() {
+        stopSpeech()
+        chat.startEmptyTrail()
+        composing = true
+    }
+
+    /// Long-press "Edit before asking": fills the box instead of asking.
+    private func edit(_ text: String) {
+        chat.question = text
+        composing = true
+    }
+
+    private func toggleSpeech(_ step: TrailStep) {
+        guard let answer = step.reply?.answer else { return }
+        if speakingStep == step.id {
+            stopSpeech()
         } else {
-            EmptyState()
+            speech.stop()
+            speech.toggle(answer)
+            speakingStep = step.id
         }
+    }
+
+    private func stopSpeech() {
+        speech.stop()
+        speakingStep = nil
     }
 }
 
-/// "Keep exploring": tappable rows with chevrons, like an inset grouped list.
-struct FollowUps: View {
-    let questions: [String]
-    let ask: (String) -> Void
+// MARK: Fresh session
+
+/// Shown before the first question: the one place the brand mark appears.
+struct Hero: View {
+    var body: some View {
+        VStack(spacing: 16) {
+            Image("BrandIcon")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 96, height: 96)
+                .clipShape(.rect(cornerRadius: 22))
+                .accessibilityHidden(true)
+            Text("A little curiosity.\nA whole world to explore.")
+                .font(.largeTitle.bold())
+                .multilineTextAlignment(.center)
+        }
+        .padding(.bottom, 24)
+    }
+}
+
+/// "Need a spark?": four starter ideas that each start a trail when tapped.
+struct StarterIdeas: View {
+    let chat: ChatModel
+    let start: (Suggestion) -> Void
+    let edit: (String) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Keep exploring").font(.headline)
-            VStack(spacing: 0) {
-                ForEach(Array(questions.enumerated()), id: \.offset) { index, question in
-                    if index > 0 { Divider().padding(.leading, 16) }
-                    Button {
-                        ask(question)
-                    } label: {
-                        HStack(spacing: 12) {
-                            Text(question).multilineTextAlignment(.leading)
-                            Spacer(minLength: 8)
-                            Image(systemName: "chevron.right")
-                                .font(.footnote.weight(.semibold))
-                                .foregroundStyle(.tertiary)
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Need a spark?").font(.headline).padding(.leading, 6)
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 260), spacing: 10)], spacing: 10) {
+                ForEach(chat.suggestions) { idea in
+                    Button { start(idea) } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("\(idea.icon) \(idea.topic)").font(.footnote).foregroundStyle(.secondary)
+                            Text(idea.question).font(.body).multilineTextAlignment(.leading)
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 14)
-                        .contentShape(.rect)
+                        .frame(maxWidth: .infinity, minHeight: 64, alignment: .topLeading)
+                        .padding(14)
+                        .background(.background.secondary, in: .rect(cornerRadius: 16))
+                        .contentShape(.rect(cornerRadius: 16))
                     }
                     .buttonStyle(.plain)
                     .hoverEffect(.highlight)
+                    .contextMenu {
+                        Button("Edit before asking", systemImage: "pencil") { edit(idea.question) }
+                    }
+                    .accessibilityHint("Asks this question")
                 }
             }
-            .background(.background.secondary, in: .rect(cornerRadius: 16))
+            Button("Show me different ideas", systemImage: "dice") { chat.surprise() }
+                .buttonStyle(.glass)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 4)
         }
+        .padding(.top, 20)
     }
 }
 
-/// The question box on the glass layer, pinned above the keyboard.
+// MARK: Dock
+
+/// "Or try something new": starts a new trail. Sits just above the question box.
+struct SomethingNew: View {
+    let chat: ChatModel
+    let askOwn: () -> Void
+    let start: (Suggestion) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Text("Or try something new").font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
+                .padding(.leading, 6)
+            ScrollView(.horizontal) {
+                GlassEffectContainer(spacing: 8) {
+                    HStack(spacing: 8) {
+                        Button("Ask your own", systemImage: "square.and.pencil", action: askOwn)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.tint)
+                            .keyboardShortcut("n", modifiers: .command)
+                        ForEach(chat.suggestions.prefix(2)) { idea in
+                            Button("\(idea.icon) \(idea.question)") { start(idea) }
+                        }
+                        Button("Different ideas", systemImage: "dice") { chat.surprise() }
+                            .labelStyle(.iconOnly)
+                    }
+                    .buttonStyle(.glass)
+                    .disabled(chat.isLoading)
+                }
+                .padding(.vertical, 2)
+            }
+            .scrollIndicators(.hidden)
+        }
+        .padding(.bottom, 10)
+    }
+}
+
+/// The question box on the glass layer, with a round send (or stop) button.
 struct ComposeBar: View {
     @Bindable var chat: ChatModel
+    var focused: FocusState<Bool>.Binding
+    let placeholder: String
     let send: () -> Void
-    @FocusState private var focused: Bool
 
     private var canSend: Bool {
         !chat.question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -226,9 +251,9 @@ struct ComposeBar: View {
     var body: some View {
         GlassEffectContainer(spacing: 10) {
             HStack(alignment: .bottom, spacing: 10) {
-                TextField("Ask a science question…", text: $chat.question, axis: .vertical)
+                TextField(placeholder, text: $chat.question, axis: .vertical)
                     .lineLimit(1...5)
-                    .focused($focused)
+                    .focused(focused)
                     .submitLabel(.send)
                     .padding(.horizontal, 18)
                     .padding(.vertical, 13)
@@ -264,35 +289,220 @@ struct ComposeBar: View {
                 }
             }
         }
-        .frame(maxWidth: 720)
-        .padding(.horizontal, 16)
-        .padding(.bottom, 8)
     }
 
     private func submit() {
-        focused = false
+        focused.wrappedValue = false
         send()
     }
 }
 
-/// Shown before the first question: the one place the brand mark appears.
-struct EmptyState: View {
+/// "Started a new trail · Undo", for a few seconds after something new.
+struct UndoBanner: View {
+    let undo: () -> Void
+    let expire: () -> Void
+
     var body: some View {
-        VStack(spacing: 16) {
-            Image("BrandIcon")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 112, height: 112)
-                .clipShape(.rect(cornerRadius: 26))
-                .accessibilityHidden(true)
-            Text("A little curiosity.\nA whole world to explore.")
-                .font(.title2.weight(.semibold))
-                .multilineTextAlignment(.center)
-            Text("Ask a question below, or pick an idea.")
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
+        HStack(spacing: 14) {
+            Text("Started a new trail")
+            Button("Undo", action: undo).fontWeight(.semibold)
         }
-        .frame(maxWidth: .infinity, minHeight: 420)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 10)
+        .glassEffect(.regular.interactive(), in: .capsule)
+        .task {
+            try? await Task.sleep(for: .seconds(6))
+            expire()
+        }
+    }
+}
+
+// MARK: Trail
+
+/// The steps of the current trail. Only the latest is open; earlier ones fold
+/// to their question, a preview, and the follow-up the child chose.
+struct TrailView: View {
+    let chat: ChatModel
+    let speakingStep: UUID?
+    let bottomInset: Double
+    let speak: (TrailStep) -> Void
+    let dive: (String) -> Void
+    let editFollowUp: (String) -> Void
+    let retry: () -> Void
+    @State private var expanded: Set<UUID> = []
+
+    var body: some View {
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 12) {
+                    ForEach(chat.steps) { step in
+                        let latest = step.id == chat.steps.last?.id
+                        Group {
+                            if latest || expanded.contains(step.id) {
+                                OpenStep(step: step, latest: latest, first: step.id == chat.steps.first?.id,
+                                         speaking: speakingStep == step.id, speak: { speak(step) },
+                                         dive: dive, editFollowUp: editFollowUp, retry: retry,
+                                         fold: latest ? nil : { expanded.remove(step.id) })
+                            } else {
+                                FoldedStep(step: step) { expanded.insert(step.id) }
+                            }
+                        }
+                        .id(step.id)
+                    }
+                }
+                .frame(maxWidth: 680, alignment: .leading)
+                .padding(.horizontal, 24)
+                .padding(.top, 12)
+                .frame(maxWidth: .infinity)
+            }
+            .contentMargins(.bottom, bottomInset + 24, for: .scrollContent)
+            .scrollDismissesKeyboard(.interactively)
+            .onChange(of: chat.steps.last?.id) { _, id in
+                expanded = []
+                if let id { withAnimation { proxy.scrollTo(id, anchor: .top) } }
+            }
+        }
+    }
+}
+
+/// An earlier step: question, two-line preview, and the chosen follow-up.
+struct FoldedStep: View {
+    let step: TrailStep
+    let expand: () -> Void
+
+    var body: some View {
+        Button(action: expand) {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(step.question).font(.headline).multilineTextAlignment(.leading)
+                    Spacer(minLength: 8)
+                    Image(systemName: "chevron.down").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
+                }
+                if let answer = step.reply?.answer {
+                    Text(answer).font(.subheadline).foregroundStyle(.secondary).lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                }
+                if let chosen = step.chosen {
+                    Label(chosen, systemImage: "arrow.turn.down.right")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.tint)
+                        .padding(.horizontal, 12).padding(.vertical, 6)
+                        .background(.background, in: .capsule)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(14)
+            .background(.background.secondary, in: .rect(cornerRadius: 16))
+            .contentShape(.rect(cornerRadius: 16))
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint("Shows this answer again")
+    }
+}
+
+/// The latest step (or an earlier one the child re-opened).
+struct OpenStep: View {
+    let step: TrailStep
+    let latest: Bool
+    let first: Bool
+    let speaking: Bool
+    let speak: () -> Void
+    let dive: (String) -> Void
+    let editFollowUp: (String) -> Void
+    let retry: () -> Void
+    let fold: (() -> Void)?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if first, let topic = step.topic {
+                Text(topic).font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
+            }
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                Text(step.question).font(.title2.bold()).foregroundStyle(.tint)
+                Spacer(minLength: 8)
+                if step.reply != nil {
+                    Button(speaking ? "Stop reading" : "Read aloud",
+                           systemImage: speaking ? "stop.fill" : "speaker.wave.2") { speak() }
+                        .labelStyle(.iconOnly)
+                        .buttonStyle(.glass)
+                        .buttonBorderShape(.circle)
+                }
+                if let fold {
+                    Button("Fold", systemImage: "chevron.up", action: fold)
+                        .labelStyle(.iconOnly)
+                        .buttonStyle(.borderless)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            if step.isLoading {
+                HStack(spacing: 12) {
+                    ProgressView()
+                    Text("Working on your answer…").foregroundStyle(.secondary)
+                }
+                .padding(.vertical, 12)
+            } else if let error = step.error {
+                VStack(alignment: .leading, spacing: 12) {
+                    Label(error, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red)
+                    if latest {
+                        Button("Try again", systemImage: "arrow.clockwise", action: retry)
+                            .buttonStyle(.bordered)
+                    }
+                }
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(.red.opacity(0.08), in: .rect(cornerRadius: 16))
+            } else if let reply = step.reply {
+                Text(reply.answer)
+                    .font(.title3)
+                    .lineSpacing(6)
+                    .textSelection(.enabled)
+                if latest {
+                    DiveDeeper(questions: reply.followUps, ask: dive, edit: editFollowUp)
+                        .padding(.top, 8)
+                } else if let chosen = step.chosen {
+                    Label(chosen, systemImage: "arrow.turn.down.right")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.tint)
+                }
+            }
+        }
+        .padding(.bottom, 8)
+    }
+}
+
+/// "Dive deeper": the latest answer's follow-ups, in the accent colour.
+struct DiveDeeper: View {
+    let questions: [String]
+    let ask: (String) -> Void
+    let edit: (String) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Dive deeper").font(.headline)
+            VStack(spacing: 0) {
+                ForEach(Array(questions.enumerated()), id: \.offset) { index, question in
+                    if index > 0 { Divider().overlay(Color.accentColor.opacity(0.15)).padding(.leading, 16) }
+                    Button { ask(question) } label: {
+                        HStack(spacing: 12) {
+                            Text(question).multilineTextAlignment(.leading)
+                            Spacer(minLength: 8)
+                            Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).opacity(0.55)
+                        }
+                        .foregroundStyle(.tint)
+                        .fontWeight(.medium)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 13)
+                        .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    .hoverEffect(.highlight)
+                    .contextMenu {
+                        Button("Edit before asking", systemImage: "pencil") { edit(question) }
+                    }
+                }
+            }
+            .background(Color.accentColor.opacity(0.09), in: .rect(cornerRadius: 16))
+        }
     }
 }
