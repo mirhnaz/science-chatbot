@@ -110,6 +110,11 @@ struct ContentView: View {
             while chat.isLoading { try? await Task.sleep(for: .milliseconds(300)) }
             try? await Task.sleep(for: .seconds(1))
             if let next = chat.steps.last?.reply?.followUps.first { chat.ask(next, using: engines) }
+            // `-autoAskOwn`: then tap "Ask your own" to open an empty trail.
+            guard ProcessInfo.processInfo.arguments.contains("-autoAskOwn") else { return }
+            while chat.isLoading { try? await Task.sleep(for: .milliseconds(300)) }
+            try? await Task.sleep(for: .seconds(2))
+            askOwn()
         }
         #endif
     }
@@ -139,7 +144,12 @@ struct ContentView: View {
     private func askOwn() {
         stopSpeech()
         chat.startEmptyTrail()
-        composing = true
+        // Focus after the question box has moved to the centre; focusing
+        // during the move is ignored.
+        Task {
+            try? await Task.sleep(for: .milliseconds(650))
+            composing = true
+        }
     }
 
     /// Long-press "Edit before asking": fills the box instead of asking.
@@ -174,22 +184,34 @@ struct FreshSession<Compose: View>: View {
     let start: (Suggestion) -> Void
     let edit: (String) -> Void
     @ViewBuilder let compose: Compose
+    /// Visible height of the scroll view (without toolbar and keyboard).
+    @State private var visibleHeight = 0.0
 
     var body: some View {
         ScrollView {
+            // At least as tall as the screen and centred with spacers, so when
+            // it fits there is nothing to scroll and it can never be left
+            // scrolled up (`defaultScrollAnchor` only centres once, and the
+            // switch from a trail left it offset).
             VStack(spacing: 0) {
+                Spacer(minLength: 0)
                 Hero()
                 compose
                 StarterIdeas(chat: chat, start: start, edit: edit)
                 MadeWithLove()
                     .padding(.top, 28)
+                Spacer(minLength: 0)
             }
             .frame(maxWidth: 720)
             .padding(.horizontal, 16)
             .padding(.vertical, 24)
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, minHeight: visibleHeight)
         }
-        .defaultScrollAnchor(.center, for: .alignment)
+        // The scroll view's own size does not depend on its content, so
+        // measuring it cannot loop.
+        .onGeometryChange(for: Double.self) { proxy in
+            proxy.size.height - proxy.safeAreaInsets.top - proxy.safeAreaInsets.bottom
+        } action: { visibleHeight = max($0, 0) }
         .scrollBounceBehavior(.basedOnSize)
         .scrollDismissesKeyboard(.interactively)
     }
