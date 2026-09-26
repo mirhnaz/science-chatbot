@@ -52,8 +52,8 @@ struct ContentView: View {
                     .transition(.opacity)
                 } else {
                     TrailView(chat: chat, speakingStep: speakingStep,
-                              speak: toggleSpeech, dive: { chat.ask($0, using: engines) },
-                              editFollowUp: edit, retry: { chat.retry(using: engines) })
+                              speak: toggleSpeech, dive: { text in continueTrail { chat.ask(text, using: engines) } },
+                              editFollowUp: edit, retry: { continueTrail { chat.retry(using: engines) } })
                         // A safe-area *bar*: the system keeps the trail clear
                         // of the dock and fades/blurs it as it scrolls beneath,
                         // like the toolbar. (Measuring the dock by hand caused
@@ -109,7 +109,7 @@ struct ContentView: View {
             startTrail(idea)
             while chat.isLoading { try? await Task.sleep(for: .milliseconds(300)) }
             try? await Task.sleep(for: .seconds(1))
-            if let next = chat.steps.last?.reply?.followUps.first { chat.ask(next, using: engines) }
+            if let next = chat.steps.last?.reply?.followUps.first { continueTrail { chat.ask(next, using: engines) } }
             // `-autoAskOwn`: then tap "Ask your own" to open an empty trail.
             guard ProcessInfo.processInfo.arguments.contains("-autoAskOwn") else { return }
             while chat.isLoading { try? await Task.sleep(for: .milliseconds(300)) }
@@ -124,7 +124,7 @@ struct ContentView: View {
     private var compose: some View {
         ComposeBar(chat: chat, focused: $composing,
                    placeholder: fresh ? "Ask a science question…" : "Ask more about this…") {
-            chat.ask(using: engines)
+            continueTrail { chat.ask(using: engines) }
         }
     }
 
@@ -134,6 +134,12 @@ struct ContentView: View {
         guard let first = engines.first else { return "Not set up yet" }
         if !(first is RemoteEngine) { return "Offline mode" }
         return chat.steps.count > 1 ? "\(chat.steps.count) steps" : ""
+    }
+
+    /// Adds a step to the trail inside the same smooth animation that folds
+    /// the previous step and scrolls to the new one.
+    private func continueTrail(_ change: () -> Void) {
+        withAnimation(trailAnimation(reduceMotion), change)
     }
 
     private func startTrail(_ idea: Suggestion) {
@@ -425,39 +431,54 @@ struct TrailView: View {
     let editFollowUp: (String) -> Void
     let retry: () -> Void
     @State private var expanded: Set<UUID> = []
+    @State private var position = ScrollPosition(idType: UUID.self)
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 12) {
-                    ForEach(chat.steps) { step in
-                        let latest = step.id == chat.steps.last?.id
-                        Group {
-                            if latest || expanded.contains(step.id) {
-                                OpenStep(step: step, latest: latest, first: step.id == chat.steps.first?.id,
-                                         speaking: speakingStep == step.id, speak: { speak(step) },
-                                         dive: dive, editFollowUp: editFollowUp, retry: retry,
-                                         fold: latest ? nil : { expanded.remove(step.id) })
-                            } else {
-                                FoldedStep(step: step) { expanded.insert(step.id) }
-                            }
+        ScrollView {
+            // A plain VStack, not a lazy one: trails are short, and exact
+            // heights let the scroll to a new step glide instead of jump.
+            VStack(alignment: .leading, spacing: 12) {
+                ForEach(chat.steps) { step in
+                    let latest = step.id == chat.steps.last?.id
+                    Group {
+                        if latest || expanded.contains(step.id) {
+                            OpenStep(step: step, latest: latest, first: step.id == chat.steps.first?.id,
+                                     speaking: speakingStep == step.id, speak: { speak(step) },
+                                     dive: dive, editFollowUp: editFollowUp, retry: retry,
+                                     fold: latest ? nil : { withAnimation(.smooth) { _ = expanded.remove(step.id) } })
+                        } else {
+                            FoldedStep(step: step) { withAnimation(.smooth) { _ = expanded.insert(step.id) } }
                         }
-                        .id(step.id)
                     }
+                    .id(step.id)
                 }
-                .frame(maxWidth: 680, alignment: .leading)
-                .padding(.horizontal, 24)
-                .padding(.top, 12)
-                .frame(maxWidth: .infinity)
             }
-            .scrollDismissesKeyboard(.interactively)
-            .scrollEdgeEffectStyle(.soft, for: .bottom)
-            .onChange(of: chat.steps.last?.id) { _, id in
+            .scrollTargetLayout()
+            .frame(maxWidth: 680, alignment: .leading)
+            .padding(.horizontal, 24)
+            .padding(.top, 12)
+            .frame(maxWidth: .infinity)
+        }
+        .scrollPosition($position)
+        .scrollDismissesKeyboard(.interactively)
+        .scrollEdgeEffectStyle(.soft, for: .bottom)
+        .onChange(of: chat.steps.last?.id) { _, id in
+            guard let id else { return }
+            // Fold the earlier steps and glide to the new one together, so
+            // the page does not shift under the scroll.
+            withAnimation(trailAnimation(reduceMotion)) {
                 expanded = []
-                if let id { withAnimation { proxy.scrollTo(id, anchor: .top) } }
+                position.scrollTo(id: id, anchor: .top)
             }
         }
     }
+}
+
+/// The animation for adding a step: a smooth glide, or a short fade-like
+/// ease when Reduce Motion is on.
+func trailAnimation(_ reduceMotion: Bool) -> Animation {
+    reduceMotion ? .easeInOut(duration: 0.2) : .smooth(duration: 0.55)
 }
 
 /// An earlier step: question, two-line preview, and the chosen follow-up.
