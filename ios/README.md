@@ -121,7 +121,8 @@ Settings → Tutor has three modes:
 
 - **Automatic** (default): asks the AI PC; falls back to the model on this
   iPad when there is no network (airplane mode skips the PC at once), when a
-  4-second `/healthz` check fails, or when the server replies 429 (busy),
+  4-second `/healthz` check fails (skipped for 60 s after the PC last
+  answered or passed a check), or when the server replies 429 (busy),
   502 (Ollama offline or unclear reply), or 503 (restarting). A 504 timeout
   and validation errors are shown instead, not retried locally. The status
   line names which one answered.

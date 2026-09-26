@@ -25,7 +25,9 @@ struct RemoteEngine: TutorEngine {
     }
 
     func ask(_ question: String) async throws -> TutorReply {
-        if preflight, !(await checkHealth(timeout: 4)) {
+        if preflight, await !ReachabilityMemory.shared.recentlyReached(baseURL),
+           !(await checkHealth(timeout: 4)) {
+            await ReachabilityMemory.shared.forget(baseURL)
             try Task.checkCancellation()
             throw TutorError.unreachable
         }
@@ -45,6 +47,7 @@ struct RemoteEngine: TutorEngine {
         } catch let error as URLError where error.code == .cancelled {
             throw CancellationError()
         } catch is URLError {
+            await ReachabilityMemory.shared.forget(baseURL)
             throw TutorError.unreachable
         }
 
@@ -59,6 +62,7 @@ struct RemoteEngine: TutorEngine {
         guard let answer = reply?.answer, let followUps = reply?.followUps else {
             throw TutorError.message(ValidationError.emptyAnswer.description)
         }
+        await ReachabilityMemory.shared.reached(baseURL)
         return try validateReply(answer: answer, followUps: followUps)
     }
 
@@ -69,6 +73,29 @@ struct RemoteEngine: TutorEngine {
         var request = URLRequest(url: baseURL.appendingPathComponent("healthz"))
         request.timeoutInterval = timeout
         guard let (_, response) = try? await URLSession.shared.data(for: request) else { return false }
-        return (response as? HTTPURLResponse)?.statusCode == 200
+        let ok = (response as? HTTPURLResponse)?.statusCode == 200
+        if ok { await ReachabilityMemory.shared.reached(baseURL) }
+        return ok
     }
+}
+
+/// Remembers that the AI PC answered recently, so Automatic mode can skip the
+/// /healthz round trip before each question (about 0.5–1 s through Funnel).
+/// A successful check or answer counts; any "can't reach it" clears it. An
+/// actor, so questions and checks can update it safely at the same time.
+actor ReachabilityMemory {
+    static let shared = ReachabilityMemory()
+    /// How long a success is trusted. If the PC goes down within this window,
+    /// the next question waits for the network error before falling back.
+    static let window: TimeInterval = 60
+    private var lastReached: [URL: Date] = [:]
+
+    func recentlyReached(_ url: URL) -> Bool {
+        guard let date = lastReached[url] else { return false }
+        return Date().timeIntervalSince(date) < Self.window
+    }
+
+    func reached(_ url: URL) { lastReached[url] = Date() }
+
+    func forget(_ url: URL) { lastReached[url] = nil }
 }
