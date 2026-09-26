@@ -227,7 +227,16 @@ first step with ↳ → latest answer with Dive deeper and the chip row.
 **Still to check by hand:** taps, rotation, Undo, Read aloud per answer, dark
 mode, iPhone.
 
-Debugging notes: Debug builds accept `-autoAsk` (`xcrun devicectl device
+Later the same day: starters were renamed **Sparks** / **New spark**, the
+dock became a `safeAreaBar` with a soft scroll edge (text had clashed with
+it), the speaker animates while reading, and the app adopted the **Nord**
+palette in light and dark (colour sets in `Assets.xcassets`, table in
+[DESIGN.md](DESIGN.md)); light and dark screenshots were checked on the iPad.
+Still unchecked: Settings screens in Nord, Dynamic Type, VoiceOver, Reduce
+Transparency/Increase Contrast, iPhone.
+
+Debugging notes: launch arguments such as `-theme dark` override saved
+settings for one launch. Debug builds accept `-autoAsk` (`xcrun devicectl device
 process launch --device <id> local.sciencechatbot.app -- -autoAsk`), which
 asks the first spark and then a follow-up. Hang/crash reports are listed with
 `xcrun devicectl device info files --domain-type systemCrashLogs` and copied
