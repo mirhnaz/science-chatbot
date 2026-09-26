@@ -4,7 +4,7 @@ import ScienceCore
 /// Something that can answer one independent science question.
 /// Both engines return the same validated reply type.
 protocol TutorEngine: Sendable {
-    /// Shown in the status line, for example "My AI PC".
+    /// Shown in the status line, for example "mir-ai-pc".
     var name: String { get }
     func ask(_ question: String) async throws -> TutorReply
 }
@@ -17,26 +17,22 @@ enum EngineChoice: String, CaseIterable, Identifiable {
     var label: String {
         switch self {
         case .automatic: return "Automatic"
-        case .remote: return "My AI PC"
+        case .remote: return "mir-ai-pc"
         case .local: return "On this iPad"
         }
     }
 }
 
-/// The AI PC address: the one typed in Settings, otherwise the build's
-/// default host from Local.xcconfig (kept out of Git).
+/// The AI PC address, fixed when the app is built: `SCIENCE_SERVER_HOST`
+/// from the ignored Local.xcconfig, so the hostname stays out of Git and
+/// cannot be changed on the iPad.
 enum ServerAddress {
-    static var builtIn: String? {
-        guard let host = Bundle.main.object(forInfoDictionaryKey: "ScienceServerHost") as? String,
-              !host.trimmingCharacters(in: .whitespaces).isEmpty
+    static let url: String? = {
+        guard let host = (Bundle.main.object(forInfoDictionaryKey: "ScienceServerHost") as? String)?
+            .trimmingCharacters(in: .whitespaces), !host.isEmpty
         else { return nil }
-        return "https://\(host.trimmingCharacters(in: .whitespaces))"
-    }
-
-    static func effective(_ typed: String) -> String {
-        let trimmed = typed.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? (builtIn ?? "") : trimmed
-    }
+        return "https://\(host)"
+    }()
 }
 
 /// Friendly errors shared by both engines, worded like the web app.

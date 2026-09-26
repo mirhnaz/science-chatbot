@@ -161,6 +161,12 @@ aloud picks the best installed Premium/Enhanced voice for the answer's language
 (NaturalLanguage detection) with an optional Settings choice; Siri voices are
 not available to apps. Built, installed, and launched on the iPad; the header
 showed "Automatic · My AI PC" and the PC's `/healthz` returned 200 from the Mac.
+Settings was then simplified for 10–13 year olds: Tutor and Appearance on
+the main page; model, AI PC check, and voice on an "Advanced (for grown-ups)"
+page with a warning. The typed AI PC address override was removed; the
+address comes only from `SCIENCE_SERVER_HOST` at build time (kept out of Git
+per the rules above, rather than hard-coded in Swift), and starter taps no
+longer open the keyboard. The remote mode is labelled "mir-ai-pc".
 **Still unverified on the iPad:** a real remote answer, airplane-mode fallback,
 PC-off fallback, voice quality, follow-ups, Stop, and Read aloud.
 

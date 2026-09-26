@@ -39,7 +39,7 @@ final class ChatModel {
             return
         }
         guard !engines.isEmpty else {
-            errorText = "Choose a tutor in Settings: download a model or enter your AI PC address."
+            errorText = "The tutor isn’t set up yet. Ask a grown-up to check Settings → Advanced."
             return
         }
 

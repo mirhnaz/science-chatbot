@@ -5,7 +5,7 @@ A native SwiftUI app with two ways to answer questions:
 - **On this iPad** — runs a model inside the app with
   [llama.cpp](https://github.com/ggml-org/llama.cpp), the engine Ollama is
   built on. Works with no internet once the model file is on the iPad.
-- **My AI PC** — sends questions to the existing Rust server (which calls
+- **mir-ai-pc** — sends questions to the existing Rust server (which calls
   Ollama on the PC), for example through the Tailscale Funnel HTTPS address.
 
 Ollama itself cannot run inside an iOS app: iOS does not let apps start a
@@ -53,8 +53,9 @@ DEVELOPMENT_TEAM = ABCDE12345
 SCIENCE_SERVER_HOST = your-pc.your-tailnet.ts.net
 ```
 
-`SCIENCE_SERVER_HOST` (host only, no `https://`) becomes the app's default AI
-PC address; leave it out to type the address in Settings instead.
+`SCIENCE_SERVER_HOST` (host only, no `https://`) is the app's AI PC address.
+It is fixed at build time and cannot be changed on the iPad; without it,
+AI PC mode is unavailable.
 
 The team ID is the `OU=` value printed by
 `security find-certificate -c "Apple Development" -p | openssl x509 -noout -subject`,
@@ -93,18 +94,18 @@ Recommended: `Qwen3-4B-Instruct-2507-Q4_K_M.gguf` (about 2.5 GB), a smaller
 non-thinking member of the same Qwen3 family as the server's `qwen3:8b`.
 Answers are a little simpler than the 8B model's. Choose one method:
 
-1. **Download in the app**: Settings → *Download recommended model* (needs
+1. **Download in the app**: Settings → Advanced → *Download recommended model* (needs
    internet once).
 2. **Finder over a cable (no internet on the iPad)**: download the file on the
    Mac from
    <https://huggingface.co/unsloth/Qwen3-4B-Instruct-2507-GGUF>, then in Finder
    select the iPad → **Files** → drag the `.gguf` onto *Science Chatbot*.
-   In the app, open Settings → *Refresh list*. Or copy it from the Mac's
+   In the app, open Settings → Advanced → *Refresh list*. Or copy it from the Mac's
    terminal with the app installed:
    `xcrun devicectl device copy to --device <device-id> --domain-type appDataContainer --domain-identifier local.sciencechatbot.app --source <file>.gguf --destination Documents/<file>.gguf`
-3. **Files app**: Settings → *Import model file…* and pick a `.gguf`.
+3. **Files app**: Settings → Advanced → *Import model file…* and pick a `.gguf`.
 
-Then choose **On this iPad** in Settings. The first question loads the model
+Then choose **On this iPad** or **Automatic** in Settings. The first question loads the model
 (several seconds); later questions reuse it. Airplane mode is a good test.
 
 Any GGUF chat model works, including Ollama's own blobs, but 8B models are
@@ -120,18 +121,23 @@ Settings → Tutor has three modes:
   502 (Ollama offline or unclear reply), or 503 (restarting). A 504 timeout
   and validation errors are shown instead, not retried locally. The status
   line names which one answered.
-- **My AI PC**: always the server. **On this iPad**: always local.
+- **mir-ai-pc**: always the server. **On this iPad**: always local.
 
-The AI PC address defaults to `SCIENCE_SERVER_HOST` from `Local.xcconfig`; a
-different HTTPS address typed in Settings overrides it on this iPad only. The
-server's validation, two-request limit, and timeout apply. Native apps send no
+The AI PC address is `SCIENCE_SERVER_HOST` from `Local.xcconfig`; Settings
+→ Advanced shows it with a *Test connection* button. The server's validation, two-request limit, and timeout apply. Native apps send no
 browser `Origin` header, so no server change is needed.
+
+## Settings
+
+Settings is kept simple for 10–13 year olds: **Tutor** mode and
+**Appearance**. Model files, the AI PC connection check, and the voice are on
+**Advanced (for grown-ups)**, which opens with a do-not-change warning.
 
 ## Read aloud
 
 Apps cannot use Siri's own voice. The app picks the best installed voice
 (Premium, then Enhanced, then Standard) for the answer's language, or the voice
-chosen in Settings → Read aloud. Download natural voices on the iPad in
+chosen in Settings → Advanced → Read aloud. Download natural voices on the iPad in
 Settings → Accessibility → Read & Speak → Voices.
 
 ## Adding files

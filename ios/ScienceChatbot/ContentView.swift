@@ -7,7 +7,6 @@ struct ContentView: View {
     @Environment(ModelStore.self) private var models
     @Environment(\.horizontalSizeClass) private var sizeClass
     @AppStorage("engineMode") private var engineChoice = EngineChoice.automatic.rawValue
-    @AppStorage("serverURL") private var serverURL = ""
     @State private var chat = ChatModel()
     @State private var network = NetworkMonitor()
     @State private var showSettings = false
@@ -17,7 +16,7 @@ struct ContentView: View {
     /// Engines to try, in order, for the mode chosen in Settings. Empty if
     /// nothing is set up yet.
     private var engines: [TutorEngine] {
-        let address = ServerAddress.effective(serverURL)
+        let address = ServerAddress.url ?? ""
         let local = models.selectedPath.map(LocalTutor.init(modelPath:))
         switch choice {
         case .remote:
