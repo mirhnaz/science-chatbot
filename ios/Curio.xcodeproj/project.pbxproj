@@ -31,7 +31,7 @@
 		3F2D0C1564104C23AF3B613B /* App.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = App.xcconfig; sourceTree = "<group>"; };
 		5A9672358DBE787F24899222 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		5DC7B15AA78E520137D7E6C4 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
-		69CBFB52AA72DBA38604AA78 /* Science Chatbot.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Science Chatbot.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		69CBFB52AA72DBA38604AA78 /* Curio.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Curio.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		747BC80080FBC496ADAC6E59 /* TutorEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorEngine.swift; sourceTree = "<group>"; };
 		7AA43593DB2BD41DC1BE745D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		8859FDC805BA135BC64B2C70 /* App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
@@ -85,12 +85,12 @@
 			children = (
 				D037A11EC7E3DD6F0AC7432F /* Packages */,
 				CC370AD0966FCAED985C28F0 /* science-chatbot */,
-				A120491D0AD8E68F3AD712CF /* ScienceChatbot */,
+				A120491D0AD8E68F3AD712CF /* Curio */,
 				A483AAAA4EFDC31B3473CEFE /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		A120491D0AD8E68F3AD712CF /* ScienceChatbot */ = {
+		A120491D0AD8E68F3AD712CF /* Curio */ = {
 			isa = PBXGroup;
 			children = (
 				8859FDC805BA135BC64B2C70 /* App.swift */,
@@ -107,13 +107,13 @@
 				F8A8239AA4721DD4FE59AEB6 /* Speech.swift */,
 				747BC80080FBC496ADAC6E59 /* TutorEngine.swift */,
 			);
-			path = ScienceChatbot;
+			path = Curio;
 			sourceTree = "<group>";
 		};
 		A483AAAA4EFDC31B3473CEFE /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				69CBFB52AA72DBA38604AA78 /* Science Chatbot.app */,
+				69CBFB52AA72DBA38604AA78 /* Curio.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -157,9 +157,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		1C0B41601248BBED062BC5AA /* ScienceChatbot */ = {
+		1C0B41601248BBED062BC5AA /* Curio */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 8249353E8FFE547592747691 /* Build configuration list for PBXNativeTarget "ScienceChatbot" */;
+			buildConfigurationList = 8249353E8FFE547592747691 /* Build configuration list for PBXNativeTarget "Curio" */;
 			buildPhases = (
 				14D2D5131397734B0650CD76 /* Sources */,
 				0DF717F7F4C1A8FB84EB9E10 /* Resources */,
@@ -169,14 +169,14 @@
 			);
 			dependencies = (
 			);
-			name = ScienceChatbot;
+			name = Curio;
 			packageProductDependencies = (
 				E689AF3302410BA320BF5CBE /* ScienceCore */,
 				6B7460FF07288AA0992A4D0E /* LlamaFramework */,
 				AD173C740F0663329D1DF01B /* KokoroFramework */,
 			);
-			productName = ScienceChatbot;
-			productReference = 69CBFB52AA72DBA38604AA78 /* Science Chatbot.app */;
+			productName = Curio;
+			productReference = 69CBFB52AA72DBA38604AA78 /* Curio.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -194,7 +194,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 520874C7F817A2D9A545A013 /* Build configuration list for PBXProject "ScienceChatbot" */;
+			buildConfigurationList = 520874C7F817A2D9A545A013 /* Build configuration list for PBXProject "Curio" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -213,7 +213,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				1C0B41601248BBED062BC5AA /* ScienceChatbot */,
+				1C0B41601248BBED062BC5AA /* Curio */,
 			);
 		};
 /* End PBXProject section */
@@ -326,13 +326,13 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = Accent;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				INFOPLIST_FILE = ScienceChatbot/Info.plist;
+				INFOPLIST_FILE = Curio/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = local.sciencechatbot.app;
-				PRODUCT_NAME = "Science Chatbot";
+				PRODUCT_BUNDLE_IDENTIFIER = local.curio.app;
+				PRODUCT_NAME = Curio;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -404,13 +404,13 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = Accent;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				INFOPLIST_FILE = ScienceChatbot/Info.plist;
+				INFOPLIST_FILE = Curio/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = local.sciencechatbot.app;
-				PRODUCT_NAME = "Science Chatbot";
+				PRODUCT_BUNDLE_IDENTIFIER = local.curio.app;
+				PRODUCT_NAME = Curio;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -419,7 +419,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		520874C7F817A2D9A545A013 /* Build configuration list for PBXProject "ScienceChatbot" */ = {
+		520874C7F817A2D9A545A013 /* Build configuration list for PBXProject "Curio" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				34CE14C064C8AA526FEDF4DB /* Debug */,
@@ -428,7 +428,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
-		8249353E8FFE547592747691 /* Build configuration list for PBXNativeTarget "ScienceChatbot" */ = {
+		8249353E8FFE547592747691 /* Build configuration list for PBXNativeTarget "Curio" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				476E25070A96DD93AACD51C1 /* Debug */,

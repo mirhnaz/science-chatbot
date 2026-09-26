@@ -1,7 +1,7 @@
 # Design
 
-The shared design for Science Chatbot. The iPad/iOS app implements it first
-(`ios/ScienceChatbot/ContentView.swift`), following Apple's Human Interface
+The shared design for Curio. The iPad/iOS app implements it first
+(`ios/Curio/ContentView.swift`), following Apple's Human Interface
 Guidelines for Liquid Glass (iOS/iPadOS 26 and later). The web app will adopt
 the same structure later; the web notes below say how. Until then, the web keeps
 its current two-panel layout ([FRONTEND.md](FRONTEND.md)).
@@ -11,7 +11,7 @@ its current two-panel layout ([FRONTEND.md](FRONTEND.md)).
 [design/curiosity-column.png](design/curiosity-column.png) (source:
 [design/curiosity-column.html](design/curiosity-column.html)) replaces the
 Ideas sidebar with one column where every "what next?" choice sits near the
-question box. Built in `ios/ScienceChatbot/ContentView.swift`:
+question box. Built in `ios/Curio/ContentView.swift`:
 
 - Fresh sessions centre the question box with four starter ideas; on the first
   question the box moves to the bottom.
@@ -66,7 +66,7 @@ iPad; the principles and tokens still apply to both.
 
 ```text
 ┌─────────────┬───────────────────────────────────────────┐
-│ Ideas   🎲  │          Science Chatbot        🔊   ⚙︎   │  glass toolbar
+│ Ideas   🎲  │          Curio        🔊   ⚙︎   │  glass toolbar
 │─────────────│             (Thinking… / Offline mode)    │
 │ Sparks      │  Why does a straw look bent?  (title)     │
 │ 🌈 Light    │  Answer text, max 680 pt/px wide          │
@@ -82,7 +82,7 @@ iPad; the principles and tokens still apply to both.
   question in body text, emoji icon). The dice button refreshes them. Picking
   one fills the question box and shows the selection; it does not send.
   History will live here later.
-- **Detail**: an inline title "Science Chatbot" and a subtitle that appears
+- **Detail**: an inline title "Curio" and a subtitle that appears
   only when useful ("Thinking…", "Offline mode", "Not set up yet").
 - **Toolbar buttons**: Read aloud (speaker ↔ stop) and Settings (gear),
   separated into two glass buttons.

@@ -1,4 +1,4 @@
-# Science Chatbot for iPad and iPhone
+# Curio for iPad and iPhone
 
 A native SwiftUI app with two ways to answer questions:
 
@@ -21,23 +21,23 @@ cases as `backend/tests/validation.rs`.
 ## Layout
 
 ```text
-ScienceChatbot.xcodeproj  Xcode project (committed; edit it in Xcode)
+Curio.xcodeproj  Xcode project (committed; edit it in Xcode)
 App.xcconfig         Shared build settings; includes the ignored Local.xcconfig
 ScienceCore/         Swift package: validation, reply decoding, JSON grammar, starter questions
 LlamaFramework/      Swift package wrapping llama.cpp's prebuilt xcframework (pinned release)
 KokoroFramework/     Swift package: sherpa-onnx + ONNX Runtime (pinned) and a small Kokoro wrapper
-ScienceChatbot/      App: SwiftUI screens, local and remote engines, model files, read aloud
+Curio/      App: SwiftUI screens, local and remote engines, model files, read aloud
 ```
 
 | File | Responsibility |
 | --- | --- |
-| `ScienceChatbot/LocalEngine.swift` | Loads the GGUF, applies the chat template, grammar-constrained generation |
-| `ScienceChatbot/RemoteEngine.swift` | `POST /api/chat` and `/healthz` on the Rust server |
-| `ScienceChatbot/ModelStore.swift` | Finds, imports, and downloads model files in Documents |
-| `ScienceChatbot/ChatModel.swift` | Screen state: question, reply, loading, cancel, starters |
-| `ScienceChatbot/NaturalVoice.swift` | Kokoro voice files (download, checksums) and sentence generation |
-| `ScienceChatbot/Speech.swift` | Read aloud: natural voice with gapless sentence queue, Apple voice fallback |
-| `ScienceChatbot/ContentView.swift` | Split view: Ideas sidebar, answer column, glass toolbar and compose bar ([design](../docs/DESIGN.md)) |
+| `Curio/LocalEngine.swift` | Loads the GGUF, applies the chat template, grammar-constrained generation |
+| `Curio/RemoteEngine.swift` | `POST /api/chat` and `/healthz` on the Rust server |
+| `Curio/ModelStore.swift` | Finds, imports, and downloads model files in Documents |
+| `Curio/ChatModel.swift` | Screen state: question, reply, loading, cancel, starters |
+| `Curio/NaturalVoice.swift` | Kokoro voice files (download, checksums) and sentence generation |
+| `Curio/Speech.swift` | Read aloud: natural voice with gapless sentence queue, Apple voice fallback |
+| `Curio/ContentView.swift` | Split view: Ideas sidebar, answer column, glass toolbar and compose bar ([design](../docs/DESIGN.md)) |
 | `ScienceCore/.../ReplyGrammar.swift` | GBNF grammar: the on-device version of Ollama's `format` schema |
 
 ## Build on the Mac
@@ -66,10 +66,10 @@ The team ID is the `OU=` value printed by
 or pick your Personal Team once in Xcode → Signing & Capabilities and copy it.
 Choosing a Team in that screen instead writes it into `project.pbxproj`; do not
 commit that change. If the bundle identifier is taken, change
-`local.sciencechatbot.app` to something unique.
+`local.curio.app` to something unique.
 
 ```sh
-open ios/ScienceChatbot.xcodeproj
+open ios/Curio.xcodeproj
 ```
 
 Connect the iPad with a cable, trust the Mac, and turn on
@@ -85,11 +85,11 @@ From the command line (the device ID comes from `xcrun devicectl list devices`):
 
 ```sh
 cd ios
-xcodebuild -project ScienceChatbot.xcodeproj -scheme ScienceChatbot \
+xcodebuild -project Curio.xcodeproj -scheme Curio \
   -destination 'id=<device-id>' -derivedDataPath /tmp/sc-build \
   -allowProvisioningUpdates build
 xcrun devicectl device install app --device <device-id> \
-  "/tmp/sc-build/Build/Products/Debug-iphoneos/Science Chatbot.app"
+  "/tmp/sc-build/Build/Products/Debug-iphoneos/Curio.app"
 ```
 
 ## Put the model on the iPad
@@ -103,10 +103,10 @@ Answers are a little simpler than the 8B model's. Choose one method:
 2. **Finder over a cable (no internet on the iPad)**: download the file on the
    Mac from
    <https://huggingface.co/unsloth/Qwen3-4B-Instruct-2507-GGUF>, then in Finder
-   select the iPad → **Files** → drag the `.gguf` onto *Science Chatbot*.
+   select the iPad → **Files** → drag the `.gguf` onto *Curio*.
    In the app, open Settings → Advanced → *Refresh list*. Or copy it from the Mac's
    terminal with the app installed:
-   `xcrun devicectl device copy to --device <device-id> --domain-type appDataContainer --domain-identifier local.sciencechatbot.app --source <file>.gguf --destination Documents/<file>.gguf`
+   `xcrun devicectl device copy to --device <device-id> --domain-type appDataContainer --domain-identifier local.curio.app --source <file>.gguf --destination Documents/<file>.gguf`
 3. **Files app**: Settings → Advanced → *Import model file…* and pick a `.gguf`.
 
 Then choose **On this iPad** or **Automatic** in Settings. The first question loads the model
@@ -170,8 +170,8 @@ in `project.pbxproj`); a file only on disk is not compiled.
 
 ```sh
 cd ios/ScienceCore && swift test        # validation, grammar, decoding, starters
-cd ios && xcodebuild -project ScienceChatbot.xcodeproj \
-  -scheme ScienceChatbot -destination 'generic/platform=iOS' \
+cd ios && xcodebuild -project Curio.xcodeproj \
+  -scheme Curio -destination 'generic/platform=iOS' \
   CODE_SIGNING_ALLOWED=NO build         # compile check without signing
 ```
 

@@ -60,7 +60,7 @@ test('theme synchronizes across tabs and resets when storage is cleared', async 
   b.events.DOMContentLoaded();
   b.events.storage({ key: 'unrelated', newValue: 'dark' });
   assert.equal(b.dataset.theme, 'light');
-  b.events.storage({ key: 'science-chatbot.theme.v1', newValue: 'dark' });
+  b.events.storage({ key: 'curio.theme.v1', newValue: 'dark' });
   assert.equal(b.dataset.theme, 'dark');
   assert.equal(b.select.value, 'dark');
   b.events.storage({ key: null, newValue: null });

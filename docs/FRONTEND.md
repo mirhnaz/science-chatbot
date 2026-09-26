@@ -13,7 +13,7 @@ Run `npm run build:frontend` after TypeScript changes. Both compiled scripts are
 served through the Rust asset allowlist. The theme script runs before CSS so a
 saved preference is applied before painting; no inline scripts or relaxed CSP
 are needed. The default follows the OS. Explicit choices persist in localStorage
-under `science-chatbot.theme.v1`; blocked storage still permits in-page selection.
+under `curio.theme.v1`; blocked storage still permits in-page selection.
 
 At desktop widths of at least 900 CSS pixels and heights of at least 600, the
 workspace fills the available viewport. The question and answer sit side by side;

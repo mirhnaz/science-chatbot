@@ -18,7 +18,7 @@ npm run typecheck
 npm run check:rust
 ```
 
-The release binary is `backend/target/release/science-chatbot-server`.
+The release binary is `backend/target/release/curio-server`.
 Keep `public/` and `build/client/app.js` under the deployment root. Set
 `WorkingDirectory` or `ASSET_ROOT` to that root. The running Rust server does not
 need Node or Cargo installed. Node.js is used only to compile the frontend and
@@ -29,7 +29,7 @@ run the TypeScript tests.
 Rust defaults to loopback port `11437`, so it can run beside the deployed service on `11436`:
 
 ```sh
-backend/target/release/science-chatbot-server
+backend/target/release/curio-server
 ```
 
 In another terminal:
@@ -46,29 +46,29 @@ side-by-side instance with Ctrl+C after checking it.
 
 ## Install or update the systemd service
 
-Inspect `systemctl cat science-chatbot-web.service` first, including any drop-ins.
+Inspect `systemctl cat curio-web.service` first, including any drop-ins.
 For an existing installation, preserve `User`, `WorkingDirectory`, all environment
 variables, especially `PUBLIC_ORIGIN` and `PORT=11436`, and enablement. The current
 service already runs Rust; removing the old Node source requires no restart.
 
-For a new installation, copy `deploy/science-chatbot-web.service` to
-`deploy/science-chatbot-web.local.service`. Customize the account, working
+For a new installation, copy `deploy/curio-web.service` to
+`deploy/curio-web.local.service`. Customize the account, working
 directory, absolute release-binary path, and public origin. Do not install the
 example values unchanged. Local unit copies are ignored by Git.
 
 After building and testing, install the customized unit:
 
 ```sh
-systemd-analyze verify deploy/science-chatbot-web.local.service
-sudo install -m 0644 deploy/science-chatbot-web.local.service /etc/systemd/system/science-chatbot-web.service
+systemd-analyze verify deploy/curio-web.local.service
+sudo install -m 0644 deploy/curio-web.local.service /etc/systemd/system/curio-web.service
 sudo systemctl daemon-reload
-sudo systemctl enable science-chatbot-web.service
-sudo systemctl restart science-chatbot-web.service
-systemctl status science-chatbot-web.service --no-pager
+sudo systemctl enable curio-web.service
+sudo systemctl restart curio-web.service
+systemctl status curio-web.service --no-pager
 curl --noproxy '*' --fail http://127.0.0.1:11436/healthz
 ```
 
-Expect the main process to be `science-chatbot-server` and health to report
+Expect the main process to be `curio-server` and health to report
 `{"status":"ok"}`. Check the existing public HTTPS URL for the page, assets,
 and a real question. Confirm `tailscale serve status` still shows the original
 mapping; do not run a new Serve/Funnel configuration command.
@@ -91,8 +91,8 @@ JavaScript backend, which has now been removed from this workspace.
 ## Operations
 
 ```sh
-journalctl -u science-chatbot-web.service -n 50 --no-pager
-systemctl is-enabled science-chatbot-web.service ollama.service tailscaled.service
+journalctl -u curio-web.service -n 50 --no-pager
+systemctl is-enabled curio-web.service ollama.service tailscaled.service
 tailscale serve status
 ```
 

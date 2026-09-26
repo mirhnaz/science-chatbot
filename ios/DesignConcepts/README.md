@@ -1,4 +1,4 @@
-# Science Chatbot icon concepts
+# Curio icon concepts
 
 `rocket-atom-concepts.png` contains the initial three-direction exploration:
 

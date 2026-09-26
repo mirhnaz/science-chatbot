@@ -62,7 +62,7 @@ later reduced, the selector can reuse excluded entries to fill the result.
 ## Browser behavior
 
 The page requests a batch on load and on “Surprise me.” It stores only the last
-40 displayed catalogue IDs under `science-chatbot.recent-suggestions.v1` in
+40 displayed catalogue IDs under `curio.recent-suggestions.v1` in
 `sessionStorage`. This survives reloads in the same tab and does not create an
 account, server-side profile, or saved conversation. If storage is unavailable,
 the same page still keeps recent IDs in memory.

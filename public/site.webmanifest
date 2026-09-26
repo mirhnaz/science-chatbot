@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "Science Chatbot",
-  "short_name": "Science Chatbot",
+  "name": "Curio",
+  "short_name": "Curio",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

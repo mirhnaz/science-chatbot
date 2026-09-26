@@ -2,12 +2,14 @@
 // Kept separate from chat behavior; failure to access storage never blocks the app.
 (() => {
   type Theme = 'system' | 'light' | 'dark';
-  const key = 'science-chatbot.theme.v1';
+  const key = 'curio.theme.v1';
+  // Before the rename to Curio; read once so a saved choice survives.
+  const legacyKey = 'science-chatbot.theme.v1';
   const system = window.matchMedia('(prefers-color-scheme: dark)');
   const valid = (value: unknown): value is Theme => value === 'system' || value === 'light' || value === 'dark';
   let preference: Theme = 'system';
   try {
-    const saved = localStorage.getItem(key);
+    const saved = localStorage.getItem(key) ?? localStorage.getItem(legacyKey);
     if (valid(saved)) preference = saved;
   } catch { /* Use the system theme when storage is unavailable. */ }
 

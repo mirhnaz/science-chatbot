@@ -1,7 +1,7 @@
 # App icon
 
-`science-chatbot-icon.png` is the rocket-and-atom app icon, a copy of the iOS
-`AppIcon` (`ios/ScienceChatbot/Assets.xcassets/AppIcon.appiconset/RocketAtomAppIcon.png`,
+`curio-icon.png` is the rocket-and-atom app icon, a copy of the iOS
+`AppIcon` (`ios/Curio/Assets.xcassets/AppIcon.appiconset/RocketAtomAppIcon.png`,
 1024 px; design history in `ios/DesignConcepts/`). macOS `sips` resized the full
 square composition without cropping into:
 

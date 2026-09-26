@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1200" viewBox="0 0 1920 1200" role="img" aria-labelledby="title description">
-<title id="title">How our Science Chatbot works</title>
+<title id="title">How Curio works</title>
 <desc id="description">Six numbered steps: ask a science question in a browser; the Rust app on our home computer checks it; the app adds tutor instructions; Qwen, running through Ollama on our home computer, creates a reply; the app checks the reply format; the browser displays the answer and three follow-up questions. An encrypted internet link connects the browser and computer. A dashed arrow shows that a follow-up starts a new question. Additional features include read aloud, cancellation and friendly error messages. AI can make mistakes.</desc>
 <defs>
 <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0L8 4L0 8Z" fill="#173453"/></marker>
@@ -7,8 +7,8 @@
 </defs>
 <rect width="1920" height="1200" fill="#FFFFFF"/>
 <g font-family="Noto Sans, sans-serif">
-<text x="60" y="48" font-size="17" font-weight="700" fill="#118579" text-anchor="start">SCIENCE CHATBOT  /  A CLASSROOM WALKTHROUGH</text>
-<text x="60" y="108" font-size="49" font-weight="700" fill="#173453" text-anchor="start">How our Science Chatbot works</text>
+<text x="60" y="48" font-size="17" font-weight="700" fill="#118579" text-anchor="start">CURIO  /  A CLASSROOM WALKTHROUGH</text>
+<text x="60" y="108" font-size="49" font-weight="700" fill="#173453" text-anchor="start">How Curio works</text>
 <text x="62" y="154" font-size="24" font-weight="400" fill="#53677E" text-anchor="start">From a curious question to an answer — and three new things to explore.</text>
 <path d="M1395 187H1434" fill="none" stroke="#173453" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#arrow)"/>
 <text x="1448" y="194" font-size="17" font-weight="400" fill="#53677E" text-anchor="start">Follow steps 1–6</text>

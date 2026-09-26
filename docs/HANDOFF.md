@@ -7,7 +7,7 @@ anything. Do not assume another agent has the preceding conversation.
 
 ## Current state
 
-Science Chatbot is a self-hosted science tutor for children aged 10–12, created
+Curio (formerly Science Chatbot) is a self-hosted science tutor for children aged 10–12, created
 by Ayaan and Naz Mir. It calls local Ollama with `qwen3:8b`. Questions are
 independent; replies contain an answer and three clickable follow-up questions.
 There is no login, database, persisted history, or response streaming yet.
@@ -131,7 +131,7 @@ the model is unloaded first; iOS apps do not exit that way, but keep it in mind.
 ### Xcode project and first device install (2026-09-26)
 
 XcodeGen was retired at the user's request (sole developer). The generated
-`ios/ScienceChatbot.xcodeproj` and `ios/ScienceChatbot/Info.plist` are now
+`ios/Curio.xcodeproj` and `ios/Curio/Info.plist` are now
 committed and edited in Xcode; `ios/project.yml` was deleted. Signing uses
 `ios/App.xcconfig`, which optionally includes the ignored
 `ios/Local.xcconfig` holding the personal `DEVELOPMENT_TEAM` and
@@ -247,11 +247,27 @@ view's full height. `ScrollViewReader`/`scrollTo(id:)` landed short here.
 
 Debugging notes: launch arguments such as `-theme dark` override saved
 settings for one launch. Debug builds accept `-autoAsk` (`xcrun devicectl device
-process launch --device <id> local.sciencechatbot.app -- -autoAsk`), which
+process launch --device <id> local.curio.app -- -autoAsk`), which
 asks the first spark and then a follow-up. Hang/crash reports are listed with
 `xcrun devicectl device info files --domain-type systemCrashLogs` and copied
 with `device copy from`. The iOS Simulator cannot build the app because the
 pinned llama.cpp framework has no simulator slice.
+
+### Renamed to Curio (2026-09-26)
+
+The app is now **Curio** everywhere: web title and manifest, iOS display name,
+Xcode project/target/scheme (`ios/Curio.xcodeproj`, `ios/Curio/`), iOS bundle
+ID `local.curio.app` (a new app on the iPad: the old one must be deleted and
+the Qwen model re-copied; the Michael voice re-downloaded), the Rust crate and
+binary `curio-server`, the npm package, the unit templates
+`deploy/curio-web.service` and `deploy/curio-caddy.service`, docs, diagrams,
+and the tutor prompt ("You are speaking as the Curio app"). Browser storage
+keys moved to `curio.*`; the theme falls back to the old key once. The GitHub
+repository and checkout folder are still named `science-chatbot`.
+
+**Live state:** mir-omarchy-pc still runs `science-chatbot-web.service` with
+the old `science-chatbot-server` binary until the planned switch (see
+[INSTALL.md](INSTALL.md)). Do not pull there until that switch is scheduled.
 
 ## Agreed direction, not yet implemented
 

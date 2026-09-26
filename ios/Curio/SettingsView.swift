@@ -17,7 +17,7 @@ struct SettingsView: View {
                     HStack(spacing: 16) {
                         BrandMark(size: 64)
                         VStack(alignment: .leading, spacing: 3) {
-                            Text("Science Chatbot").font(.title3.bold())
+                            Text("Curio").font(.title3.bold())
                             Text("Big questions. Everyday discoveries.")
                                 .font(.subheadline).foregroundStyle(.secondary)
                             MadeWithLove()

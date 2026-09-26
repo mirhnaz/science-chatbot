@@ -79,7 +79,7 @@ struct ContentView: View {
                 }
             }
             .animation(.snappy, value: chat.undoSteps != nil)
-            .navigationTitle(chat.steps.first?.question ?? "Science Chatbot")
+            .navigationTitle(chat.steps.first?.question ?? "Curio")
             .navigationBarTitleDisplayMode(.inline)
             .navigationSubtitle(subtitle)
             .toolbar {

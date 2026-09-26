@@ -8,7 +8,7 @@ npm test
 npm run typecheck
 npm run check:rust
 npm run build
-RUST_SERVER_BIN=backend/target/release/science-chatbot-server node --test build/test/*.test.js
+RUST_SERVER_BIN=backend/target/release/curio-server node --test build/test/*.test.js
 ```
 
 `npm test` builds the frontend, TypeScript test files, and debug Rust

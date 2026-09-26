@@ -1,4 +1,4 @@
-# Science Chatbot
+# Curio
 
 A self-hosted science tutor with a TypeScript browser frontend and a Rust backend
 that calls Ollama. It uses `qwen3:8b`, a fixed tutor prompt, and independent

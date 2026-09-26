@@ -1,18 +1,18 @@
-# Science Chatbot classroom diagram
+# Curio classroom diagram
 
 A classroom walkthrough of the current project, suitable for a child explaining
 it to a teacher. Follow the numbered arrows across the top, down the right, and
 back along the bottom. The dashed arrow starts another question.
 
-- [Presentation image](science-chatbot-workflow.png): 2880 × 1800 PNG; insert it
+- [Presentation image](curio-workflow.png): 2880 × 1800 PNG; insert it
   into a slide or print it in landscape orientation, fitted to the page.
-- [Editable diagram](science-chatbot-workflow.svg): scalable vector drawing with
+- [Editable diagram](curio-workflow.svg): scalable vector drawing with
   editable text and shapes. Open it in a vector editor or browser. It uses Noto
   Sans with a generic sans-serif fallback; text appearance may vary by computer.
 
 ## Speaking notes: about two minutes
 
-**Introduction:** “Our project is a science chatbot for children. You can ask a
+**Introduction:** “Our project, Curio, is a science chatbot for children. You can ask a
 science question and get an explanation plus three new questions to explore.
 The blue area is the screen we use. The green area shows what happens on our
 home computer.”
@@ -60,7 +60,7 @@ The SVG is the editable source; the PNG is its rendered copy. To regenerate the
 PNG with the existing system renderer:
 
 ```sh
-rsvg-convert -w 2880 -h 1800 -o docs/diagrams/science-chatbot-workflow.png docs/diagrams/science-chatbot-workflow.svg
+rsvg-convert -w 2880 -h 1800 -o docs/diagrams/curio-workflow.png docs/diagrams/curio-workflow.svg
 ```
 
 The exported image was visually checked for readable labels, arrow direction,

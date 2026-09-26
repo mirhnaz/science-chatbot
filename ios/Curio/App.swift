@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct ScienceChatbotApp: App {
+struct CurioApp: App {
     @State private var models = ModelStore()
     @State private var naturalVoice = NaturalVoiceStore()
     @AppStorage("theme") private var theme = "system"
