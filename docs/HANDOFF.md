@@ -279,6 +279,18 @@ Funnel is unchanged. Publicly: `/healthz` 200, the Curio page and its
 banner returned 404, and a real question was answered in 3.1 s with three
 follow-ups. The user created the unit and switched services with sudo.
 
+### Answer timing and latency (2026-09-26)
+
+Answers now show "Answered in N seconds" (device-measured; "· on this iPad"
+for offline answers) on the iPad and web, and the iPad remembers a
+successful AI PC check or answer for 60 s instead of checking `/healthz`
+before every question. Measured the same evening: Qwen on the RTX 5080 answers
+in 0.8–1.0 s; over the tailnet the whole request takes about 0.8 s, but
+through the public Funnel relay 2.5–3.7 s (connect 0.25 s, TLS 1.3–2.4 s). The
+iPad showed 5–6.6 s, so it was using the public Funnel path. Installing
+Tailscale on the iPad (same account) should make MagicDNS resolve the host
+to the tailnet address and cut this to about 1 s; not yet done or verified.
+
 ## Agreed direction, not yet implemented
 
 The user expects login, conversation history, and more functionality over time.
