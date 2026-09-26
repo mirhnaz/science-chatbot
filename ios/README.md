@@ -37,12 +37,13 @@ ScienceChatbot/      App: SwiftUI screens, local and remote engines, model files
 | `ScienceChatbot/ChatModel.swift` | Screen state: question, reply, loading, cancel, starters |
 | `ScienceChatbot/NaturalVoice.swift` | Kokoro voice files (download, checksums) and sentence generation |
 | `ScienceChatbot/Speech.swift` | Read aloud: natural voice with gapless sentence queue, Apple voice fallback |
-| `ScienceChatbot/Theme.swift` | Web colour palette (light and dark) and panel styles |
+| `ScienceChatbot/ContentView.swift` | Split view: Ideas sidebar, answer column, glass toolbar and compose bar ([design](../docs/DESIGN.md)) |
 | `ScienceCore/.../ReplyGrammar.swift` | GBNF grammar: the on-device version of Ollama's `format` schema |
 
 ## Build on the Mac
 
-Requirements: Xcode with the iOS platform installed, and an Apple ID.
+Requirements: Xcode with the iOS platform installed, and an Apple ID. The app
+needs iOS/iPadOS 26 or later (Liquid Glass).
 
 The Xcode project is committed and managed in Xcode; add or remove files
 there. `tutor.txt` and `questions.json` are referenced from `../backend/` as
