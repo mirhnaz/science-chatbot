@@ -102,8 +102,8 @@ selection. No new frontend dependencies or framework were needed. All 21 Rust
 checks and 27 HTTP/frontend checks, type checking, rustfmt, Clippy, and the release
 build passed. Chromium measurements covered laptop, mobile, and small/zoom-sized
 viewports, including long answers; see [VERIFICATION.md](VERIFICATION.md).
-The release binary includes the new `/theme.js` asset route. **The live service
-still needs a user-authorized restart** to load that route. Static assets are
+The release binary includes the new `/theme.js` asset route. The live service
+was restarted at 15:36 after that build; `/theme.js` returned 200 publicly. Static assets are
 already updated because the live server reads this checkout. No Funnel or unit
 configuration changed. Commit locally; push only when requested.
 
@@ -171,6 +171,16 @@ The user then reported the simplified Settings and Automatic mode working on
 the iPad. Apple's Premium voices were not good enough for the user; a custom
 text-to-speech approach is under discussion (not started). **Still
 unverified:** PC-off fallback and follow-ups/Stop were not reported separately.
+
+### Rocket-and-atom icon (2026-09-26)
+
+The user designed a new icon in Xcode (flat 1024 px PNG, `RocketAtomAppIcon.png`;
+design history in `ios/DesignConcepts/`). The web favicon, touch icon, manifest
+icons, and header logo were regenerated from it with `sips` (`?v=3` cache
+query); see [../assets/README.md](../assets/README.md). Pushed to `main` and
+fast-forwarded on mir-omarchy-pc; no restart was needed because the server
+reads `public/` from disk. All public icon files, the manifest, and `/` matched
+the repository byte-for-byte afterwards.
 
 ## Agreed direction, not yet implemented
 
