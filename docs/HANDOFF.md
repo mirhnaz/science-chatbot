@@ -193,9 +193,10 @@ set.) Implemented: `ios/KokoroFramework` (prebuilt sherpa-onnx and ONNX Runtime
 pinned by checksum, plus a small C-API wrapper), in-app download of the English
 files from a pinned Hugging Face revision with SHA-256 checks, and sentence-by-
 sentence gapless playback with Apple-voice fallback, all behind Settings →
-Advanced → Read aloud. It builds cleanly and was installed on the iPad. **Not
-yet verified on the iPad:** the download, first-sentence delay, generation
-speed on the M2, memory alongside Qwen, and Stop.
+Advanced → Read aloud. It builds cleanly and was installed on the iPad. The user
+reported the in-app download and Read aloud with the natural voice working
+on the iPad. **Not measured:** first-sentence delay, generation speed on the
+M2, memory alongside Qwen, and Stop were not reported separately.
 
 ## Agreed direction, not yet implemented
 
