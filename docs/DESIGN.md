@@ -116,40 +116,50 @@ Reconciled with the 2026-09 redesign
 the redesign wins where they conflict. It applies to the iOS app on both
 iPhone and iPad. "Was" records the replaced value.
 
-| Token | Value | Was (earlier design) |
-| --- | --- | --- |
-| Ground (page background) | `#FFF9F0` | system background |
-| Surface (cards, chips, buttons) | `#FFFFFF` | `.background.secondary`; controls on glass |
-| Border | `#EDE6DA`, 1.5 px | no borders ("hierarchy from type, not outlines") |
-| Ink | `#211E3B` | `.primary` |
-| Muted / labels | `#5B5775` / `#6B6785` | `.secondary` |
-| Placeholder, disabled icon | `#7A7690` | system |
-| Accent (brand, Space) | `#4F46C9` | `#4E45B6` (dark `#C1B2FF`) |
-| Accent tint / trail connector | `#E6E1FF` / `#CFC8FF` | accent at 9 % opacity |
-| Weather | fill `#DCEBFB`, fg `#1D5FA8` | — (emoji only) |
-| Animals | fill `#DBF3E3`, fg `#1F7A45` | — |
-| Space | fill `#E6E1FF`, fg `#4F46C9` | — |
-| Sound | fill `#FFE3D6`, fg `#B8452E` | — |
-| Success check | `#1F7A45` | — |
-| Locked stamp outline | `#D6CFC2`, 2 px dashed | — |
-| Heart (credit line) | `#E0554A` | ❤️ emoji |
-| Display type | Fredoka 500/600/700 | San Francisco |
-| Body type | Nunito 600/700/800 | San Francisco |
-| Answer text | 17/26, Nunito 600 | `.title3`, line spacing 6 |
-| Radius | cards 20, illustration 18, chips 14, bars/pills 24–26 | 16 everywhere |
-| Touch targets | ≥ 44 px; bar controls 48 | system |
-| Icons | 2 px stroke, round caps (Lucide-style); no emoji in chrome | SF Symbols and emoji |
-| Readable width (iPad) | 680 pt | unchanged, kept |
-| Bottom bar width (iPad) | 720 pt max | unchanged, kept |
+| Token | Light (design) | Dark (derived, to review) | Was (earlier design) |
+| --- | --- | --- | --- |
+| Ground (page background) | `#FFF9F0` | `#16142A` | system background |
+| Surface (cards, chips, buttons) | `#FFFFFF` | `#221F3A` | `.background.secondary`; controls on glass |
+| Border | `#EDE6DA`, 1.5 px | `#38345A` | no borders ("hierarchy from type, not outlines") |
+| Ink | `#211E3B` | `#F3F0FF` | `.primary` |
+| Muted / labels | `#5B5775` / `#6B6785` | `#BDB8D6` / `#A9A4C4` | `.secondary` |
+| Placeholder, disabled icon | `#7A7690` | `#8E89A8` | system |
+| Accent as text/icons (brand, Space) | `#4F46C9` | `#B8B0FF` | `#4E45B6` (dark `#C1B2FF`) |
+| Accent as fill under white text | `#4F46C9` | `#5E55D8` | same as accent |
+| Accent tint / trail connector | `#E6E1FF` / `#CFC8FF` | `#2B2650` / `#4A4480` | accent at 9 % opacity |
+| Weather | fill `#DCEBFB`, fg `#1D5FA8` | fill `#1B2B42`, fg `#8CC0F5` | — (emoji only) |
+| Animals | fill `#DBF3E3`, fg `#1F7A45` | fill `#173426`, fg `#7FD6A0` | — |
+| Space | fill `#E6E1FF`, fg `#4F46C9` | fill `#2B2650`, fg `#B8B0FF` | — |
+| Sound | fill `#FFE3D6`, fg `#B8452E` | fill `#3E2219`, fg `#F5A38C` | — |
+| Earth *(derived)* | fill `#F1E7D6`, fg `#7A5424` | fill `#33291B`, fg `#E0B98A` | — |
+| Electricity *(derived)* | fill `#D9F2F1`, fg `#116B69` | fill `#163332`, fg `#7AD6D2` | — |
+| Forces & motion *(derived)* | fill `#FCE1EC`, fg `#A3305F` | fill `#3B1D2B`, fg `#F29BC0` | — |
+| Light *(derived)* | fill `#FFF0C7`, fg `#855A00` | fill `#3A3016`, fg `#F2C766` | — |
+| Matter *(derived)* | fill `#EEE2F7`, fg `#77389F` | fill `#2F2140`, fg `#D3A6F0` | — |
+| Plants *(derived)* | fill `#E6F2D2`, fg `#4A6E12` | fill `#25321A`, fg `#B5D986` | — |
+| Success check | `#1F7A45` | `#7FD6A0` | — |
+| Locked stamp outline | `#D6CFC2`, 2 px dashed | `#4A4666` | — |
+| Heart (credit line) | `#E0554A` | `#F07A70` | ❤️ emoji |
+| Display type | Fredoka 500/600/700 | same | San Francisco |
+| Body type | Nunito 600/700/800 | same | San Francisco |
+| Answer text | 17/26, Nunito 600 | same | `.title3`, line spacing 6 |
+| Radius | cards 20, illustration 18, chips 14, bars/pills 24–26 | same | 16 everywhere |
+| Touch targets | ≥ 44 px; bar controls 48 | same | system |
+| Icons | 2 px stroke, round caps (Lucide-style); no emoji in chrome. iOS uses the closest SF Symbols | same | SF Symbols and emoji |
+| Readable width (iPad) | 680 pt | same | unchanged, kept |
+| Bottom bar width (iPad) | 720 pt max | same | unchanged, kept |
+
+Implemented in `ios/Curio/CurioTheme.swift`. Fredoka and Nunito (SIL Open Font
+License) are bundled in `ios/Curio/Fonts/`. The derived colours keep each
+category's hue; check them on the device before treating them as final.
 
 Principles superseded by the redesign: "controls on glass" (controls are now
 solid white with a border), "no borders or small spaced capitals" (section
 labels are 11–12 px uppercase), "platform colours so Dark Mode works" (fixed
 warm palette), and "Answered in N seconds" (dropped as an engineering metric).
 
-Gaps the redesign leaves open: the six other bank topics (Earth, Electricity,
-Forces & motion, Light, Matter, Plants) have no category colours, and there
-are no Dark Mode values.
+Gaps the redesign left open, filled here: colours for the six other bank
+topics and all Dark Mode values (both marked derived above).
 
 ## Web notes (for the later rollout)
 

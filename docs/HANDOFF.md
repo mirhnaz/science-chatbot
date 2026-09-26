@@ -291,6 +291,64 @@ iPad showed 5–6.6 s, so it was using the public Funnel path. Installing
 Tailscale on the iPad would cut this to about 1 s, but the user decided not
 to pursue it: the iPad keeps using the public Funnel path.
 
+### 2026-09 redesign: Home, Trail, Trail complete (2026-09-26, iOS)
+
+Source: [design/redesign-2026-09/curio-redesign-handoff.md](design/redesign-2026-09/curio-redesign-handoff.md)
+and its three `.dc.html` artboards. The user asked for the critique to apply
+to iPad as well as iPhone. Tokens are reconciled in [DESIGN.md](DESIGN.md)
+(redesign wins). Web (`src/client/`) is unchanged.
+
+User decisions on the open questions: trails are **5 steps**; Sparks are
+**shuffle-only** (no daily set); **one stamp per finished trail, unlimited**
+(counter is a total, row shows the latest four and a dashed "next");
+**dark tokens derived** by the agent (marked "to review" in DESIGN.md).
+
+Implemented (`774807f` Home, `29c62cf` Trail + Complete):
+- `CurioTheme.swift`: tokens, category styles for all 10 bank topics, the
+  shared `BottomBar`. Fredoka and Nunito bundled (`ios/Curio/Fonts/`, OFL).
+- `HomeView.swift`: greeting by first name (new Settings field "You", stored
+  in `@AppStorage("childName")` on the device), resume card with 5 dots,
+  Sparks 2×2 (4 across on iPad) with Shuffle, heart credit line.
+- `TrailView.swift`: header, numbered step rail, category illustration,
+  17/26 answer, two Dive deeper chips; New-spark carousel, Ask your own, and
+  "Answered in N seconds" removed. On step 5 the bar is replaced by Finish.
+- `CompleteView.swift`: stamp, recap (first sentence of answers 1, middle,
+  last), stamps row, Start a new spark, Show a grown-up (shares the recap
+  card as an image). `StampStore` keeps only topic + date + a random trail
+  ID in UserDefaults. A trail stays resumable until Finish is tapped.
+- Debug launch arguments: `-autoAsk` (first spark + one follow-up), then
+  `-autoHome` (back to Home to show the resume card) or `-autoComplete`
+  (follows Dive deeper to step 5 and opens Trail complete).
+
+Verified: unsigned and signed builds succeed with no warnings in the new
+files; `swift test` 9/9; derived colours ≥ 5.1:1 (light) and ≥ 7.1:1 (dark).
+The signed build was installed on the iPad. **Not verified visually:** the
+iPad was in use by someone else that night, so the agent did not launch
+the app or take screenshots after the first attempt. Check by hand: Home,
+resume card, Shuffle, trail rail/expand, Finish → Complete, share sheet,
+dark mode, Dynamic Type, iPhone layout, and that Fredoka/Nunito weights
+render (variable fonts; SwiftUI `.weight()` on `Font.custom`).
+
+Known contrast gaps in the design's own values (kept, redesign wins): Sound
+label `#B8452E` on `#FFE3D6` is 4.38:1 and placeholder `#7A7690` on white is
+4.36:1, just under WCAG AA 4.5:1 for small text.
+
+**Needs new feature development** (placeholders shipped instead):
+- Microphone / speech-to-text: not built; the bar has no mic. Needs Speech
+  framework, microphone and speech-recognition permissions, and a privacy
+  decision (on-device-only recognition for children).
+- Per-step illustrations: a generic per-category scene stands in. Real ones
+  need generation or a drawn library.
+- Short step labels ("Step 3 · The nucleus") and trail names ("Comets"):
+  the question and the starter topic stand in. Needs the tutor to return a
+  label, which changes the response schema/API contract.
+- Recap facts: first sentences stand in; generated facts need an extra
+  model call or schema change.
+- Resume across launches: trails live in memory only, so the resume card
+  disappears when the app is closed. Needs trail persistence (privacy
+  decision, ties into history).
+- Parent digest (open in the design): not started.
+
 ## Agreed direction, not yet implemented
 
 The user expects login, conversation history, and more functionality over time.
