@@ -10,11 +10,11 @@
 		14ECCAFD67004EC54F1A55B8 /* ChatModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C1FAE2985C7B6DEDAC0CAC7 /* ChatModel.swift */; };
 		2AB4726B43025D37406DD75C /* TutorEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 747BC80080FBC496ADAC6E59 /* TutorEngine.swift */; };
 		2B372D440549F52DFF4DF3C1 /* ModelStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9742A41C47D7419076FDA162 /* ModelStore.swift */; };
+		2F74D875F0EDFB545B8BB277 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DC7B15AA78E520137D7E6C4 /* NetworkMonitor.swift */; };
 		3667258F494F8DDBB90402E9 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A9672358DBE787F24899222 /* ContentView.swift */; };
 		4CD577A46103241B28F53109 /* questions.json in Resources */ = {isa = PBXBuildFile; fileRef = EDF52CCE772F2659CBB58973 /* questions.json */; };
 		5444D94E2E7A7FA12A08B8F7 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F461881EDE8DE76CEF375F0 /* Theme.swift */; };
 		5E9D1D54B1631216BCD8D9BC /* LocalEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D915168E0CA058C9F138059 /* LocalEngine.swift */; };
-		2F74D875F0EDFB545B8BB277 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DC7B15AA78E520137D7E6C4 /* NetworkMonitor.swift */; };
 		77C23C41241224B9B00D4AE7 /* Speech.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A8239AA4721DD4FE59AEB6 /* Speech.swift */; };
 		8B47A1C8920191F4D619ACFF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FAB26B4F62FED9798C4C9848 /* Assets.xcassets */; };
 		9AEB7EFFCF555F4CF6D9781B /* LlamaFramework in Frameworks */ = {isa = PBXBuildFile; productRef = 6B7460FF07288AA0992A4D0E /* LlamaFramework */; };
@@ -30,19 +30,19 @@
 		3F2D0C1564104C23AF3B613B /* App.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = App.xcconfig; sourceTree = "<group>"; };
 		4F461881EDE8DE76CEF375F0 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		5A9672358DBE787F24899222 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		69CBFB52AA72DBA38604AA78 /* ScienceChatbot.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = ScienceChatbot.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5DC7B15AA78E520137D7E6C4 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
+		69CBFB52AA72DBA38604AA78 /* Science Chatbot.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Science Chatbot.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		747BC80080FBC496ADAC6E59 /* TutorEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorEngine.swift; sourceTree = "<group>"; };
 		7AA43593DB2BD41DC1BE745D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		8859FDC805BA135BC64B2C70 /* App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
 		9742A41C47D7419076FDA162 /* ModelStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelStore.swift; sourceTree = "<group>"; };
-		9936692D2D25150F727E4D00 /* ScienceCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ScienceCore; path = ScienceCore; sourceTree = SOURCE_ROOT; };
+		9936692D2D25150F727E4D00 /* ScienceCore */ = {isa = PBXFileReference; lastKnownFileType = folder; path = ScienceCore; sourceTree = SOURCE_ROOT; };
 		9C1FAE2985C7B6DEDAC0CAC7 /* ChatModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatModel.swift; sourceTree = "<group>"; };
 		BEC8D6D8EB59AA236DB2D166 /* RemoteEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteEngine.swift; sourceTree = "<group>"; };
-		D4BA6F97377721ABAB8C05DE /* LlamaFramework */ = {isa = PBXFileReference; lastKnownFileType = folder; name = LlamaFramework; path = LlamaFramework; sourceTree = SOURCE_ROOT; };
+		D4BA6F97377721ABAB8C05DE /* LlamaFramework */ = {isa = PBXFileReference; lastKnownFileType = folder; path = LlamaFramework; sourceTree = SOURCE_ROOT; };
 		D93A94107CE05F1BB3343D5E /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		E12547E2EFB35175E491887F /* tutor.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = tutor.txt; sourceTree = "<group>"; };
 		EDF52CCE772F2659CBB58973 /* questions.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = questions.json; sourceTree = "<group>"; };
-		5DC7B15AA78E520137D7E6C4 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
 		F8A8239AA4721DD4FE59AEB6 /* Speech.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Speech.swift; sourceTree = "<group>"; };
 		FAB26B4F62FED9798C4C9848 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -110,7 +110,7 @@
 		A483AAAA4EFDC31B3473CEFE /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				69CBFB52AA72DBA38604AA78 /* ScienceChatbot.app */,
+				69CBFB52AA72DBA38604AA78 /* Science Chatbot.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -171,7 +171,7 @@
 				6B7460FF07288AA0992A4D0E /* LlamaFramework */,
 			);
 			productName = ScienceChatbot;
-			productReference = 69CBFB52AA72DBA38604AA78 /* ScienceChatbot.app */;
+			productReference = 69CBFB52AA72DBA38604AA78 /* Science Chatbot.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
