@@ -265,6 +265,11 @@ and the tutor prompt ("You are speaking as the Curio app"). Browser storage
 keys moved to `curio.*`; the theme falls back to the old key once. The GitHub
 repository and checkout folder are still named `science-chatbot`.
 
+Verified on the iPad: Curio (`local.curio.app`) built with a new profile
+after the user signed in to Xcode and approved keychain access, the old
+Science Chatbot app was removed, the Qwen GGUF was copied into Curio's
+Documents over the cable, and the user re-downloaded the Michael voice.
+
 **Live state:** mir-omarchy-pc still runs `science-chatbot-web.service` with
 the old `science-chatbot-server` binary until the planned switch (see
 [INSTALL.md](INSTALL.md)). Do not pull there until that switch is scheduled.
