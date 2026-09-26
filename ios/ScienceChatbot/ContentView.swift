@@ -424,6 +424,8 @@ struct UndoBanner: View {
 /// The steps of the current trail. Only the latest is open; earlier ones fold
 /// to their question, a preview, and the follow-up the child chose.
 struct TrailView: View {
+    private static let content = "trailContent"
+    private static let topPadding = 12.0
     let chat: ChatModel
     let speakingStep: UUID?
     let speak: (TrailStep) -> Void
@@ -432,6 +434,12 @@ struct TrailView: View {
     let retry: () -> Void
     @State private var expanded: Set<UUID> = []
     @State private var position = ScrollPosition(idType: UUID.self)
+    /// Height of the trail's scroll view; the latest step reserves this much
+    /// so the scroll can reach it (the dock's inset adds no scroll room).
+    @State private var visibleHeight = 0.0
+    /// Top of the latest step inside the trail content (not affected by
+    /// scrolling), used to scroll that step to the top.
+    @State private var latestTop = 0.0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -451,25 +459,45 @@ struct TrailView: View {
                             FoldedStep(step: step) { withAnimation(.smooth) { _ = expanded.insert(step.id) } }
                         }
                     }
+                    // The latest step reserves a screen's height, so its
+                    // question can scroll to the top and the answer fills in
+                    // below it in view (the end of the content would
+                    // otherwise stop the scroll short).
+                    .frame(minHeight: latest ? visibleHeight : nil, alignment: .top)
+                    .onGeometryChange(for: Double.self) { proxy in
+                        proxy.frame(in: .named(Self.content)).minY
+                    } action: { top in
+                        if latest { latestTop = top }
+                    }
                     .id(step.id)
                 }
             }
-            .scrollTargetLayout()
+            .coordinateSpace(.named(Self.content))
             .frame(maxWidth: 680, alignment: .leading)
             .padding(.horizontal, 24)
-            .padding(.top, 12)
+            .padding(.top, Self.topPadding)
             .frame(maxWidth: .infinity)
         }
+        // The scroll view's own size, not its content: cannot loop.
+        .onGeometryChange(for: Double.self) { proxy in
+            proxy.size.height
+        } action: { visibleHeight = $0 }
         .scrollPosition($position)
         .scrollDismissesKeyboard(.interactively)
         .scrollEdgeEffectStyle(.soft, for: .bottom)
         .onChange(of: chat.steps.last?.id) { _, id in
-            guard let id else { return }
-            // Fold the earlier steps and glide to the new one together, so
-            // the page does not shift under the scroll.
-            withAnimation(trailAnimation(reduceMotion)) {
-                expanded = []
-                position.scrollTo(id: id, anchor: .top)
+            guard id != nil else { return }
+            // First fold the earlier steps, then glide the new question to the
+            // top. A scroll asked for while the fold is still animating is
+            // dropped by SwiftUI, so the glide waits for it to settle.
+            let fold = reduceMotion ? 0.15 : 0.3
+            withAnimation(.smooth(duration: fold)) { expanded = [] }
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(fold + 0.05))
+                withAnimation(trailAnimation(reduceMotion)) {
+                    // latestTop is measured inside the padded content.
+                    position.scrollTo(y: latestTop + Self.topPadding - 8)
+                }
             }
         }
     }
