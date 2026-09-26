@@ -24,6 +24,11 @@ question box. Built in `ios/Curio/ContentView.swift`:
 - Each trail becomes one History entry later, so there is no "New chat"
   button; until then, a replaced trail can be restored with Undo.
 - Read aloud moves onto each answer; the toolbar keeps only Settings.
+- Phones (iPhone, narrow web): the question box sits at the bottom from the
+  start, with the hero and compact Sparks scrolling above; iPad and wide
+  windows centre it.
+- The question box is a filled field with a thin outline (not see-through
+  glass, which vanished on a light background); the send button keeps glass.
 - The dock is a `safeAreaBar`, so the trail fades and blurs beneath it like
   under the toolbar (web: a gradient mask or `backdrop-filter` behind the
   sticky dock).

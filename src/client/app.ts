@@ -84,6 +84,8 @@ function element<K extends keyof HTMLElementTagNameMap>(tag: K, className?: stri
 }
 
 const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+/** Phones keep the question box in the dock even on the fresh screen. */
+const phoneQuery = window.matchMedia('(max-width: 600px)');
 
 // ---- State ---------------------------------------------------------------
 
@@ -297,13 +299,15 @@ function show(update: () => void) {
 
 function render() {
   const fresh = steps.length === 0;
+  const centred = fresh && !phoneQuery.matches;
   document.body.setAttribute('data-view', fresh ? 'fresh' : 'trail');
+  document.body.setAttribute('data-dock', centred ? 'off' : 'on');
   $('fresh').hidden = !fresh;
   $('trail').hidden = fresh;
   $('new-spark').hidden = fresh;
-  const target = fresh ? 'fresh' : 'dock';
+  const target = centred ? 'fresh' : 'dock';
   if (composeIn !== target) {
-    $(fresh ? 'fresh-compose' : 'dock-compose').append($('question-form'));
+    $(centred ? 'fresh-compose' : 'dock-compose').append($('question-form'));
     composeIn = target;
   }
   $('question').placeholder = fresh ? 'Ask a science question…' : 'Ask more about this…';
@@ -472,6 +476,7 @@ $('ask-own').addEventListener('click', askOwn);
 $('undo-button').addEventListener('click', undo);
 synthesis?.addEventListener('voiceschanged', renderTrail);
 window.addEventListener('pagehide', () => { controller?.abort('cancel'); stopSpeech(); });
+phoneQuery.addEventListener?.('change', () => render());
 
 render();
 void refreshSparks();

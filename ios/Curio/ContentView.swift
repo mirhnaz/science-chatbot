@@ -12,6 +12,7 @@ import SwiftUI
 struct ContentView: View {
     @Environment(ModelStore.self) private var models
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @AppStorage("engineMode") private var engineChoice = EngineChoice.automatic.rawValue
     @State private var chat = ChatModel()
     @State private var network = NetworkMonitor()
@@ -45,11 +46,21 @@ struct ContentView: View {
     var body: some View {
         NavigationStack {
             Group {
-                if fresh {
+                if fresh && sizeClass != .compact {
                     FreshSession(chat: chat, start: startTrail, edit: edit) {
                         compose.matchedGeometryEffect(id: "compose", in: glide)
                     }
                     .transition(.opacity)
+                } else if fresh {
+                    // iPhone: Sparks scroll above, the question box stays at
+                    // the bottom within thumb reach, like Messages.
+                    FreshSession(chat: chat, start: startTrail, edit: edit) { EmptyView() }
+                        .safeAreaBar(edge: .bottom) {
+                            compose.matchedGeometryEffect(id: "compose", in: glide)
+                                .padding(.horizontal, 16)
+                                .padding(.bottom, 8)
+                        }
+                        .transition(.opacity)
                 } else {
                     TrailView(chat: chat, speakingStep: speakingStep,
                               speak: toggleSpeech, dive: { text in continueTrail { chat.ask(text, using: engines) } },
@@ -245,14 +256,17 @@ struct MadeWithLove: View {
 
 /// Shown before the first question, with the large brand mark.
 struct Hero: View {
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
     var body: some View {
-        VStack(spacing: 16) {
-            BrandMark(size: 96)
+        let compact = sizeClass == .compact
+        VStack(spacing: compact ? 10 : 16) {
+            BrandMark(size: compact ? 64 : 96)
             Text("A little curiosity.\nA whole world to explore.")
-                .font(.largeTitle.bold())
+                .font(compact ? .title.bold() : .largeTitle.bold())
                 .multilineTextAlignment(.center)
         }
-        .padding(.bottom, 24)
+        .padding(.bottom, compact ? 8 : 24)
     }
 }
 
@@ -261,23 +275,26 @@ struct StarterIdeas: View {
     let chat: ChatModel
     let start: (Suggestion) -> Void
     let edit: (String) -> Void
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     var body: some View {
+        let compact = sizeClass == .compact
         VStack(alignment: .leading, spacing: 10) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Sparks").font(.headline)
                 Text("Pick one to start exploring").font(.subheadline).foregroundStyle(.secondary)
             }
             .padding(.leading, 6)
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 260), spacing: 10)], spacing: 10) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 260), spacing: 10)], spacing: compact ? 8 : 10) {
                 ForEach(chat.suggestions) { idea in
                     Button { start(idea) } label: {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("\(idea.icon) \(idea.topic)").font(.footnote).foregroundStyle(.secondary)
                             Text(idea.question).font(.body).multilineTextAlignment(.leading)
                         }
-                        .frame(maxWidth: .infinity, minHeight: 64, alignment: .topLeading)
-                        .padding(14)
+                        .frame(maxWidth: .infinity, minHeight: compact ? nil : 64, alignment: .topLeading)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, compact ? 10 : 14)
                         .background(.background.secondary, in: .rect(cornerRadius: 16))
                         .contentShape(.rect(cornerRadius: 16))
                     }
@@ -294,7 +311,7 @@ struct StarterIdeas: View {
                 .frame(maxWidth: .infinity)
                 .padding(.top, 4)
         }
-        .padding(.top, 20)
+        .padding(.top, compact ? 16 : 20)
     }
 }
 
@@ -359,7 +376,10 @@ struct ComposeBar: View {
                     .submitLabel(.send)
                     .padding(.horizontal, 18)
                     .padding(.vertical, 13)
-                    .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 24))
+                    // Filled with a thin outline, like system search fields:
+                    // plain glass disappeared on a white background.
+                    .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 24))
+                    .overlay(RoundedRectangle(cornerRadius: 24).strokeBorder(Color(.separator)))
                     .accessibilityLabel("Your science question")
                     .onChange(of: chat.question) { _, text in
                         // Return sends, like Messages; a vertical field would
