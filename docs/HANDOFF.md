@@ -133,9 +133,9 @@ the model is unloaded first; iOS apps do not exit that way, but keep it in mind.
 XcodeGen was retired at the user's request (sole developer). The generated
 `ios/ScienceChatbot.xcodeproj` and `ios/ScienceChatbot/Info.plist` are now
 committed and edited in Xcode; `ios/project.yml` was deleted. Signing uses
-`ios/Signing.xcconfig`, which optionally includes the ignored
-`ios/Signing.local.xcconfig` holding the personal `DEVELOPMENT_TEAM`, so the
-team ID stays out of Git. Choosing a Team in Xcode's UI would write it into
+`ios/App.xcconfig`, which optionally includes the ignored
+`ios/Local.xcconfig` holding the personal `DEVELOPMENT_TEAM` and
+`SCIENCE_SERVER_HOST`, so neither the team ID nor the hostname is in Git. Choosing a Team in Xcode's UI would write it into
 `project.pbxproj` instead; avoid committing that.
 
 Verified: a signed Debug build (free Personal Team, automatic provisioning)
@@ -148,6 +148,21 @@ plain header row, and in-panel scrolling; the landscape dark-mode layout was
 checked with `xcrun devicectl device capture screenshot`. **Still
 unverified:** portrait/light layouts, model load time, memory, answer speed,
 follow-ups, Stop, Read aloud, and remote mode. The free-profile install expires after 7 days.
+
+### Automatic mode and voices (2026-09-26)
+
+User-verified on the iPad: portrait and light layouts, and local answers
+averaging about 10 s. The app now defaults to **Automatic**: AI PC first via
+the build-time `SCIENCE_SERVER_HOST` (Info.plist `ScienceServerHost`), falling
+back to the on-device model when offline (`NWPathMonitor`), when a 4 s
+`/healthz` preflight fails, or on 429/502/503. The stored setting key changed
+from `engine` to `engineMode` so existing installs start in Automatic. Read
+aloud picks the best installed Premium/Enhanced voice for the answer's language
+(NaturalLanguage detection) with an optional Settings choice; Siri voices are
+not available to apps. Built, installed, and launched on the iPad; the header
+showed "Automatic · My AI PC" and the PC's `/healthz` returned 200 from the Mac.
+**Still unverified on the iPad:** a real remote answer, airplane-mode fallback,
+PC-off fallback, voice quality, follow-ups, Stop, and Read aloud.
 
 ## Agreed direction, not yet implemented
 

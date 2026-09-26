@@ -14,6 +14,7 @@
 		4CD577A46103241B28F53109 /* questions.json in Resources */ = {isa = PBXBuildFile; fileRef = EDF52CCE772F2659CBB58973 /* questions.json */; };
 		5444D94E2E7A7FA12A08B8F7 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F461881EDE8DE76CEF375F0 /* Theme.swift */; };
 		5E9D1D54B1631216BCD8D9BC /* LocalEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D915168E0CA058C9F138059 /* LocalEngine.swift */; };
+		2F74D875F0EDFB545B8BB277 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DC7B15AA78E520137D7E6C4 /* NetworkMonitor.swift */; };
 		77C23C41241224B9B00D4AE7 /* Speech.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A8239AA4721DD4FE59AEB6 /* Speech.swift */; };
 		8B47A1C8920191F4D619ACFF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FAB26B4F62FED9798C4C9848 /* Assets.xcassets */; };
 		9AEB7EFFCF555F4CF6D9781B /* LlamaFramework in Frameworks */ = {isa = PBXBuildFile; productRef = 6B7460FF07288AA0992A4D0E /* LlamaFramework */; };
@@ -26,7 +27,7 @@
 
 /* Begin PBXFileReference section */
 		2D915168E0CA058C9F138059 /* LocalEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalEngine.swift; sourceTree = "<group>"; };
-		3F2D0C1564104C23AF3B613B /* Signing.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Signing.xcconfig; sourceTree = "<group>"; };
+		3F2D0C1564104C23AF3B613B /* App.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = App.xcconfig; sourceTree = "<group>"; };
 		4F461881EDE8DE76CEF375F0 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		5A9672358DBE787F24899222 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		69CBFB52AA72DBA38604AA78 /* ScienceChatbot.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = ScienceChatbot.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -41,6 +42,7 @@
 		D93A94107CE05F1BB3343D5E /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		E12547E2EFB35175E491887F /* tutor.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = tutor.txt; sourceTree = "<group>"; };
 		EDF52CCE772F2659CBB58973 /* questions.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = questions.json; sourceTree = "<group>"; };
+		5DC7B15AA78E520137D7E6C4 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
 		F8A8239AA4721DD4FE59AEB6 /* Speech.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Speech.swift; sourceTree = "<group>"; };
 		FAB26B4F62FED9798C4C9848 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -97,6 +99,7 @@
 				9742A41C47D7419076FDA162 /* ModelStore.swift */,
 				BEC8D6D8EB59AA236DB2D166 /* RemoteEngine.swift */,
 				D93A94107CE05F1BB3343D5E /* SettingsView.swift */,
+				5DC7B15AA78E520137D7E6C4 /* NetworkMonitor.swift */,
 				F8A8239AA4721DD4FE59AEB6 /* Speech.swift */,
 				4F461881EDE8DE76CEF375F0 /* Theme.swift */,
 				747BC80080FBC496ADAC6E59 /* TutorEngine.swift */,
@@ -134,7 +137,7 @@
 		D5052FF1175FDFF2A473E657 /* ios */ = {
 			isa = PBXGroup;
 			children = (
-				3F2D0C1564104C23AF3B613B /* Signing.xcconfig */,
+				3F2D0C1564104C23AF3B613B /* App.xcconfig */,
 			);
 			path = ios;
 			sourceTree = "<group>";
@@ -234,6 +237,7 @@
 				2B372D440549F52DFF4DF3C1 /* ModelStore.swift in Sources */,
 				EA27D9F149954A2F90882C06 /* RemoteEngine.swift in Sources */,
 				DC4F51F8EC35618EED02F1F9 /* SettingsView.swift in Sources */,
+				2F74D875F0EDFB545B8BB277 /* NetworkMonitor.swift in Sources */,
 				77C23C41241224B9B00D4AE7 /* Speech.swift in Sources */,
 				5444D94E2E7A7FA12A08B8F7 /* Theme.swift in Sources */,
 				2AB4726B43025D37406DD75C /* TutorEngine.swift in Sources */,
@@ -310,7 +314,7 @@
 		};
 		476E25070A96DD93AACD51C1 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 3F2D0C1564104C23AF3B613B /* Signing.xcconfig */;
+			baseConfigurationReference = 3F2D0C1564104C23AF3B613B /* App.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = Accent;
@@ -388,7 +392,7 @@
 		};
 		BE80639AB09863B75262E40F /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 3F2D0C1564104C23AF3B613B /* Signing.xcconfig */;
+			baseConfigurationReference = 3F2D0C1564104C23AF3B613B /* App.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = Accent;

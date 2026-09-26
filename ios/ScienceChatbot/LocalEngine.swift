@@ -167,6 +167,7 @@ actor LocalEngine {
 
 /// Adapts the shared actor to the TutorEngine protocol for one model file.
 struct LocalTutor: TutorEngine {
+    var name: String { EngineChoice.local.label }
     let modelPath: String
 
     func ask(_ question: String) async throws -> TutorReply {

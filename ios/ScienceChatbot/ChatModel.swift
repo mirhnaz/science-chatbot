@@ -27,7 +27,9 @@ final class ChatModel {
         recent.record(suggestions)
     }
 
-    func ask(_ text: String? = nil, using engine: TutorEngine?) {
+    /// `engines` is in preference order. If one cannot be reached, the next
+    /// is tried (Automatic mode: AI PC, then this iPad).
+    func ask(_ text: String? = nil, using engines: [TutorEngine]) {
         if let text { question = text }
         let question: String
         do {
@@ -36,7 +38,7 @@ final class ChatModel {
             errorText = (error as? ValidationError)?.description
             return
         }
-        guard let engine else {
+        guard !engines.isEmpty else {
             errorText = "Choose a tutor in Settings: download a model or enter your AI PC address."
             return
         }
@@ -51,10 +53,13 @@ final class ChatModel {
 
         task = Task {
             do {
-                let result = try await engine.ask(question)
+                let (result, source) = try await Self.firstAnswer(question, from: engines) { name in
+                    self.status = "Working on your answer on \(name)…"
+                }
                 try Task.checkCancellation()
                 reply = result
-                status = String(format: "Answered in %.1f seconds.", Date().timeIntervalSince(started))
+                let seconds = String(format: "%.1f", Date().timeIntervalSince(started))
+                status = "Answered by \(source) in \(seconds) seconds."
             } catch is CancellationError {
                 status = "Question cancelled."
             } catch {
@@ -67,5 +72,22 @@ final class ChatModel {
 
     func cancel() {
         task?.cancel()
+    }
+
+    /// Tries each engine in order; moves on only for "can't reach it" errors.
+    /// `switching` reports the engine being tried after a fallback.
+    private static func firstAnswer(
+        _ question: String, from engines: [TutorEngine], switching: (String) -> Void
+    ) async throws -> (TutorReply, String) {
+        for (index, engine) in engines.enumerated() {
+            if index > 0 { switching(engine.name) }
+            do {
+                return (try await engine.ask(question), engine.name)
+            } catch let error as TutorError where error.allowsFallback && index < engines.count - 1 {
+                try Task.checkCancellation()
+                continue
+            }
+        }
+        throw TutorError.unreachable  // not reached: the last engine rethrows
     }
 }

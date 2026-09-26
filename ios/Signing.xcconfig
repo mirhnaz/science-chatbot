@@ -1,5 +1,0 @@
-// Code signing. Committed defaults; personal values go in the ignored
-// Signing.local.xcconfig next to this file, for example:
-//   DEVELOPMENT_TEAM = ABCDE12345
-DEVELOPMENT_TEAM =
-#include? "Signing.local.xcconfig"

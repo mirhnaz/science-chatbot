@@ -22,7 +22,7 @@ cases as `backend/tests/validation.rs`.
 
 ```text
 ScienceChatbot.xcodeproj  Xcode project (committed; edit it in Xcode)
-Signing.xcconfig     Signing defaults; includes the ignored Signing.local.xcconfig
+App.xcconfig         Shared build settings; includes the ignored Local.xcconfig
 ScienceCore/         Swift package: validation, reply decoding, JSON grammar, starter questions
 LlamaFramework/      Swift package wrapping llama.cpp's prebuilt xcframework (pinned release)
 ScienceChatbot/      App: SwiftUI screens, local and remote engines, model files, read aloud
@@ -45,12 +45,16 @@ The Xcode project is committed and managed in Xcode; add or remove files
 there. `tutor.txt` and `questions.json` are referenced from `../backend/` as
 app resources, not copied.
 
-Your Apple team ID stays out of Git. Create `ios/Signing.local.xcconfig`
-(ignored) containing one line:
+Your Apple team ID and the AI PC's hostname stay out of Git. Create
+`ios/Local.xcconfig` (ignored):
 
 ```text
 DEVELOPMENT_TEAM = ABCDE12345
+SCIENCE_SERVER_HOST = your-pc.your-tailnet.ts.net
 ```
+
+`SCIENCE_SERVER_HOST` (host only, no `https://`) becomes the app's default AI
+PC address; leave it out to type the address in Settings instead.
 
 The team ID is the `OU=` value printed by
 `security find-certificate -c "Apple Development" -p | openssl x509 -noout -subject`,
@@ -108,10 +112,32 @@ too large for most iPads. On an 8 GB M-series iPad, 4B Q4 is the sweet spot.
 
 ## Use the AI PC
 
-Choose **My AI PC** in Settings and enter the server's HTTPS address (for
-example the Tailscale Funnel URL), then *Test connection*. The address is saved
-only on the iPad. The server's validation, two-request limit, and timeout apply.
-Native apps send no browser `Origin` header, so no server change is needed.
+Settings → Tutor has three modes:
+
+- **Automatic** (default): asks the AI PC; falls back to the model on this
+  iPad when there is no network (airplane mode skips the PC at once), when a
+  4-second `/healthz` check fails, or when the server replies 429 (busy),
+  502 (Ollama offline or unclear reply), or 503 (restarting). A 504 timeout
+  and validation errors are shown instead, not retried locally. The status
+  line names which one answered.
+- **My AI PC**: always the server. **On this iPad**: always local.
+
+The AI PC address defaults to `SCIENCE_SERVER_HOST` from `Local.xcconfig`; a
+different HTTPS address typed in Settings overrides it on this iPad only. The
+server's validation, two-request limit, and timeout apply. Native apps send no
+browser `Origin` header, so no server change is needed.
+
+## Read aloud
+
+Apps cannot use Siri's own voice. The app picks the best installed voice
+(Premium, then Enhanced, then Standard) for the answer's language, or the voice
+chosen in Settings → Read aloud. Download natural voices on the iPad in
+Settings → Accessibility → Read & Speak → Voices.
+
+## Adding files
+
+Xcode manages the project, so add new Swift files in Xcode (or register them
+in `project.pbxproj`); a file only on disk is not compiled.
 
 ## Checks
 

@@ -1,0 +1,8 @@
+// Build settings shared by Debug and Release. Personal values go in the
+// ignored Local.xcconfig next to this file, for example:
+//   DEVELOPMENT_TEAM = ABCDE12345
+//   SCIENCE_SERVER_HOST = your-pc.your-tailnet.ts.net
+DEVELOPMENT_TEAM =
+// Default AI PC host (HTTPS). Empty means the user enters it in Settings.
+SCIENCE_SERVER_HOST =
+#include? "Local.xcconfig"

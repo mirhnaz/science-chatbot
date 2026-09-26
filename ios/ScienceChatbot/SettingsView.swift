@@ -1,24 +1,31 @@
+import AVFoundation
 import SwiftUI
 import UniformTypeIdentifiers
 
 struct SettingsView: View {
     @Environment(ModelStore.self) private var models
     @Environment(\.dismiss) private var dismiss
-    @AppStorage("engine") private var engineChoice = EngineChoice.local.rawValue
+    @AppStorage("engineMode") private var engineChoice = EngineChoice.automatic.rawValue
     @AppStorage("serverURL") private var serverURL = ""
     @AppStorage("theme") private var theme = "system"
     @State private var importing = false
     @State private var connection: String?
+    @AppStorage(Speech.voiceKey) private var voiceID = ""
+    @State private var speech = Speech()
 
     var body: some View {
         @Bindable var models = models
         NavigationStack {
             Form {
-                Section("Tutor") {
+                Section {
                     Picker("Answer questions using", selection: $engineChoice) {
                         ForEach(EngineChoice.allCases) { Text($0.label).tag($0.rawValue) }
                     }
                     .pickerStyle(.segmented)
+                } header: {
+                    Text("Tutor")
+                } footer: {
+                    Text(modeHelp)
                 }
 
                 Section {
@@ -50,14 +57,14 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    TextField("https://your-pc.tailnet.ts.net", text: $serverURL)
+                    TextField(ServerAddress.builtIn ?? "https://your-pc.tailnet.ts.net", text: $serverURL)
                         .keyboardType(.URL)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                     Button("Test connection") {
                         connection = "Checking…"
                         Task {
-                            guard let remote = RemoteEngine(address: serverURL) else {
+                            guard let remote = RemoteEngine(address: ServerAddress.effective(serverURL)) else {
                                 connection = "Enter a full address starting with https://"
                                 return
                             }
@@ -70,7 +77,25 @@ struct SettingsView: View {
                 } header: {
                     Text("My AI PC")
                 } footer: {
-                    Text("The Science Chatbot server address, for example your Tailscale Funnel URL.")
+                    Text(ServerAddress.builtIn == nil
+                         ? "The Science Chatbot server address, for example your Tailscale Funnel URL."
+                         : "Leave empty to use the built-in address shown above.")
+                }
+
+                Section {
+                    Picker("Voice", selection: $voiceID) {
+                        Text("Automatic (best installed)").tag("")
+                        ForEach(Speech.voices(language: Speech.deviceLanguage), id: \.identifier) { voice in
+                            Text("\(voice.name) · \(voice.quality.label) · \(voice.language)").tag(voice.identifier)
+                        }
+                    }
+                    Button("Preview voice", systemImage: "speaker.wave.2") {
+                        speech.preview(AVSpeechSynthesisVoice(identifier: voiceID))
+                    }
+                } header: {
+                    Text("Read aloud")
+                } footer: {
+                    Text("For more natural voices, download a Premium or Enhanced voice in the iPad’s Settings → Accessibility → Read & Speak → Voices, then return here. Siri’s own voice is not available to apps.")
                 }
 
                 Section("Appearance") {
@@ -87,7 +112,19 @@ struct SettingsView: View {
                 if case .success(let url) = result { models.importModel(from: url) }
             }
             .onAppear { models.refresh() }
+            .onDisappear { speech.stop() }
         }
         .tint(Palette.accent)
+    }
+
+    private var modeHelp: String {
+        switch EngineChoice(rawValue: engineChoice) ?? .automatic {
+        case .automatic:
+            return "Uses your AI PC over the internet. Without internet (for example airplane mode), or if the PC cannot answer, uses the model on this iPad."
+        case .remote:
+            return "Always uses your AI PC. Needs internet."
+        case .local:
+            return "Always uses the model on this iPad. Works offline."
+        }
     }
 }

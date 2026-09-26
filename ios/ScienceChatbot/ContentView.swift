@@ -6,17 +6,29 @@ import SwiftUI
 struct ContentView: View {
     @Environment(ModelStore.self) private var models
     @Environment(\.horizontalSizeClass) private var sizeClass
-    @AppStorage("engine") private var engineChoice = EngineChoice.local.rawValue
+    @AppStorage("engineMode") private var engineChoice = EngineChoice.automatic.rawValue
     @AppStorage("serverURL") private var serverURL = ""
     @State private var chat = ChatModel()
+    @State private var network = NetworkMonitor()
     @State private var showSettings = false
 
-    /// Builds the engine chosen in Settings, or nil if it is not set up yet.
-    private var engine: TutorEngine? {
-        if engineChoice == EngineChoice.remote.rawValue {
-            return RemoteEngine(address: serverURL)
+    private var choice: EngineChoice { EngineChoice(rawValue: engineChoice) ?? .automatic }
+
+    /// Engines to try, in order, for the mode chosen in Settings. Empty if
+    /// nothing is set up yet.
+    private var engines: [TutorEngine] {
+        let address = ServerAddress.effective(serverURL)
+        let local = models.selectedPath.map(LocalTutor.init(modelPath:))
+        switch choice {
+        case .remote:
+            return [RemoteEngine(address: address)].compactMap { $0 }
+        case .local:
+            return [local].compactMap { $0 }
+        case .automatic:
+            // Offline (for example airplane mode): skip the PC entirely.
+            let remote = network.isOnline ? RemoteEngine(address: address, preflight: local != nil) : nil
+            return [remote as TutorEngine?, local].compactMap { $0 }
         }
-        return models.selectedPath.map(LocalTutor.init(modelPath:))
     }
 
     var body: some View {
@@ -29,9 +41,9 @@ struct ContentView: View {
                     let spacing = 18.0
                     let width = max(proxy.size.width - spacing, 0)
                     HStack(alignment: .top, spacing: spacing) {
-                        QuestionPanel(chat: chat, engine: engine, scrolls: true)
+                        QuestionPanel(chat: chat, engines: engines, scrolls: true)
                             .frame(width: width * 0.9 / 2.1)
-                        AnswerPanel(chat: chat, engine: engine)
+                        AnswerPanel(chat: chat, engines: engines)
                             .frame(width: width * 1.2 / 2.1)
                     }
                 }
@@ -40,8 +52,8 @@ struct ContentView: View {
             } else {
                 ScrollView {
                     VStack(spacing: 16) {
-                        QuestionPanel(chat: chat, engine: engine)
-                        AnswerPanel(chat: chat, engine: engine).frame(minHeight: 460)
+                        QuestionPanel(chat: chat, engines: engines)
+                        AnswerPanel(chat: chat, engines: engines).frame(minHeight: 460)
                     }
                     .padding(16)
                 }
@@ -58,7 +70,7 @@ struct ContentView: View {
         HStack(spacing: 12) {
             Brand()
             Spacer(minLength: 12)
-            Label(engineBadge, systemImage: engineChoice == "remote" ? "desktopcomputer" : "ipad")
+            Label(engineBadge, systemImage: badgeIcon)
                 .labelStyle(.titleAndIcon)
                 .font(.footnote)
                 .foregroundStyle(Palette.muted)
@@ -74,9 +86,14 @@ struct ContentView: View {
         .padding(.top, 8)
     }
 
+    /// Names the engine that will be tried first.
     private var engineBadge: String {
-        let choice = EngineChoice(rawValue: engineChoice) ?? .local
-        return engine == nil ? "\(choice.label) · not set up" : choice.label
+        guard let first = engines.first else { return "\(choice.label) · not set up" }
+        return choice == .automatic ? "Automatic · \(first.name)" : first.name
+    }
+
+    private var badgeIcon: String {
+        engines.first is RemoteEngine ? "desktopcomputer" : "ipad"
     }
 }
 
@@ -99,7 +116,7 @@ struct Brand: View {
 
 struct QuestionPanel: View {
     @Bindable var chat: ChatModel
-    let engine: TutorEngine?
+    let engines: [TutorEngine]
     /// True in the two-panel layout: scroll inside the panel instead of
     /// growing taller than the screen.
     var scrolls = false
@@ -140,7 +157,7 @@ struct QuestionPanel: View {
             HStack(spacing: 10) {
                 Button {
                     focused = false
-                    chat.ask(using: engine)
+                    chat.ask(using: engines)
                 } label: {
                     Label("Ask a question", systemImage: "arrow.up.right")
                         .font(.body.weight(.semibold))
@@ -205,7 +222,7 @@ struct QuestionPanel: View {
 
 struct AnswerPanel: View {
     let chat: ChatModel
-    let engine: TutorEngine?
+    let engines: [TutorEngine]
     @State private var speech = Speech()
 
     var body: some View {
@@ -233,7 +250,7 @@ struct AnswerPanel: View {
                     ForEach(reply.followUps, id: \.self) { followUp in
                         Button {
                             speech.stop()
-                            chat.ask(followUp, using: engine)
+                            chat.ask(followUp, using: engines)
                         } label: {
                             Text(followUp).frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 8)
                         }
