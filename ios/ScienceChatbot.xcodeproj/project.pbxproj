@@ -13,7 +13,6 @@
 		2F74D875F0EDFB545B8BB277 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DC7B15AA78E520137D7E6C4 /* NetworkMonitor.swift */; };
 		3667258F494F8DDBB90402E9 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A9672358DBE787F24899222 /* ContentView.swift */; };
 		4CD577A46103241B28F53109 /* questions.json in Resources */ = {isa = PBXBuildFile; fileRef = EDF52CCE772F2659CBB58973 /* questions.json */; };
-		5444D94E2E7A7FA12A08B8F7 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F461881EDE8DE76CEF375F0 /* Theme.swift */; };
 		5E9D1D54B1631216BCD8D9BC /* LocalEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D915168E0CA058C9F138059 /* LocalEngine.swift */; };
 		E3AAEDB922DD002A7A8A4979 /* NaturalVoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = C53A33C4CBFB63EF1224D089 /* NaturalVoice.swift */; };
 		77C23C41241224B9B00D4AE7 /* Speech.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A8239AA4721DD4FE59AEB6 /* Speech.swift */; };
@@ -30,7 +29,6 @@
 /* Begin PBXFileReference section */
 		2D915168E0CA058C9F138059 /* LocalEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalEngine.swift; sourceTree = "<group>"; };
 		3F2D0C1564104C23AF3B613B /* App.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = App.xcconfig; sourceTree = "<group>"; };
-		4F461881EDE8DE76CEF375F0 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		5A9672358DBE787F24899222 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		5DC7B15AA78E520137D7E6C4 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
 		69CBFB52AA72DBA38604AA78 /* Science Chatbot.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Science Chatbot.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -107,7 +105,6 @@
 				5DC7B15AA78E520137D7E6C4 /* NetworkMonitor.swift */,
 				C53A33C4CBFB63EF1224D089 /* NaturalVoice.swift */,
 				F8A8239AA4721DD4FE59AEB6 /* Speech.swift */,
-				4F461881EDE8DE76CEF375F0 /* Theme.swift */,
 				747BC80080FBC496ADAC6E59 /* TutorEngine.swift */,
 			);
 			path = ScienceChatbot;
@@ -249,7 +246,6 @@
 				2F74D875F0EDFB545B8BB277 /* NetworkMonitor.swift in Sources */,
 				E3AAEDB922DD002A7A8A4979 /* NaturalVoice.swift in Sources */,
 				77C23C41241224B9B00D4AE7 /* Speech.swift in Sources */,
-				5444D94E2E7A7FA12A08B8F7 /* Theme.swift in Sources */,
 				2AB4726B43025D37406DD75C /* TutorEngine.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -309,7 +305,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -388,7 +384,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;

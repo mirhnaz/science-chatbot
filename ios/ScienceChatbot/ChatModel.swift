@@ -45,6 +45,7 @@ final class ChatModel {
 
         task?.cancel()
         askedQuestion = question
+        self.question = ""  // the question moves to the answer's title
         reply = nil
         errorText = nil
         isLoading = true

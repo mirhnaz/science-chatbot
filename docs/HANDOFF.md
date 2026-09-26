@@ -198,6 +198,20 @@ reported the in-app download and Read aloud with the natural voice working
 on the iPad. **Not measured:** first-sentence delay, generation speed on the
 M2, memory alongside Qwen, and Stop were not reported separately.
 
+### Native iPad redesign (2026-09-26)
+
+A HIG review found the iPad app copied the web page (custom header, bordered
+cards, web palette, no Liquid Glass). Phases 1–2 are implemented: minimum iOS
+26; `NavigationSplitView` with an Ideas sidebar and an answer detail column;
+system toolbar (Read aloud, Settings) and a glass compose bar at the bottom;
+system colours with the purple accent only; follow-ups as grouped rows; no
+technical text on the main screen; readable width. `Theme.swift` and the web
+colour sets were removed; Settings uses a menu picker, a Done checkmark, and an
+About section. [DESIGN.md](DESIGN.md) records the design and how the web
+should adopt it later (web unchanged for now). Verified: clean build and an
+iPad screenshot of the empty state. **Not yet checked:** the answer screen,
+dark mode, portrait, iPhone layout, and phase 3 polish.
+
 ## Agreed direction, not yet implemented
 
 The user expects login, conversation history, and more functionality over time.

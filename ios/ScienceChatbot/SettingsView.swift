@@ -16,7 +16,7 @@ struct SettingsView: View {
                     Picker("Answer questions using", selection: $engineChoice) {
                         ForEach(EngineChoice.allCases) { Text($0.label).tag($0.rawValue) }
                     }
-                    .pickerStyle(.segmented)
+                    .pickerStyle(.menu)
                 } header: {
                     Text("Tutor")
                 } footer: {
@@ -32,6 +32,12 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    LabeledContent("Made with love by", value: "Ayaan and Naz")
+                } header: {
+                    Text("About")
+                }
+
+                Section {
                     NavigationLink {
                         AdvancedSettingsView()
                     } label: {
@@ -40,9 +46,12 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Settings")
-            .toolbar { Button("Done") { dismiss() } }
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done", systemImage: "checkmark") { dismiss() }
+                }
+            }
         }
-        .tint(Palette.accent)
     }
 
     private var modeHelp: String {

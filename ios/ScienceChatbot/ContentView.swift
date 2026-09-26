@@ -1,15 +1,20 @@
 import ScienceCore
 import SwiftUI
 
-/// Two panels side by side on iPad (like the web workspace); stacked on
-/// iPhone or narrow Split View, like the web's small-screen layout.
+/// iPadOS layout: a sidebar of starter ideas and a detail column with the
+/// answer. Controls live on the Liquid Glass layer (toolbar and the compose
+/// bar at the bottom); content scrolls underneath. On iPhone the split view
+/// collapses to one column that opens on the answer, with Ideas one tap back.
+/// docs/DESIGN.md describes the same layout for the web.
 struct ContentView: View {
     @Environment(ModelStore.self) private var models
-    @Environment(\.horizontalSizeClass) private var sizeClass
     @AppStorage("engineMode") private var engineChoice = EngineChoice.automatic.rawValue
     @State private var chat = ChatModel()
     @State private var network = NetworkMonitor()
+    @State private var speech = Speech()
     @State private var showSettings = false
+    @State private var selectedIdea: Suggestion.ID?
+    @State private var compactColumn = NavigationSplitViewColumn.detail
 
     private var choice: EngineChoice { EngineChoice(rawValue: engineChoice) ?? .automatic }
 
@@ -31,277 +36,142 @@ struct ContentView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            header
-            if sizeClass == .regular {
-                // Same split as the web's `.9fr 1.2fr` grid. `layoutPriority`
-                // cannot do this: it hands all spare width to one panel.
-                GeometryReader { proxy in
-                    let spacing = 18.0
-                    let width = max(proxy.size.width - spacing, 0)
-                    HStack(alignment: .top, spacing: spacing) {
-                        QuestionPanel(chat: chat, engines: engines, scrolls: true)
-                            .frame(width: width * 0.9 / 2.1)
-                        AnswerPanel(chat: chat, engines: engines)
-                            .frame(width: width * 1.2 / 2.1)
+        NavigationSplitView(preferredCompactColumn: $compactColumn) {
+            IdeasList(chat: chat, selection: $selectedIdea)
+                .navigationTitle("Ideas")
+                .toolbar {
+                    ToolbarItem {
+                        Button("Surprise me", systemImage: "dice") {
+                            selectedIdea = nil
+                            chat.surprise()
+                        }
                     }
                 }
-                .padding([.horizontal, .bottom], 24)
-                .padding(.top, 8)
-            } else {
-                ScrollView {
-                    VStack(spacing: 16) {
-                        QuestionPanel(chat: chat, engines: engines)
-                        AnswerPanel(chat: chat, engines: engines).frame(minHeight: 460)
+        } detail: {
+            AnswerView(chat: chat, speech: speech) { followUp in
+                ask(followUp)
+            }
+            .navigationTitle("Science Chatbot")
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationSubtitle(subtitle)
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        if let answer = chat.reply?.answer { speech.toggle(answer) }
+                    } label: {
+                        Label(speech.isSpeaking ? "Stop reading" : "Read aloud",
+                              systemImage: speech.isSpeaking ? "stop.fill" : "speaker.wave.2")
                     }
-                    .padding(16)
+                    .disabled(chat.reply == nil || chat.isLoading)
+                }
+                ToolbarSpacer(.fixed, placement: .primaryAction)
+                ToolbarItem(placement: .primaryAction) {
+                    Button("Settings", systemImage: "gearshape") { showSettings = true }
                 }
             }
+            .safeAreaInset(edge: .bottom) {
+                ComposeBar(chat: chat) { ask(nil) }
+            }
         }
-        .background(Palette.background.ignoresSafeArea())
-        .tint(Palette.accent)
+        .onChange(of: selectedIdea) { _, id in
+            // Like the web: a starter fills the box; the child presses send.
+            if let idea = chat.suggestions.first(where: { $0.id == id }) {
+                chat.question = idea.question
+                compactColumn = .detail
+            }
+        }
+        .onChange(of: chat.isLoading) { _, loading in if loading { speech.stop() } }
         .sheet(isPresented: $showSettings) { SettingsView() }
     }
 
-    /// A plain header row like the web's compact masthead. Toolbar items would
-    /// be squeezed into separate glass bubbles on iPadOS 26.
-    private var header: some View {
-        HStack(spacing: 12) {
-            Brand()
-            Spacer(minLength: 12)
-            Label(engineBadge, systemImage: badgeIcon)
-                .labelStyle(.titleAndIcon)
-                .font(.footnote)
-                .foregroundStyle(Palette.muted)
-                .lineLimit(1)
-            Button {
-                showSettings = true
-            } label: {
-                Image(systemName: "gearshape").font(.title3).frame(width: 44, height: 44)
-            }
-            .accessibilityLabel("Settings")
-        }
-        .padding(.horizontal, sizeClass == .regular ? 24 : 16)
-        .padding(.top, 8)
+    private func ask(_ text: String?) {
+        selectedIdea = nil
+        chat.ask(text, using: engines)
     }
 
-    /// Names the engine that will be tried first.
-    private var engineBadge: String {
-        guard let first = engines.first else { return "\(choice.label) · not set up" }
-        return choice == .automatic ? "Automatic · \(first.name)" : first.name
-    }
-
-    private var badgeIcon: String {
-        engines.first is RemoteEngine ? "desktopcomputer" : "ipad"
+    /// Only what a child needs: working, offline, or not set up.
+    private var subtitle: String {
+        if chat.isLoading { return "Thinking…" }
+        guard let first = engines.first else { return "Not set up yet" }
+        return first is RemoteEngine ? "" : "Offline mode"
     }
 }
 
-/// The web masthead: icon, name with a star, and tagline.
-struct Brand: View {
-    var body: some View {
-        HStack(spacing: 12) {
-            Image("BrandIcon").resizable().frame(width: 36, height: 36)
-                .clipShape(.rect(cornerRadius: 10))
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 2) {
-                (Text("Science Chatbot ").font(.headline) + Text("✦").font(.subheadline).foregroundColor(Palette.accent))
-                    .foregroundStyle(Palette.ink)
-                Text("Big questions. Everyday discoveries.").font(.caption).foregroundStyle(Palette.muted)
-            }
-        }
-        .accessibilityElement(children: .combine)
-    }
-}
-
-struct QuestionPanel: View {
-    @Bindable var chat: ChatModel
-    let engines: [TutorEngine]
-    /// True in the two-panel layout: scroll inside the panel instead of
-    /// growing taller than the screen.
-    var scrolls = false
-    @FocusState private var focused: Bool
+/// Starter ideas in the sidebar, like "Need a spark?" on the web.
+struct IdeasList: View {
+    let chat: ChatModel
+    @Binding var selection: Suggestion.ID?
 
     var body: some View {
-        Group {
-            if scrolls {
-                ScrollView { content }.scrollBounceBehavior(.basedOnSize)
-            } else {
-                content
-            }
-        }
-        .panel()
-    }
-
-    private var content: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 8) {
-                Eyebrow("01 / START WITH A WONDER")
-                Text("What makes you curious?").font(.title2.bold()).foregroundStyle(Palette.ink)
-            }
-
-            TextField("Why does the Moon change shape?", text: $chat.question, axis: .vertical)
-                .lineLimit(3...6)
-                .focused($focused)
-                .submitLabel(.send)
-                .padding(.horizontal, 14).padding(.vertical, 12)
-                .background(Palette.input, in: .rect(cornerRadius: 12))
-                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(focused ? Palette.accent : Palette.line))
-                .accessibilityLabel("Your science question")
-                .onChange(of: chat.question) { _, text in
-                    if text.utf16.count > maxQuestionLength {
-                        chat.question = String(text.utf16.prefix(maxQuestionLength)) ?? text
-                    }
-                }
-
-            HStack(spacing: 10) {
-                Button {
-                    focused = false
-                    chat.ask(using: engines)
-                } label: {
-                    Label("Ask a question", systemImage: "arrow.up.right")
-                        .font(.body.weight(.semibold))
-                        .frame(minHeight: 30)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(Palette.primaryButton)
-                .disabled(chat.isLoading)
-                .keyboardShortcut(.return, modifiers: .command)
-
-                if chat.isLoading {
-                    Button("Stop") { chat.cancel() }.buttonStyle(SecondaryButtonStyle())
-                }
-            }
-
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Need a spark?").font(.headline).foregroundStyle(Palette.ink)
-                    Text("Pick an idea to get started.").font(.subheadline).foregroundStyle(Palette.muted)
-                }
-                Spacer()
-                Button {
-                    chat.surprise()
-                } label: {
-                    Label("Surprise me", systemImage: "sparkle")
-                }
-                .buttonStyle(SecondaryButtonStyle())
-            }
-            .padding(.top, 4)
-
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 170), spacing: 10)], spacing: 10) {
-                ForEach(chat.suggestions) { suggestion in
-                    Button {
-                        // Fill the box; the child presses Ask. No keyboard:
-                        // it only opens when the box itself is tapped.
-                        chat.question = suggestion.question
-                        focused = false
-                    } label: {
-                        VStack(alignment: .leading, spacing: 7) {
-                            Text("\(suggestion.icon)  \(suggestion.topic.uppercased())")
-                                .font(.caption2.weight(.bold)).tracking(0.6)
-                                .foregroundStyle(Palette.muted)
-                            Text(suggestion.question)
-                                .font(.subheadline.weight(.medium))
-                                .foregroundStyle(Palette.ink)
-                                .multilineTextAlignment(.leading)
+        List(selection: $selection) {
+            Section {
+                ForEach(chat.suggestions) { idea in
+                    Label {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(idea.topic).font(.caption).foregroundStyle(.secondary)
+                            Text(idea.question)
                         }
-                        .frame(maxWidth: .infinity, minHeight: 84, alignment: .topLeading)
-                        .padding(12)
-                        .background(Palette.card, in: .rect(cornerRadius: 12))
-                        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Palette.line))
-                        .contentShape(.rect)
+                        .padding(.vertical, 4)
+                    } icon: {
+                        Text(idea.icon)
                     }
-                    .buttonStyle(.plain)
+                    .tag(idea.id)
                     .accessibilityHint("Puts this question in the question box")
                 }
+            } header: {
+                Text("Need a spark?")
+            } footer: {
+                Text("Pick an idea, or tap the dice for new ones.")
             }
-            Spacer(minLength: 0)
-            Text("Made with love by **Ayaan and Naz**").font(.footnote).foregroundStyle(Palette.muted)
         }
+        .listStyle(.sidebar)
     }
 }
 
-struct AnswerPanel: View {
+/// The answer column: empty state, progress, error, or the reply with its
+/// follow-up questions. Kept to a readable width like a book page.
+struct AnswerView: View {
     let chat: ChatModel
-    let engines: [TutorEngine]
-    @State private var speech = Speech()
+    let speech: Speech
+    let askFollowUp: (String) -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 8) {
-                    Eyebrow("02 / FOLLOW YOUR CURIOSITY")
-                    Text("Let’s discover.").font(.title2.bold()).foregroundStyle(Palette.ink)
-                }
-                Spacer()
-                Image("BrandIcon")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 42, height: 42)
-                    .clipShape(.rect(cornerRadius: 12))
-                    .accessibilityHidden(true)
-            }
-
-            ScrollView {
-                content.frame(maxWidth: .infinity, alignment: .leading).padding(4)
-            }
-            .frame(maxHeight: .infinity)
-
-            if let reply = chat.reply, !chat.isLoading {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Keep exploring").font(.footnote.weight(.bold)).foregroundStyle(Palette.muted)
-                    ForEach(reply.followUps, id: \.self) { followUp in
-                        Button {
-                            speech.stop()
-                            chat.ask(followUp, using: engines)
-                        } label: {
-                            Text(followUp).frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 8)
-                        }
-                        .buttonStyle(SecondaryButtonStyle())
-                    }
-                }
-            }
-
-            Divider().overlay(Palette.line)
-            HStack {
-                Text(chat.status).font(.footnote).foregroundStyle(Palette.muted)
-                    .accessibilityAddTraits(.updatesFrequently)
-                Spacer()
-                Button {
-                    if let answer = chat.reply?.answer { speech.toggle(answer) }
-                } label: {
-                    Label(speech.isSpeaking ? "Stop reading" : "Read aloud",
-                          systemImage: speech.isSpeaking ? "stop.fill" : "speaker.wave.2")
-                }
-                .buttonStyle(SecondaryButtonStyle())
-                .disabled(chat.reply == nil || chat.isLoading)
-                .opacity(chat.reply == nil || chat.isLoading ? 0.5 : 1)
-            }
+        ScrollView {
+            content
+                .frame(maxWidth: 680, alignment: .leading)
+                .padding(.horizontal, 24)
+                .padding(.vertical, 20)
+                .frame(maxWidth: .infinity)
         }
-        .panel(fill: Palette.answerPanel)
-        .onChange(of: chat.isLoading) { _, loading in if loading { speech.stop() } }
+        .scrollDismissesKeyboard(.interactively)
     }
 
     @ViewBuilder private var content: some View {
         if chat.isLoading {
-            VStack(spacing: 10) {
-                ProgressView().controlSize(.large).tint(Palette.accent)
-                Text("Working on your answer…").font(.headline).foregroundStyle(Palette.ink)
-                Text("The first question can take a little longer.").font(.footnote).foregroundStyle(Palette.muted)
+            VStack(spacing: 12) {
+                ProgressView().controlSize(.large)
+                Text("Working on your answer…").font(.headline)
+                Text("The first question can take a little longer.")
+                    .font(.subheadline).foregroundStyle(.secondary)
             }
-            .frame(maxWidth: .infinity, minHeight: 220)
+            .frame(maxWidth: .infinity, minHeight: 360)
         } else if let error = chat.errorText {
-            Text(error)
-                .foregroundStyle(Palette.errorText)
-                .lineSpacing(4)
+            Label(error, systemImage: "exclamationmark.triangle.fill")
+                .foregroundStyle(.red)
                 .padding(16)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Palette.errorBackground, in: .rect(cornerRadius: 10))
-                .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Palette.errorLine))
+                .background(.red.opacity(0.1), in: .rect(cornerRadius: 16))
         } else if let reply = chat.reply {
-            VStack(alignment: .leading, spacing: 12) {
-                Text(chat.askedQuestion).font(.headline).foregroundStyle(Palette.accent)
-                Text(reply.answer).font(.body).lineSpacing(5).foregroundStyle(Palette.ink)
+            VStack(alignment: .leading, spacing: 16) {
+                Text(chat.askedQuestion)
+                    .font(.title2.bold())
+                    .foregroundStyle(.tint)
+                Text(reply.answer)
+                    .font(.title3)
+                    .lineSpacing(6)
                     .textSelection(.enabled)
+                FollowUps(questions: reply.followUps, ask: askFollowUp)
+                    .padding(.top, 12)
             }
         } else {
             EmptyState()
@@ -309,21 +179,120 @@ struct AnswerPanel: View {
     }
 }
 
-/// The shared rocket-and-atom brand mark and welcome text.
+/// "Keep exploring": tappable rows with chevrons, like an inset grouped list.
+struct FollowUps: View {
+    let questions: [String]
+    let ask: (String) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Keep exploring").font(.headline)
+            VStack(spacing: 0) {
+                ForEach(Array(questions.enumerated()), id: \.offset) { index, question in
+                    if index > 0 { Divider().padding(.leading, 16) }
+                    Button {
+                        ask(question)
+                    } label: {
+                        HStack(spacing: 12) {
+                            Text(question).multilineTextAlignment(.leading)
+                            Spacer(minLength: 8)
+                            Image(systemName: "chevron.right")
+                                .font(.footnote.weight(.semibold))
+                                .foregroundStyle(.tertiary)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 14)
+                        .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    .hoverEffect(.highlight)
+                }
+            }
+            .background(.background.secondary, in: .rect(cornerRadius: 16))
+        }
+    }
+}
+
+/// The question box on the glass layer, pinned above the keyboard.
+struct ComposeBar: View {
+    @Bindable var chat: ChatModel
+    let send: () -> Void
+    @FocusState private var focused: Bool
+
+    private var canSend: Bool {
+        !chat.question.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    var body: some View {
+        GlassEffectContainer(spacing: 10) {
+            HStack(alignment: .bottom, spacing: 10) {
+                TextField("Ask a science question…", text: $chat.question, axis: .vertical)
+                    .lineLimit(1...5)
+                    .focused($focused)
+                    .submitLabel(.send)
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 13)
+                    .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 24))
+                    .accessibilityLabel("Your science question")
+                    .onChange(of: chat.question) { _, text in
+                        // Return sends, like Messages; a vertical field would
+                        // otherwise insert a new line.
+                        if text.contains("\n") {
+                            chat.question = text.replacingOccurrences(of: "\n", with: "")
+                            if canSend, !chat.isLoading { submit() }
+                        } else if text.utf16.count > maxQuestionLength {
+                            chat.question = String(text.utf16.prefix(maxQuestionLength)) ?? text
+                        }
+                    }
+
+                if chat.isLoading {
+                    Button("Stop", systemImage: "stop.fill") { chat.cancel() }
+                        .labelStyle(.iconOnly)
+                        .font(.title3)
+                        .frame(width: 48, height: 48)
+                        .buttonStyle(.glass)
+                        .buttonBorderShape(.circle)
+                } else {
+                    Button("Ask", systemImage: "arrow.up") { submit() }
+                        .labelStyle(.iconOnly)
+                        .font(.title3.bold())
+                        .frame(width: 48, height: 48)
+                        .buttonStyle(.glassProminent)
+                        .buttonBorderShape(.circle)
+                        .disabled(!canSend)
+                        .keyboardShortcut(.return, modifiers: .command)
+                }
+            }
+        }
+        .frame(maxWidth: 720)
+        .padding(.horizontal, 16)
+        .padding(.bottom, 8)
+    }
+
+    private func submit() {
+        focused = false
+        send()
+    }
+}
+
+/// Shown before the first question: the one place the brand mark appears.
 struct EmptyState: View {
     var body: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 16) {
             Image("BrandIcon")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 120, height: 120)
-                .clipShape(.rect(cornerRadius: 28))
+                .frame(width: 112, height: 112)
+                .clipShape(.rect(cornerRadius: 26))
                 .accessibilityHidden(true)
             Text("A little curiosity.\nA whole world to explore.")
-                .font(.title3.weight(.semibold)).multilineTextAlignment(.center).foregroundStyle(Palette.ink)
-            Text("Ask a question or choose an idea.\nYour science discovery starts here.")
-                .font(.subheadline).multilineTextAlignment(.center).foregroundStyle(Palette.muted)
+                .font(.title2.weight(.semibold))
+                .multilineTextAlignment(.center)
+            Text("Ask a question below, or pick an idea.")
+                .font(.body)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
         }
-        .frame(maxWidth: .infinity, minHeight: 280)
+        .frame(maxWidth: .infinity, minHeight: 420)
     }
 }
