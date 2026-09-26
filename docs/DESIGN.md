@@ -6,6 +6,28 @@ Guidelines for Liquid Glass (iOS/iPadOS 26 and later). The web app will adopt
 the same structure later; the web notes below say how. Until then, the web keeps
 its current two-panel layout ([FRONTEND.md](FRONTEND.md)).
 
+## Proposed next: the curiosity column (not built yet)
+
+[design/curiosity-column.png](design/curiosity-column.png) (source:
+[design/curiosity-column.html](design/curiosity-column.html)) replaces the
+Ideas sidebar with one column where every "what next?" choice sits near the
+question box. Agreed so far:
+
+- Fresh sessions centre the question box with four starter ideas; on the first
+  question the box moves to the bottom.
+- A **trail** stacks the questions and answers of one topic. Only the latest
+  step is open; earlier steps fold to their question, a short preview, and the
+  follow-up the child chose.
+- **Dive deeper** (the follow-ups) sits under the latest answer. **Try
+  something new** (starter chips, 🎲, and "✎ Ask your own") sits above the
+  question box and starts a new trail. Typing in the box continues the trail.
+- Tapping any suggested question asks it at once; long-press edits first.
+- Each trail becomes one History entry later, so there is no "New chat"
+  button; until then, a replaced trail can be restored with Undo.
+- Read aloud moves onto each answer; the toolbar keeps only Settings.
+
+The sections below describe the current build.
+
 ## Principles
 
 - **Two layers.** Content (ideas, the answer) sits on plain backgrounds.
