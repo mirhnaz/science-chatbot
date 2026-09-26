@@ -191,9 +191,10 @@ struct QuestionPanel: View {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 170), spacing: 10)], spacing: 10) {
                 ForEach(chat.suggestions) { suggestion in
                     Button {
-                        // Like the web: fill the box; the child presses Ask.
+                        // Fill the box; the child presses Ask. No keyboard:
+                        // it only opens when the box itself is tapped.
                         chat.question = suggestion.question
-                        focused = true
+                        focused = false
                     } label: {
                         VStack(alignment: .leading, spacing: 7) {
                             Text("\(suggestion.icon)  \(suggestion.topic.uppercased())")
