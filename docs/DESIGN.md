@@ -60,7 +60,9 @@ stamps and finished trails are kept **on the device only**.
   the bottom half of Home and Trail, fixed behind the content (cards cover
   it where they overlap), shows a science scene in 8 pt square pixels,
   densest at the bottom and fading upward, centred in the band above the
-  question bar: a starfield with a comet
+  question bar. Home: stars and a comet on phones, the solar system from
+  700 px (an atom overlapped the cards). Trail: stars on phones, an atom at
+  tablet widths, the solar system on wide web. Earlier wording: a starfield with a comet
   on phones, an atom on tablets, the solar system on wide web (≥1400 px).
   Planets/electrons use topic inks; the field levels are tokens. Trail runs
   it at 45 % opacity; Trail complete has none. Hover glows, a tap ripples.

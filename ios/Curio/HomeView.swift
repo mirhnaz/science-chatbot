@@ -59,8 +59,9 @@ struct HomeView: View {
         .background(Curio.ground)
     }
 
-    /// Stars and a comet on phones, an atom on iPad.
-    private var fieldScene: PixelField.Scene { sizeClass == .compact ? .starfield : .atom }
+    /// Stars and a comet on phones, the solar system on iPad (an atom here
+    /// overlapped the cards).
+    private var fieldScene: PixelField.Scene { sizeClass == .compact ? .starfield : .solarSystem }
 
     private var phoneBody: some View {
         ScrollView {

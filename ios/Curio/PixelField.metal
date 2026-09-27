@@ -55,7 +55,7 @@ static float ringDist(float2 q, float2 ab) {
             if (length(center - f - rot(float2(ab.x * cos(w), ab.y * sin(w)), ang)) < 1.4 * C) { s = 1.0; ci = 1.0; }
         }
     } else {
-        float2 c = float2(size.x * 0.08 + 5.0 * C, f.y);
+        float2 c = float2(size.x * 0.08 + 5.0 * C, f.y + r * 0.4);  // low, clear of text above
         float dn = length(center - c);
         if (dn < 4.5 * C) { s = 1.0; ci = 3.0; } else if (dn < 6.5 * C) s = 0.5;
         for (int i = 0; i < 4; i++) {

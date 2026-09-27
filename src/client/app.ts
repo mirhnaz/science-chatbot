@@ -1034,12 +1034,13 @@ function sendFieldFocus() {
   fieldWorker.postMessage({ type: 'focus', x: (column.left + column.right) / 2 - box.left, y: (top + bottom) / 2, r: Math.max(0, (bottom - top) / 2) });
 }
 
-/** Scene by width (stars on phones, an atom on tablets, the solar system on
- *  wide screens), quieter on Trail, and paused when hidden or finished. */
+/** Scene by width and screen: stars on phones; the solar system on Home and
+ *  on wide Trail; an atom on Trail at tablet widths. Quieter on Trail, and
+ *  paused when hidden or finished. */
 function updateField() {
   if (!fieldWorker || !fieldCanvas) return;
   const width = window.innerWidth;
-  const scene = width >= 1400 ? 2 : width >= 700 ? 1 : 0;
+  const scene = width < 700 ? 0 : view === 'home' || width >= 1400 ? 2 : 1;
   fieldWorker.postMessage({ type: 'scene', scene, intensity: view === 'trail' ? 0.45 : 1 });
   fieldWorker.postMessage({ type: 'run', running: view !== 'complete' && document.visibilityState === 'visible' });
   // After this render's layout: where the empty gap is now.
