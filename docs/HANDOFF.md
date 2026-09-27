@@ -666,6 +666,16 @@ depends on history and on privacy decisions for children's data.
   stored, consent, retention, and a review step before a child's question
   becomes a starter.
 - Trails as a map of interests (above and in [DESIGN.md](DESIGN.md)).
+- Frontend backlog (agreed 2026-09-27, after the celebration / sparks /
+  loading / welcome batch):
+  - Read-aloud highlighting (sentence or word as it is spoken).
+  - Accessibility pass: VoiceOver / screen-reader order, iOS Dynamic Type,
+    web keyboard-only use, the four low-contrast colours in DESIGN.md.
+  - Installable web app: service worker with an offline "can't reach the
+    tutor" page (manifest exists).
+  - "My trails" / history with finished trails to reread (needs saved
+    answers and privacy decisions; where the React migration would start).
+  - Grown-ups weekly summary (same privacy questions).
 
 Authentication approach, database choice, history retention, and detailed UI
 requirements have not been decided. Clarify them when beginning the feature.
