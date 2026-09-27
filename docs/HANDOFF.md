@@ -709,11 +709,23 @@ Changed on the branch: `tutor.txt`, default model `gemma4:12b` in
 `main.rs`, `http.rs`, both `deploy/` units and the README. Not changed: the
 iOS offline model (4B Qwen fallback; its prompt copy now names Gemma),
 `src/client/app.ts` ("private Qwen tutor" tool text) and the classroom
-diagrams, which still say Qwen. **Not yet done:** merge into `main`, rebuild
-and restart the live service with `OLLAMA_MODEL=gemma4:12b`. After merging
+diagrams, which still say Qwen. After merging
 the latest `main` into the branch: `npm test` (25 Rust + 44 HTTP/frontend),
 `npm run typecheck`, `npm run check:rust` and `git diff --check` passed. Proposed next: stream answers
 (first words in well under a second) as a joint task with frontend work.
+
+Deployed (2026-09-27): merged to `main` (`ab2c54d`), pushed by the user, then
+on the PC `git pull`, `npm ci`, `npm run build` (non-interactive SSH needs
+`PATH=$HOME/.cargo/bin:$PATH`), `OLLAMA_MODEL=gemma4:12b` in
+`~/.config/systemd/user/curio-web.service` (previous unit saved beside it as
+`curio-web.service.bak-qwen3`), `daemon-reload`, restart. Verified on
+`127.0.0.1:11436`: `/healthz` 200; five live questions returned 200 with
+labels and trail names; 5.6 s for the first (model load), then 2.2–2.7 s
+(creator line 1.2 s); `ollama ps` shows `gemma4:12b` 100% GPU. Ollama unloads
+an idle model after 5 minutes, so the first question after a pause includes
+the load; `OLLAMA_KEEP_ALIVE=-1` on the Ollama service would avoid that (not
+changed). Rollback: restore the `.bak-qwen3` unit, `daemon-reload`, restart
+(the prompt is compiled in, so a full rollback also needs the older build).
 
 ## Agreed direction, not yet implemented
 
