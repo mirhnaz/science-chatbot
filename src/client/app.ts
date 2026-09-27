@@ -1178,8 +1178,8 @@ function startPixelField() {
  *  column on wide Home (the Home column and Sparks end at different
  *  heights), and the scene sits in the largest empty space, never behind
  *  text or cards: the solar system on Home, the atom centred under the
- *  Trail step. Phones keep the scene centred in the band, with the content
- *  scrolling over it. */
+ *  Trail step. Phones show no scene, only background pixels below the
+ *  content. */
 function sendFieldFocus() {
   if (!fieldWorker || !fieldCanvas) return;
   const box = fieldCanvas.getBoundingClientRect();
@@ -1188,13 +1188,20 @@ function sendFieldFocus() {
   type Rect = [number, number, number, number];
   const post = (fill: [number, number, number], rect: Rect) =>
     fieldWorker!.postMessage({ type: 'focus', fill, rect: [rect[0], rect[1], rect[2], Math.max(rect[1], rect[3])] });
-  if (box.width < 700 || view === 'welcome' || view === 'complete') { post([0, 0, 0], [0, box.height * 0.1, box.width, floor - 12]); return; }
+  if (view === 'welcome' || view === 'complete') { post([0, 0, 0], [0, box.height * 0.1, box.width, floor - 12]); return; }
   /** Where background pixels start below content that ends at `bottom`. */
   const line = (bottom: number, limit: number) => Math.max(1, Math.min(bottom - box.top + 16, limit - 16));
   const lowest = (elements: Element[]) => elements.reduce((low, item) => {
     const rect = item.getBoundingClientRect();
     return rect.height > 0 ? Math.max(low, rect.bottom) : low;
   }, -Infinity);
+  if (box.width < 700) {
+    // Phones: no scene, just background pixels below the content (behind
+    // the bar when the content fills the screen).
+    const fill = line(lowest(Array.from((view === 'trail' ? $('trail') : $('home')).children)), floor);
+    post([0, fill, fill], [0, 0, 0, 0]);
+    return;
+  }
   if (view === 'trail') {
     const fill = line(lowest(Array.from($('trail').children)), floor);
     const column = $('trail').getBoundingClientRect();

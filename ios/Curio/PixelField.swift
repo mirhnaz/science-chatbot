@@ -71,7 +71,7 @@ extension View {
     /// `pixelFieldContent()` (per column when two are marked, as on wide
     /// Home) and the scene sits in the largest empty part (the solar system
     /// on Home, the atom centred on Trail), never behind the content; phones
-    /// keep it centred with the content scrolling over it. Hover and taps on the
+    /// show no scene, only background pixels below the content. Hover and taps on the
     /// view reach the field (content still gets them).
     func pixelFieldBackground(_ scene: PixelField.Scene, intensity: Double = 1) -> some View {
         modifier(PixelFieldBackground(scene: scene, intensity: intensity))
@@ -147,7 +147,13 @@ private struct PixelFieldBackground: ViewModifier {
         /// Where background pixels start below content ending at `bottom`.
         func line(_ bottom: Double, _ limit: Double) -> Double { max(1, min(bottom - field.minY + 16, limit - 16)) }
         let columns = marked.sorted { $0.minX < $1.minX }
-        guard scene != .starfield, let first = columns.first else {
+        if scene == .starfield {
+            // Phones: no comet, just background pixels below the content
+            // (behind the bar when the content fills the screen).
+            let fill = columns.map { line($0.maxY, floor) }.max() ?? 0
+            return ([0, fill, fill], .zero)
+        }
+        guard let first = columns.first else {
             return ([0, 0, 0], CGRect(x: 0, y: 12, width: field.width, height: max(0, floor - 24)))
         }
         guard columns.count > 1 else {

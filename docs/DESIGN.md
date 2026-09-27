@@ -71,8 +71,8 @@ stamps and finished trails are kept **on the device only**.
 - **Pixel field** (2026-09-27, after omarchy.org's pixel hero): the bottom
   half of Home and Trail, fixed behind the content and reaching the bottom
   edge behind the see-through question bar, shows a science scene in 8 pt
-  square pixels. Phones: stars and a comet centred in that band, densest at
-  the bottom, with the content scrolling over it. From 700 px (web) and on
+  square pixels. Phones (2026-09-27, user's call): no scene, only background
+  pixels below the content, so usually a strip behind the question bar. From 700 px (web) and on
   iPad (placement per the user's annotated mockups in
   `design/web-ipad-parity-2026-09/`): background pixels fill the space
   below the content, and the scene fits the empty part of it above the bar,
