@@ -4,7 +4,8 @@ using namespace metal;
 // The pixel field (docs/DESIGN.md → Pixel field): the same maths as the web's
 // src/client/field-worker.ts, as a SwiftUI colorEffect so the GPU draws it.
 // One cell = 8 pt; each cell is a square "pixel" with a small gap.
-// Scenes: 0 starfield + comet (phones), 1 atom (tablets), 2 solar system.
+// Scenes: 0 starfield + comet (phones), 1 atom (tablets), 2 solar system,
+// 3 the stamp celebration burst (from the tap point).
 
 static float hash(float2 p) {
     p = fract(p * float2(123.34, 456.21));
@@ -30,6 +31,22 @@ static float ringDist(float2 q, float2 ab) {
     if (max(abs(local.x), abs(local.y)) > 0.36) return half4(0.0);
     float y01 = center.y / size.y, t = time;
     float h1 = hash(cell), h2 = hash(cell + 17.0);
+    if (scene > 2.5) {
+        // Scene 3, the stamp celebration: rings and sparkles from the tap
+        // point (the stamp), fading over about three seconds.
+        float age = tap.z, dist = length(center - tap.xy), b = 0.0;
+        for (int k = 0; k < 3; k++) {
+            float since = age - float(k) * 0.18;
+            if (since > 0.0) b = max(b, exp(-pow(dist - since * 260.0, 2.0) / (2.8 * C * C)) * clamp(1.0 - since * 0.7, 0.0, 1.0) * step(0.25, h2));
+        }
+        float spark = h1 > 0.9 && dist < 26.0 * C ? (0.5 + 0.5 * sin(t * 9.0 + h2 * 40.0)) * clamp(1.0 - age * 0.45, 0.0, 1.0) * smoothstep(26.0 * C, 6.0 * C, dist) : 0.0;
+        float burst = max(b, spark);
+        if (burst < 0.05) return half4(0.0);
+        half4 bc = burst < 0.3 ? mid : burst < 0.6 ? lit : crest;
+        if (spark >= b) { float k = floor(h2 * 4.0); bc = k < 1.0 ? p1 : k < 2.0 ? p2 : k < 3.0 ? p3 : p4; }
+        half a = half(intensity);
+        return half4(bc.rgb * a, a);
+    }
     float d = smoothstep(0.45, 1.0, y01); d *= d;
     float v = h1 < d * 0.9 ? 0.18 + 0.22 * (0.5 + 0.5 * sin(t * 0.8 + h2 * 6.2832)) : 0.0;
     if (h2 > (scene < 0.5 ? 0.985 : 0.992)) v = max(v, (0.35 + 0.35 * sin(t * 2.3 + h1 * 40.0)) * smoothstep(0.05, 0.4, y01));

@@ -89,6 +89,13 @@ interface AppElements {
   'nav-mark': HTMLSpanElement;
   'nav-home': HTMLButtonElement;
   'nav-stamps': HTMLButtonElement;
+  welcome: HTMLElement;
+  'welcome-mark': HTMLSpanElement;
+  'welcome-name': HTMLInputElement;
+  'welcome-go': HTMLButtonElement;
+  'welcome-sparks': HTMLLIElement;
+  'welcome-trails': HTMLLIElement;
+  'welcome-stamps': HTMLLIElement;
   'stamps-screen': HTMLElement;
   'stamps-back': HTMLButtonElement;
   'stamps-summary': HTMLParagraphElement;
@@ -186,6 +193,8 @@ function save(key: string, value: unknown) {
   try { localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value)); } catch { /* Optional storage. */ }
 }
 const nameKey = 'curio.name.v1';
+/** Set once the first-launch welcome has been shown (or skipped). */
+const welcomedKey = 'curio.welcomed.v1';
 const stampsKey = 'curio.stamps.v1';
 const trailsKey = 'curio.trails.v1';
 /** Unfinished trails (up to three, newest first), kept 7 days so Home can
@@ -221,7 +230,7 @@ function childName(): string {
 
 /** Steps in a full trail; after the last answer the trail can be finished. */
 const trailLength = 5;
-type View = 'home' | 'trail' | 'complete' | 'stamps';
+type View = 'welcome' | 'home' | 'trail' | 'complete' | 'stamps';
 let view: View = 'home';
 let steps: Step[] = [];
 let trailId = newTrailId();
@@ -365,7 +374,8 @@ async function refreshSparks() {
   try {
     const exclude = encodeURIComponent(recentSparks.join(','));
     const count = sparkCount();
-    const response = await fetch(`/api/suggestions?exclude=${exclude}&count=${count}`, { signal: request.signal });
+    const prefer = encodeURIComponent([...uncollectedTopics()].join(','));
+    const response = await fetch(`/api/suggestions?exclude=${exclude}&count=${count}${prefer ? `&prefer=${prefer}` : ''}`, { signal: request.signal });
     if (!response.ok) throw new Error('Sparks unavailable');
     const data: unknown = await response.json();
     const items = data && typeof data === 'object' ? (data as Record<string, unknown>).suggestions : undefined;
@@ -399,8 +409,18 @@ function editFirst(target: HTMLElement, text: string) {
   });
 }
 
-/** A tinted card: icon disc, topic label, and the question. */
+/** Topics whose stamp the child has not collected yet, once they have at
+ *  least one stamp (before that, every topic would be "new"). */
+function uncollectedTopics(): Set<string> {
+  if (!stamps.length) return new Set();
+  const collected = new Set(stamps.map(stamp => stamp.topic));
+  return new Set(stampKinds.map(kind => kind.topic).filter((topic): topic is string => topic !== null && !collected.has(topic)));
+}
+
+/** A tinted card: icon disc, topic label, and the question; "New stamp!" on
+ *  topics not collected yet. */
 function renderSparks() {
+  const fresh = uncollectedTopics();
   const cards = sparks.map(spark => {
     const style = category(spark.topic);
     const card = button(`spark-card cat-${style.key}`);
@@ -409,13 +429,38 @@ function renderSparks() {
     const words = element('span', 'spark-words');
     words.append(element('span', 'spark-topic', spark.topic), element('span', 'spark-question', spark.question));
     card.append(disc, words);
-    card.setAttribute('aria-label', `${spark.topic}: ${spark.question}`);
+    const isNew = fresh.has(spark.topic);
+    if (isNew) card.append(element('span', 'new-stamp', 'New stamp!'));
+    card.setAttribute('aria-label', `${spark.topic}${isNew ? ', new stamp' : ''}: ${spark.question}`);
     card.addEventListener('click', () => startTrail(spark));
     editFirst(card, spark.question);
     return card;
   });
   $('spark-grid').replaceChildren(...cards);
   updateControls();
+}
+
+// ---- Did you know? (while an answer loads) --------------------------------
+
+let facts: string[] = [];
+let factIndex = Math.floor(Math.random() * 24);
+let factTimer: ReturnType<typeof setInterval> | undefined;
+
+async function loadFacts() {
+  try {
+    const data: unknown = await (await fetch('/did-you-know.json')).json();
+    if (Array.isArray(data)) facts = data.filter((fact): fact is string => typeof fact === 'string' && !!fact.trim() && fact.length <= 200);
+  } catch { /* Optional: loading shows no fact without them. */ }
+}
+
+/** Changes the fact in place every 6 seconds while an answer loads. */
+function startFacts() {
+  clearInterval(factTimer);
+  factTimer = setInterval(() => {
+    factIndex++;
+    const line = document.querySelector('.fact-line');
+    if (line && facts.length) line.textContent = `Did you know? ${facts[factIndex % facts.length]}`;
+  }, 6000);
 }
 
 // ---- Asking --------------------------------------------------------------
@@ -455,6 +500,8 @@ async function ask(question: unknown, options: { newTrail?: boolean; topic?: str
   controller = current;
   const timer = setTimeout(() => current.abort('timeout'), 125000);
   $('status').textContent = 'Exploring your question…';
+  factIndex++;
+  startFacts();
   go('trail');
   scrollToTop();
   try {
@@ -489,6 +536,7 @@ async function ask(question: unknown, options: { newTrail?: boolean; topic?: str
     return { error: step.error };
   } finally {
     clearTimeout(timer);
+    clearInterval(factTimer);
     if (controller === current) controller = null;
     if (steps.length === 0) go('home'); else render();
     if (sparks.length < sparkCount()) void refreshSparks();
@@ -531,12 +579,13 @@ function go(next: View) {
 
 function render() {
   document.body.setAttribute('data-view', view);
+  $('welcome').hidden = view !== 'welcome';
   $('home').hidden = view !== 'home';
   $('trail-screen').hidden = view !== 'trail';
   $('complete').hidden = view !== 'complete';
   $('stamps-screen').hidden = view !== 'stamps';
   // The last step offers Finish instead of the question box.
-  $('dock').hidden = view === 'complete' || view === 'stamps' || (view === 'trail' && isComplete() && !controller);
+  $('dock').hidden = view === 'welcome' || view === 'complete' || view === 'stamps' || (view === 'trail' && isComplete() && !controller);
   const name = trailName();
   $('question').placeholder = view === 'trail' ? `Ask more about ${name ? name.toLowerCase() : 'this'}…` : 'Ask anything…';
   persistTrails();
@@ -757,8 +806,16 @@ function currentStep(step: Step, number: number) {
     error.append(again);
     article.append(error);
   } else if (step.answer === undefined) {
+    // A pixel "thinking" animation and a Did-you-know fact that changes
+    // every few seconds (tickFact) while the tutor works.
     const loading = element('div', 'loading');
-    loading.append(element('span', 'spinner'), element('span', undefined, 'Working on your answer…'));
+    const pixels = element('span', 'thinking');
+    pixels.setAttribute('aria-hidden', 'true');
+    for (let i = 0; i < 9; i++) pixels.append(element('span', 'thinking-pixel'));
+    const words = element('span', 'loading-words');
+    words.append(element('span', 'loading-title', 'Working on your answer…'));
+    if (facts.length) words.append(element('span', 'fact-line', `Did you know? ${facts[factIndex % facts.length]}`));
+    loading.append(pixels, words);
     article.append(loading);
   } else {
     const body = element('div', 'step-body');
@@ -879,7 +936,8 @@ function renderComplete() {
   close.addEventListener('click', () => go('home'));
   header.append(close, element('p', 'caption', `${name ?? 'Your question'} · ${steps.length} steps`), element('span', 'header-spacer'));
 
-  const hero = element('div', `stamp-hero cat-${style.key}`);
+  // The stamp lands only the first time this trail's Complete is shown.
+  const hero = element('div', `stamp-hero cat-${style.key}${celebrated !== trailId ? ' landing' : ''}`);
   hero.innerHTML = style.icon;
   hero.setAttribute('role', 'img');
   hero.setAttribute('aria-label', stampName);
@@ -1051,6 +1109,9 @@ function toggleSpeech(step: Step) {
 // sends small messages. Browsers without workers or OffscreenCanvas skip it.
 let fieldWorker: Worker | null = null;
 let fieldCanvas: HTMLCanvasElement | null = null;
+/** The trail whose stamp was last celebrated, and until when the burst runs. */
+let celebrated: string | null = null;
+let celebrateUntil = 0;
 
 function startPixelField() {
   if (typeof Worker !== 'function' || typeof OffscreenCanvas !== 'function') return;
@@ -1101,11 +1162,31 @@ function sendFieldFocus() {
 function updateField() {
   if (!fieldWorker || !fieldCanvas) return;
   const width = window.innerWidth;
-  const scene = width < 700 ? 0 : view === 'home' || width >= 1400 ? 2 : 1;
+  if (view === 'complete') {
+    // The stamp celebration: a burst from the stamp, once per trail, then still.
+    if (celebrated !== trailId) {
+      celebrated = trailId;
+      celebrateUntil = performance.now() + 3500;
+      requestAnimationFrame(sendBurst);
+      setTimeout(updateField, 3600);
+    }
+    fieldWorker.postMessage({ type: 'scene', scene: 3, intensity: 1 });
+    fieldWorker.postMessage({ type: 'run', running: performance.now() < celebrateUntil && document.visibilityState === 'visible' });
+    return;
+  }
+  const scene = width < 700 || view === 'welcome' ? 0 : view === 'home' || width >= 1400 ? 2 : 1;
   fieldWorker.postMessage({ type: 'scene', scene, intensity: view === 'trail' ? 0.45 : 1 });
-  fieldWorker.postMessage({ type: 'run', running: (view === 'home' || view === 'trail') && document.visibilityState === 'visible' });
+  fieldWorker.postMessage({ type: 'run', running: view !== 'stamps' && document.visibilityState === 'visible' });
   // After this render's layout: where the empty gap is now.
   requestAnimationFrame(sendFieldFocus);
+}
+
+/** Starts the celebration burst at the stamp's centre. */
+function sendBurst() {
+  const hero = document.querySelector('#complete .stamp-hero');
+  if (!fieldWorker || !fieldCanvas || !hero) return;
+  const box = fieldCanvas.getBoundingClientRect(), stamp = hero.getBoundingClientRect();
+  fieldWorker.postMessage({ type: 'pointer', x: (stamp.left + stamp.right) / 2 - box.left, y: (stamp.top + stamp.bottom) / 2 - box.top, tap: true });
 }
 
 function sendFieldColors() {
@@ -1193,8 +1274,28 @@ wideQuery.addEventListener?.('change', () => { void refreshSparks(); });
 synthesis?.addEventListener('voiceschanged', renderTrail);
 window.addEventListener('pagehide', () => { controller?.abort('cancel'); stopSpeech(); });
 
+// First launch: the welcome, unless this browser already has a name, a
+// stamp, or a saved trail (someone who used Curio before it existed).
+try {
+  if (!localStorage.getItem(welcomedKey)) {
+    if (!childName() && !stamps.length && !steps.length) view = 'welcome';
+    else localStorage.setItem(welcomedKey, '1');
+  }
+} catch { /* Blocked storage: skip the welcome. */ }
+$('welcome-mark').innerHTML = icons.comet;
+withIcon($('welcome-sparks'), svg('<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/>'));
+withIcon($('welcome-trails'), svg('<path d="M4 19c4-1 3-6 7-7s3-6 7-7"/><circle cx="4" cy="19" r="2"/><circle cx="18" cy="5" r="2"/>'));
+withIcon($('welcome-stamps'), svg('<circle cx="12" cy="12" r="8"/><path d="M12 8l1.2 2.6 2.8.3-2.1 1.9.6 2.8L12 14.2 9.5 15.6l.6-2.8L8 10.9l2.8-.3z"/>'));
+$('welcome-go').addEventListener('click', () => {
+  const name = $('welcome-name').value.trim().slice(0, 40);
+  if (name) save(nameKey, name);
+  save(welcomedKey, '1');
+  go('home');
+});
+
 render();
 void refreshSparks();
+void loadFacts();
 startPixelField();
 
 const toolsLifecycle = new AbortController();

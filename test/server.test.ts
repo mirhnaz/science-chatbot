@@ -192,6 +192,7 @@ test('asset allowlist preserves bytes, MIME types, query handling and security h
     ['/theme.js', 'build/client/theme.js', 'text/javascript; charset=utf-8'],
     ['/app.js', 'build/client/app.js', 'text/javascript; charset=utf-8'],
     ['/field-worker.js', 'build/client/field-worker.js', 'text/javascript; charset=utf-8'],
+    ['/did-you-know.json', 'backend/data/did-you-know.json', 'application/json; charset=utf-8'],
     ['/styles.css', 'public/styles.css', 'text/css; charset=utf-8'],
     ['/favicon.ico', 'public/favicon.ico', 'image/vnd.microsoft.icon'],
     ['/favicon-32.png', 'public/favicon-32.png', 'image/png'],
@@ -427,6 +428,17 @@ test('starter suggestions rotate across four topics without calling Ollama', asy
   assert.equal((await fetch(f.url + '/api/suggestions?exclude=' + Array(41).fill('space-1').join(','))).status, 400);
   assert.equal((await fetch(f.url + '/api/suggestions?exclude=' + 'x'.repeat(65))).status, 400);
   assert.equal((await fetch(f.url + '/api/suggestions?exclude=' + 'x'.repeat(3001))).status, 400);
+});
+
+test('preferred topics fill up to half the sparks; oversized lists are refused', async t => {
+  const f = await fixture(t, (_, res) => answer(res));
+  for (let i = 0; i < 20; i++) {
+    const data = await (await fetch(f.url + '/api/suggestions?prefer=' + encodeURIComponent('Body,Forces & motion,Light'))).json() as { suggestions: { topic: string }[] };
+    assert.equal(data.suggestions.length, 4);
+    assert.ok(data.suggestions.filter(q => ['Body', 'Forces & motion', 'Light'].includes(q.topic)).length >= 2);
+  }
+  assert.equal((await fetch(f.url + '/api/suggestions?prefer=' + Array(21).fill('Space').join(','))).status, 400);
+  assert.equal((await fetch(f.url + '/api/suggestions?prefer=' + 'x'.repeat(41))).status, 400);
 });
 
 test('wide layouts can ask for six sparks from six topics; other counts are refused', async t => {

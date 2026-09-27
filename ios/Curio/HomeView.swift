@@ -12,6 +12,7 @@ struct HomeView: View {
     let start: (Suggestion) -> Void
     let edit: (String) -> Void
     let openSettings: () -> Void
+    let openStamps: () -> Void
     @AppStorage("childName") private var name = ""
     @Environment(\.curioWide) private var wide
     @Environment(\.horizontalSizeClass) private var sizeClass
@@ -46,7 +47,7 @@ struct HomeView: View {
                         MadeWithLove()
                     }
                     .frame(width: 380, alignment: .leading)
-                    SparksGrid(chat: chat, start: start, edit: edit)
+                    SparksGrid(chat: chat, newTopics: stamps.uncollectedTopics, start: start, edit: edit)
                 }
                 .padding(.horizontal, 40)
                 .padding(.top, 24)
@@ -74,7 +75,7 @@ struct HomeView: View {
                     .padding(.top, 18)
                 OpenTrails(trails: chat.openTrails, resume: resume)
                     .padding(.top, 18)
-                SparksGrid(chat: chat, start: start, edit: edit)
+                SparksGrid(chat: chat, newTopics: stamps.uncollectedTopics, start: start, edit: edit)
                     .padding(.top, 22)
                 MadeWithLove()
                     .frame(maxWidth: .infinity)
@@ -101,7 +102,7 @@ struct HomeView: View {
                 .foregroundStyle(Curio.ink)
             Spacer()
             if !stamps.stamps.isEmpty {
-                StampsBadge(count: stamps.stamps.count)
+                StampsBadge(count: stamps.stamps.count, open: openStamps)
             }
             CircleIconButton(label: "Settings", symbol: "gearshape", action: openSettings)
         }
@@ -109,14 +110,20 @@ struct HomeView: View {
     }
 }
 
-/// "3 stamps", on every layout: a count only for now. (The design links it
-/// to a Stamps screen, which does not exist yet.)
+/// "3 stamps", on every layout: opens the Stamps screen.
 struct StampsBadge: View {
     let count: Int
+    let open: () -> Void
 
     var body: some View {
+        Button(action: open) { label }
+            .buttonStyle(.plain)
+            .accessibilityHint("Shows your stamp collection")
+    }
+
+    private var label: some View {
         HStack(spacing: 8) {
-            Image(systemName: "moon.stars")
+            Image(systemName: "sparkles")
                 .font(.system(size: 11, weight: .bold))
                 .foregroundStyle(Curio.accent)
                 .frame(width: 22, height: 22)
@@ -317,6 +324,8 @@ struct ProgressDots: View {
 /// when wide. The whole card asks its question.
 struct SparksGrid: View {
     let chat: ChatModel
+    /// Topics not collected yet: their cards say "New stamp!".
+    let newTopics: Set<String>
     let start: (Suggestion) -> Void
     let edit: (String) -> Void
     @Environment(\.curioWide) private var wide
@@ -346,7 +355,7 @@ struct SparksGrid: View {
             }
             LazyVGrid(columns: columns, spacing: gap) {
                 ForEach(chat.suggestions) { idea in
-                    SparkCard(idea: idea) { start(idea) }
+                    SparkCard(idea: idea, isNew: newTopics.contains(idea.topic)) { start(idea) }
                         .contextMenu {
                             Button("Edit before asking", systemImage: "pencil") { edit(idea.question) }
                         }
@@ -358,6 +367,8 @@ struct SparksGrid: View {
 
 struct SparkCard: View {
     let idea: Suggestion
+    /// A topic whose stamp the child has not collected yet.
+    var isNew = false
     let action: () -> Void
     @Environment(\.curioWide) private var wide
 
@@ -388,12 +399,23 @@ struct SparkCard: View {
             // A minimum, not a fixed height, so larger text sizes still fit.
             .frame(maxWidth: .infinity, minHeight: wide ? 186 : 148, alignment: .topLeading)
             .background(style.fill, in: .rect(cornerRadius: wide ? 22 : Curio.cardRadius))
+            .overlay(alignment: .topTrailing) {
+                if isNew {
+                    Text("New stamp!")
+                        .font(Curio.body(11, .heavy, relativeTo: .caption2))
+                        .foregroundStyle(Curio.onAccent)
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 3)
+                        .background(Curio.accentFill, in: .capsule)
+                        .padding(12)
+                }
+            }
             .contentShape(.rect(cornerRadius: Curio.cardRadius))
         }
         .buttonStyle(.plain)
         .hoverEffect(.highlight)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(idea.topic): \(idea.question)")
+        .accessibilityLabel("\(idea.topic)\(isNew ? ", new stamp" : ""): \(idea.question)")
         .accessibilityHint("Starts a trail with this question")
         .accessibilityAddTraits(.isButton)
     }

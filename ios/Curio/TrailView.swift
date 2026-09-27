@@ -254,13 +254,7 @@ struct CurrentStep: View {
             }
 
             if step.isLoading {
-                HStack(spacing: 12) {
-                    ProgressView()
-                    Text("Working on your answer…")
-                        .font(Curio.body(16))
-                        .foregroundStyle(Curio.muted)
-                }
-                .padding(.vertical, 12)
+                LoadingMoment()
             } else if let error = step.error {
                 VStack(alignment: .leading, spacing: 12) {
                     Label(error, systemImage: "exclamationmark.triangle")
@@ -563,5 +557,54 @@ struct FinishButton: View {
         }
         .buttonStyle(.plain)
         .accessibilityHint("Shows what you found out and your stamp")
+    }
+}
+
+/// While an answer loads: a pixel "thinking" animation and a Did-you-know
+/// fact that changes every 6 seconds (a still pixel grid with Reduce Motion).
+struct LoadingMoment: View {
+    @State private var start = Int.random(in: 0..<100)
+    @State private var began = Date.now
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 16) {
+            TimelineView(.animation(minimumInterval: 1.0 / 20, paused: reduceMotion)) { context in
+                let t = context.date.timeIntervalSince(began)
+                Grid(horizontalSpacing: 3, verticalSpacing: 3) {
+                    ForEach(0..<3) { row in
+                        GridRow {
+                            ForEach(0..<3) { column in
+                                let phase = Double(row + column) * 0.15
+                                let pulse = reduceMotion ? 1 : 0.5 + 0.5 * sin((t - phase) * 2 * .pi / 1.2)
+                                RoundedRectangle(cornerRadius: 2)
+                                    .fill(Curio.fieldCrest)
+                                    .frame(width: 8, height: 8)
+                                    .opacity(0.25 + 0.75 * pulse)
+                                    .scaleEffect(0.8 + 0.2 * pulse)
+                            }
+                        }
+                    }
+                }
+            }
+            .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Working on your answer…")
+                    .font(Curio.body(16, .bold))
+                    .foregroundStyle(Curio.muted)
+                let facts = BundledText.didYouKnow
+                if !facts.isEmpty {
+                    TimelineView(.periodic(from: began, by: 6)) { context in
+                        let index = start + Int(context.date.timeIntervalSince(began) / 6)
+                        Text("Did you know? \(facts[index % facts.count])")
+                            .font(Curio.body(15))
+                            .foregroundStyle(Curio.ink)
+                            .contentTransition(.opacity)
+                            .animation(.easeInOut(duration: 0.4), value: index)
+                    }
+                }
+            }
+        }
+        .padding(.vertical, 12)
     }
 }

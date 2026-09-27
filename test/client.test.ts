@@ -36,7 +36,7 @@ function* walk(root: Element): Generator<Element> {
 const byClass = (root: Element, name: string) => [...walk(root)].filter(e => e.className.split(' ').includes(name));
 const text = (root: Element): string => root.textContent + root.children.map(text).join('');
 
-async function browser(stored?: string, storageBlocked = false, local: Record<string, string> = {}) {
+async function browser(stored?: string, storageBlocked = false, local: Record<string, string> = { 'curio.welcomed.v1': '1' }) {
   const elements = new Map<string, Element>();
   const get = (id: string): Element => {
     let element = elements.get(id);
@@ -75,10 +75,15 @@ async function browser(stored?: string, storageBlocked = false, local: Record<st
     AbortController,
     setTimeout(callback: () => void, ms: number) { const id = ++timerId; timers.set(id, { callback, ms }); return id; },
     clearTimeout(id: number) { timers.delete(id); },
-    fetch: (url: string, options: PendingRequest['options']) => new Promise((resolve, reject) => {
-      requests.push({ url, options, complete: (body, ok = true) => resolve({ ok, json: async () => body }) });
-      options.signal?.addEventListener('abort', () => reject(new Error('Aborted')));
-    })
+    // The fact rotation's interval is not exercised here.
+    setInterval() { return 0; },
+    clearInterval() {},
+    fetch: (url: string, options: PendingRequest['options']) => url === '/did-you-know.json'
+      ? Promise.resolve({ ok: true, json: async () => ['Octopuses have three hearts.', 'Glass is made from sand.'] })
+      : new Promise((resolve, reject) => {
+        requests.push({ url, options, complete: (body, ok = true) => resolve({ ok, json: async () => body }) });
+        options.signal?.addEventListener('abort', () => reject(new Error('Aborted')));
+      })
   });
   vm.runInContext(await readFile(new URL('../client/app.js', import.meta.url), 'utf8'), context);
   const trail = () => get('trail');
@@ -109,6 +114,7 @@ test('a spark asks at once and opens its trail', async () => {
   assert.equal(b.get('trail-detail').textContent, 'Thinking…');
   assert.equal(b.get('question').placeholder, 'Ask more about topic 0…');
   assert.ok(byClass(b.trail(), 'loading').length === 1);
+  assert.match(text(byClass(b.trail(), 'loading')[0]), /Did you know\? (Octopuses|Glass)/, 'a fact while it loads');
   assert.ok(b.get('spark-grid').children.every(card => card.disabled), 'sparks wait for the answer');
   assert.equal(b.get('cancel').hidden, false);
   await answerLatest(b);
@@ -405,4 +411,38 @@ test('Stamps shows every kind, earned or not, and the latest stamps', async () =
   assert.match(text(b.get('stamp-list').children[0]), /Topic 9 stamp/, 'newest first');
   b.get('stamps-back').listeners.click();
   assert.equal(b.body.attributes['data-view'], 'home');
+});
+
+test('sparks prefer uncollected topics and mark them "New stamp!" once a stamp exists', async () => {
+  const none = await browser();
+  assert.doesNotMatch(none.requests[0].url, /prefer=/, 'no stamps yet: no preference');
+  const earned = JSON.stringify([{ id: 't1', topic: 'Topic 0', earned: '2026-09-20T10:00:00.000Z' }]);
+  const b = await browser(undefined, false, { 'curio.stamps.v1': earned });
+  const prefer = new URL(b.requests[0].url, 'http://localhost').searchParams.get('prefer')!.split(',');
+  assert.equal(prefer.length, 11, 'all 11 bank topics are still uncollected');
+  assert.ok(prefer.includes('Forces & motion'));
+  b.requests[0].complete({ suggestions: [
+    { id: 'space-1', topic: 'Space', icon: '🚀', question: 'Why do stars twinkle?' },
+    { id: 'topic-0', topic: 'Topic 0', icon: '🌱', question: 'Why do plants grow?' },
+    { id: 'body-1', topic: 'Body', icon: '🫀', question: 'Why do we yawn?' },
+    { id: 'sound-1', topic: 'Sound', icon: '🎵', question: 'What is an echo?' }
+  ] }); await flush();
+  const labels = b.get('spark-grid').children.map(card => card.attributes['aria-label']);
+  assert.deepEqual(labels, ['Space, new stamp: Why do stars twinkle?', 'Topic 0: Why do plants grow?',
+    'Body, new stamp: Why do we yawn?', 'Sound, new stamp: What is an echo?']);
+});
+
+test('first launch shows the welcome once; the name is saved and Home follows', async () => {
+  const b = await browser(undefined, false, {});
+  assert.equal(b.body.attributes['data-view'], 'welcome');
+  assert.equal(b.get('dock').hidden, true);
+  b.get('welcome-name').value = '  Ayaan ';
+  b.get('welcome-go').listeners.click();
+  assert.equal(b.body.attributes['data-view'], 'home');
+  assert.equal(b.local['curio.name.v1'], 'Ayaan');
+  assert.equal(b.local['curio.welcomed.v1'], '1');
+  const again = await browser(undefined, false, { ...b.local });
+  assert.equal(again.body.attributes['data-view'], 'home', 'only once');
+  const returning = await browser(undefined, false, { 'curio.name.v1': 'Mira' });
+  assert.equal(returning.body.attributes['data-view'], 'home', 'people who used Curio before skip it');
 });

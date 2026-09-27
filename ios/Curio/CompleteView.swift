@@ -37,6 +37,14 @@ final class StampStore {
         self.persists = persists
     }
 
+    /// Topics whose stamp is not collected yet, once there is at least one
+    /// stamp (before that, every topic would be "new").
+    var uncollectedTopics: Set<String> {
+        guard !stamps.isEmpty else { return [] }
+        let collected = Set(stamps.compactMap(\.topic))
+        return Set(StampsView.kinds.compactMap { $0 }).subtracting(collected)
+    }
+
     /// Adds the trail's stamp and records it as finished, once per trail.
     func award(trail: UUID, topic: String?, question: String) {
         if !stamps.contains(where: { $0.id == trail }) {
@@ -78,6 +86,11 @@ struct CompleteView: View {
     let close: () -> Void
     let newSpark: () -> Void
     @State private var shareImage: Image?
+    /// The celebration: the stamp lands, a pixel burst plays behind it.
+    @State private var landed = false
+    @State private var bursting = false
+    @State private var burstStarted = Date.distantPast
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Visible height, so the actions sit at the bottom when everything fits.
     @State private var visibleHeight = 0.0
     @Environment(\.displayScale) private var displayScale
@@ -106,12 +119,23 @@ struct CompleteView: View {
                 .padding(.top, 8)
 
                 VStack(spacing: 0) {
-                    Image(systemName: style.symbol)
+                    Image(systemName: stampSymbol(chat.topic))
                         .font(.system(size: 64, weight: .regular))
                         .foregroundStyle(style.foreground)
                         .frame(width: 156, height: 156)
                         .background(style.fill, in: .circle)
                         .overlay(Circle().strokeBorder(Curio.accentFill, lineWidth: 5))
+                        .scaleEffect(landed ? 1 : 0.2)
+                        .rotationEffect(.degrees(landed ? 0 : -18))
+                        .opacity(landed ? 1 : 0)
+                        .background {
+                            if bursting {
+                                // Rings and sparkles from the stamp's centre.
+                                PixelField(scene: .burst, tap: .init(point: CGPoint(x: 210, y: 210), at: burstStarted))
+                                    .frame(width: 420, height: 420)
+                                    .allowsHitTesting(false)
+                            }
+                        }
                         .accessibilityLabel(stampName)
                         .padding(.top, 26)
                     Text("Trail complete!")
@@ -173,6 +197,22 @@ struct CompleteView: View {
         } action: { visibleHeight = max($0, 0) }
         .background(Curio.ground)
         .task { renderShareImage(facts: facts) }
+        .onAppear(perform: celebrate)
+        .sensoryFeedback(.success, trigger: landed) { _, now in now }
+    }
+
+    /// The stamp lands with a spring and a burst plays for a few seconds;
+    /// with Reduce Motion it simply appears.
+    private func celebrate() {
+        guard !landed else { return }
+        guard !reduceMotion else { landed = true; return }
+        burstStarted = .now
+        bursting = true
+        withAnimation(.spring(duration: 0.7, bounce: 0.45)) { landed = true }
+        Task {
+            try? await Task.sleep(for: .seconds(3.5))
+            bursting = false
+        }
     }
 
     private var questionsText: String {
@@ -276,7 +316,7 @@ struct StampsRow: View {
                 ForEach(stamps.suffix(Self.shown)) { stamp in
                     let style = CategoryStyle.of(stamp.topic)
                     let new = stamp.id == current
-                    Image(systemName: style.symbol)
+                    Image(systemName: stampSymbol(stamp.topic))
                         .font(.system(size: 22, weight: .medium))
                         .foregroundStyle(new ? Curio.onAccent : style.foreground)
                         .frame(width: 56, height: 56)

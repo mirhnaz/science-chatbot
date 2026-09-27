@@ -628,6 +628,43 @@ the screen behind the content (web: 50vh canvas; iOS:
 question bar regardless of content; taps and hover reach it through the
 content. Trail intensity 45 %.
 
+### Stamps screen, user service, trail tests (2026-09-27)
+
+User decisions: skip a "My trails" screen for now (Home already shows the
+three unfinished trails; finished trails keep no answers until history is
+built); build a Stamps screen; run Curio as a systemd user service so
+deploys need no sudo; move the iOS trail logic under `swift test`; then
+work on tuning Qwen's answers.
+
+Done: Stamps screen on web (`e85f849`, view `stamps`, nav Home / Stamps,
+the stamps pill is a button) and iOS (`61fc4a1`, pushed screen): 12 kinds
+(11 topics + Curious Mind with a sparkles icon), counts or dashed "not
+yet", latest ten with dates. `deploy/curio-web.user.service` and
+INSTALL.md → "Run as a user service" (`c5c57a4`): one-time switch with
+linger, copying PUBLIC_ORIGIN from the live unit; **not yet run on
+omarchy** (the user runs it). ScienceCore `OpenTrailShelf`/`SavedTrail`
+with 5 new tests (15 total). Web tests 41 (new Stamps test).
+Stamps screenshots checked at 390 px (light) and 1440 px (dark).
+
+### Frontend delight batch (2026-09-27)
+
+Worked on `main` while a separate `prompt-tuning` worktree changes the
+prompt (not touched here). Done: stamp celebration (`bafa5f9`),
+collection-aware sparks with `prefer=` on `/api/suggestions` and the Swift
+port (`1691345`), loading pixel grid + Did-you-know facts (`b22f414`,
+`/did-you-know.json` route), first-launch welcome on web (`2b6c20e`) and
+iOS. Verified: 25 Rust, 44 HTTP/frontend, 15 ScienceCore tests; web
+screenshots of the burst, badges, loading and welcome in light and dark.
+iOS builds and is installed; **its new screens were not checked by eye**
+(the Mac run via Xcode is unreliable), so the iOS look needs the user.
+Deployed by the agent over SSH at the user's request: mir-omarchy-pc now
+runs `curio-web` as a **user service** (the user had switched; the system
+unit is inactive), pulled to `29318d4`, `npm run build`, `systemctl
+--user restart curio-web` without sudo. Verified: local `/healthz` ok,
+public page / styles / app.js / field-worker.js / did-you-know.json match
+the repository, and a real question returned an answer with trail name,
+label and fact.
+
 ### Tutor prompt and model: Gemma 4 12B (2026-09-27, branch `prompt-tuning`)
 
 Worked in a separate worktree (`../science-chatbot-prompt`, branch
@@ -697,6 +734,16 @@ depends on history and on privacy decisions for children's data.
   stored, consent, retention, and a review step before a child's question
   becomes a starter.
 - Trails as a map of interests (above and in [DESIGN.md](DESIGN.md)).
+- Frontend backlog (agreed 2026-09-27, after the celebration / sparks /
+  loading / welcome batch):
+  - Read-aloud highlighting (sentence or word as it is spoken).
+  - Accessibility pass: VoiceOver / screen-reader order, iOS Dynamic Type,
+    web keyboard-only use, the four low-contrast colours in DESIGN.md.
+  - Installable web app: service worker with an offline "can't reach the
+    tutor" page (manifest exists).
+  - "My trails" / history with finished trails to reread (needs saved
+    answers and privacy decisions; where the React migration would start).
+  - Grown-ups weekly summary (same privacy questions).
 
 Authentication approach, database choice, history retention, and detailed UI
 requirements have not been decided. Clarify them when beginning the feature.

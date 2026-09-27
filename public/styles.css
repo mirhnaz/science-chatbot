@@ -203,7 +203,9 @@ h1, h2, h3, p { margin: 0; }
 /* Pixel field: a science scene in the bottom half of Home and Trail
    (field-worker.ts), fixed behind the content. It never takes pointer events. */
 .pixel-field { position: fixed; left: 0; right: 0; bottom: 0; width: 100%; height: 50vh; z-index: 0; pointer-events: none; }
-body[data-view="complete"] .pixel-field, body[data-view="stamps"] .pixel-field { display: none; }
+body[data-view="stamps"] .pixel-field { display: none; }
+/* Trail complete: the whole screen, for the stamp celebration burst. */
+body[data-view="complete"] .pixel-field { top: 0; height: 100vh; }
 main { position: relative; z-index: 1; }
 
 /* Screens: one column (phone); wider layouts in the breakpoints below. */
@@ -254,6 +256,11 @@ main { position: relative; z-index: 1; }
   background: var(--cat-fill); color: var(--ink); text-align: left;
 }
 .spark-card:disabled { opacity: .7; }
+.spark-card { position: relative; }
+.new-stamp {
+  position: absolute; top: 12px; right: 12px; padding: 3px 9px; border-radius: 999px;
+  background: var(--accent-fill); color: var(--on-accent); font-size: 11px; font-weight: 800; letter-spacing: .02em;
+}
 /* Six sparks load on wide layouts; if the window narrows, show four. */
 .spark-grid .spark-card:nth-child(n+5) { display: none; }
 .icon-disc { width: 40px; height: 40px; padding: 9px; border-radius: 50%; background: var(--icon-disc); color: var(--cat-ink); display: grid; place-items: center; }
@@ -338,9 +345,18 @@ main { position: relative; z-index: 1; }
 /* Phones show two choices; wider layouts show all three. */
 .dive-chips .chip:nth-child(n+3) { display: none; }
 .finish { margin-top: 20px; }
-.loading { display: flex; align-items: center; gap: 12px; color: var(--muted); padding: 14px 0; }
-.spinner { width: 20px; height: 20px; border: 3px solid var(--border); border-top-color: var(--accent-text); border-radius: 50%; animation: spin 1s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
+.loading { display: flex; align-items: center; gap: 16px; color: var(--muted); padding: 16px 0; }
+/* A 3×3 pixel "thinking" animation (compositor-only: opacity and transform). */
+.thinking { flex-shrink: 0; display: grid; grid-template-columns: repeat(3, 8px); gap: 3px; }
+.thinking-pixel { width: 8px; height: 8px; border-radius: 2px; background: var(--field-crest); animation: think 1.2s ease-in-out infinite; }
+.thinking-pixel:nth-child(2), .thinking-pixel:nth-child(4) { animation-delay: .15s; }
+.thinking-pixel:nth-child(3), .thinking-pixel:nth-child(5), .thinking-pixel:nth-child(7) { animation-delay: .3s; }
+.thinking-pixel:nth-child(6), .thinking-pixel:nth-child(8) { animation-delay: .45s; }
+.thinking-pixel:nth-child(9) { animation-delay: .6s; }
+@keyframes think { 0%, 100% { opacity: .25; transform: scale(.8); } 50% { opacity: 1; transform: none; } }
+.loading-words { display: flex; flex-direction: column; gap: 4px; }
+.loading-title { font-weight: 700; }
+.fact-line { font-size: 15px; line-height: 21px; color: var(--ink); }
 .error { margin-top: 14px; padding: 16px; border-radius: var(--radius-card); background: var(--danger-tint); color: var(--danger); display: flex; flex-direction: column; align-items: flex-start; gap: 12px; line-height: 1.5; }
 
 /* Trail complete */
@@ -351,6 +367,9 @@ main { position: relative; z-index: 1; }
   background: var(--cat-fill); border: 5px solid var(--accent-fill); color: var(--cat-ink);
 }
 .stamp-hero svg { width: 100%; height: 100%; stroke-width: 1.6; }
+/* The new stamp lands (once per trail; off with Reduce Motion). */
+.stamp-hero.landing { animation: stamp-land .75s cubic-bezier(.2, 1.5, .4, 1) both; }
+@keyframes stamp-land { from { transform: scale(.2) rotate(-18deg); opacity: 0; } 60% { opacity: 1; } to { transform: none; opacity: 1; } }
 .complete h1 { margin-top: 20px; text-align: center; font-family: var(--font-display); font-size: 30px; line-height: 34px; font-weight: 700; }
 .complete-sub { margin: 8px auto 0; max-width: 300px; text-align: center; font-size: 16px; line-height: 23px; color: var(--muted); }
 .recap { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; padding: 16px; border-radius: 18px; background: var(--surface); border: var(--border-width) solid var(--border); }
@@ -366,6 +385,22 @@ main { position: relative; z-index: 1; }
 .stamp.new { background: var(--accent-fill); color: var(--on-accent); }
 .stamp.locked { background: transparent; border: 2px dashed var(--locked); }
 .complete-actions { display: flex; flex-direction: column; gap: 10px; margin-top: auto; padding-top: 24px; }
+
+/* First-launch welcome */
+.screen.welcome { max-width: 480px; display: flex; flex-direction: column; align-items: stretch; padding-top: 48px; padding-bottom: 48px; }
+.brand-mark.welcome-mark { width: 72px; height: 72px; padding: 16px; border-radius: 20px; align-self: center; }
+.welcome-heading { margin-top: 20px; text-align: center; font-family: var(--font-display); font-size: 32px; line-height: 38px; font-weight: 700; }
+.welcome-sub { margin-top: 8px; text-align: center; font-size: 17px; line-height: 24px; color: var(--muted); }
+.welcome-label { margin-top: 28px; font-size: 15px; font-weight: 800; }
+.welcome-input { margin-top: 8px; min-height: 52px; padding: 0 18px; border-radius: var(--radius-bar); border: var(--border-width) solid var(--border); background: var(--surface); color: var(--ink); font-size: 17px; font-weight: 600; }
+.welcome-input::placeholder { color: var(--placeholder); }
+.welcome-help { margin-top: 6px; font-size: 13px; color: var(--label); }
+.welcome-steps { list-style: none; margin: 28px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.welcome-steps li { display: grid; grid-template-columns: 40px 1fr; grid-template-rows: auto auto; column-gap: 12px; align-items: center; padding: 12px 14px; border-radius: var(--radius-chip); background: var(--surface); border: var(--border-width) solid var(--border); }
+.welcome-steps .icon { grid-row: 1 / span 2; grid-column: 1; width: 40px; height: 40px; padding: 10px; border-radius: 50%; background: var(--accent-tint); color: var(--accent-text); order: -1; }
+.welcome-steps strong { grid-column: 2; font-family: var(--font-display); font-size: 17px; font-weight: 600; }
+.welcome-steps span:not(.icon) { grid-column: 2; font-size: 14px; color: var(--muted); }
+.welcome .primary { margin-top: 28px; }
 
 /* Stamps */
 .stamps-empty { margin-top: 24px; text-align: center; font-size: 16px; color: var(--muted); }
