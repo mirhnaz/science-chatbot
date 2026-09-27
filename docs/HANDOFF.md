@@ -68,7 +68,10 @@ topics or advanced concepts from other languages.
   and both `build/client/app.js` and `build/client/theme.js`. The service's `PUBLIC_ORIGIN` is configured locally;
   do not copy its personal hostname into tracked files.
 - POST `/api/chat` accepts `question`; replies contain `answer`, `followUps`, and
-  `elapsedMs`. Existing friendly errors, headers, and asset allowlist matter.
+  `elapsedMs`, plus optional `fact` (≤160), `label` (≤40), and `trailName`
+  (≤30) when the model gave usable ones (never a reason to fail a reply).
+  GET `/api/suggestions` takes `exclude` and `count` (4 or 6). Existing
+  friendly errors, headers, and asset allowlist matter.
 - Request limit: 8 KiB. Question/follow-up limits: 2,000/180 UTF-16 code units.
   Two simultaneous model requests are allowed; a third immediately gets 429.
   The complete upstream deadline is 120 seconds by default.
@@ -506,6 +509,46 @@ Nothing was deleted; ask the user before removing test data.
 
 Not deployed: the live service still runs the old binary. Going live needs
 `npm run build` and a service restart (new font routes).
+
+### Follow-up batch (2026-09-27, after the user deployed the redesign)
+
+User priorities: 1 verify deploy + iPad cleanup, 3 keep unfinished trails,
+4 microphone, 5 richer tutor replies, six sparks on the tablet, small bugs.
+Declined for now: contrast fixes, per-step illustrations. Later: Stamps and
+My trails screens. Decision: unfinished trails are kept **7 days**.
+
+Done and verified:
+- Deploy (user redeployed at `8bdf38c` and restarted): every public asset
+  and font route matched the repository byte-for-byte; a real spark was
+  answered end to end on the public site at 390 px.
+- iPad: the Debug argument `-removeFinishedTrails` (`22531b8`) removed the
+  two agent test trails and their stamps; 5 real stamps remain. Trail
+  complete in landscape (light and dark) now fits; Debug runs no longer
+  save stamps or trails.
+- Tutor extras (`bf810ef`): optional `fact`, `label`, `trailName` in the
+  prompt, schema, Rust (`optional_text`), Swift port and grammar; dropped
+  when unusable. Local qwen3:8b filled them well in English and Spanish.
+  Six-spark batches (`count=6`) and a Body topic (66 questions, 11 topics).
+- Clients (`2e1a368`): unfinished trail saved 7 days (web localStorage
+  `curio.trail.v1`, iOS UserDefaults `unfinishedTrail`, re-validated on
+  load); extras used in headers, resume card, rail, recap; 3×2 sparks when
+  wide; fixed the tapped spark staying in the web grid and the pointless
+  Undo after a finished trail.
+- Microphone (`d597188`): iOS only, on-device `SFSpeechRecognizer`, fills
+  the box, stops after a 2.5 s pause / 30 s / tap / answer / screen change;
+  usage strings in Info.plist. Hidden on web.
+- Checks: 24 Rust + 40 HTTP/frontend tests, typecheck, rustfmt + Clippy,
+  10 ScienceCore tests, iOS unsigned and signed builds. Web screenshots at
+  390 and 1180 px against local qwen3:8b. iPad screenshots: six sparks with
+  Body, mic button on Home and Trail.
+
+**Not yet verified:** speaking into the mic (needs a person; the first tap
+shows the iOS permission prompts), a real saved trail surviving an app
+relaunch on the iPad, and the extras on the iPad (its AI PC mode uses the
+deployed server, which still has the old prompt until redeployed).
+
+To go live: pull on mir-omarchy-pc, `npm run build`, restart
+`curio-web.service` (new prompt, schema, Body topic, `count` parameter).
 
 ## Agreed direction, not yet implemented
 

@@ -25,7 +25,9 @@ the app works and authorized removal of the Node fallback.
 2. HTTP: health endpoint, exact asset allowlist, MIME types, cache policy, security
    headers, and friendly method/route errors.
 3. Ollama: one shared reqwest client, unchanged prompt/schema, validated two-layer
-   JSON response, `answer`, `followUps`, and `elapsedMs` fields.
+   JSON response, `answer`, `followUps`, and `elapsedMs` fields. (Since
+   2026-09-27 replies may also carry optional `fact`, `label`, and
+   `trailName`; see HANDOFF.md.)
 4. Behavior: HTTP tests originally compared Rust and Node; the retained Rust
    tests include real sockets for
    concurrency, disconnects, timeouts during body reads, and shutdown.

@@ -41,7 +41,8 @@ curl --noproxy '*' --fail http://127.0.0.1:11437/api/chat \
   -H 'Content-Type: application/json' --data '{"question":"Why is the sky blue?"}'
 ```
 
-Verify `answer`, exactly three `followUps`, and numeric `elapsedMs`. Stop the
+Verify `answer`, exactly three `followUps`, and numeric `elapsedMs` (and,
+usually, the optional `fact`, `label`, and `trailName`). Stop the
 side-by-side instance with Ctrl+C after checking it.
 
 ## Install or update the systemd service

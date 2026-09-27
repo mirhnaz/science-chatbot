@@ -44,13 +44,15 @@ screens make shared state and reusable components useful.
 - **Read aloud** is a button on each answer when the browser has a local
   English voice.
 
-Every question is still sent to `/api/chat` on its own, so the API is
-unchanged. Browser storage: recent spark IDs in sessionStorage
+Every question is still sent to `/api/chat` on its own. Browser storage: recent spark IDs in sessionStorage
 (`curio.recent-suggestions.v1`); in localStorage the theme
 (`curio.theme.v1`), first name (`curio.name.v1`), stamps (`curio.stamps.v1`:
 trail ID, topic, date) and finished trails (`curio.trails.v1`: trail ID,
-topic, first question, date; last 100). The trail in progress lives only in
-the page and is lost on reload.
+topic, first question, date; last 100), and the unfinished trail
+(`curio.trail.v1`: its answered steps with questions, answers and the
+tutor's extras; forgotten after 7 days or when finished). Wide windows ask
+for six sparks (`count=6`). The page uses the reply's optional `label`,
+`trailName`, and `fact` when present. There is no microphone on the web.
 
 ## Checks
 

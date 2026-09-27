@@ -35,14 +35,21 @@ stamps and finished trails are kept **on the device only**.
   step (heading 34/40, illustration 360×260 beside the answer 20/32, three
   Dive deeper chips). `≥1400` (web): 232 px nav, 300 px rail, step centred
   at 760 px with a 760×280 illustration above the answer.
-- Deviations: Sparks stay 2×2 at every width (the bank gives four; the
-  tablet's 3×2 needs six and a Body topic); the stamps pill is a count, not a
-  link; the web nav shows Home and My trails only (Stamps and Grown-ups need
+- Sparks: 2×2 (four) on phones, 3×2 (six, `/api/suggestions?count=6`) at
+  ≥1100 px. Deviations: the stamps pill is a count, not a link; the web nav shows Home and My trails only (Stamps and Grown-ups need
   screens); no Complete layout was designed for wide screens, so it stays one
   centred column.
-- Placeholders until new features exist: category illustration (not per
-  step), the step's question (not a short label), the topic (not a trail
-  name), first sentences (not generated facts), no microphone.
+- From the tutor (optional reply fields, 2026-09-27): the step label
+  ("Step 3 · The nucleus"), the trail name in headers and stamps ("Comets"),
+  and one fact per answer for the recap and "So far you know". When a field
+  is missing, the step's question, the spark topic, or the answer's first
+  sentence stands in.
+- An unfinished trail is saved on the device for 7 days (resume card);
+  finished trails are not kept for resuming.
+- Microphone: iOS only, on-device recognition, fills the box (never sends by
+  itself). Hidden on the web, where browser speech services may send audio
+  to third parties.
+- Still a placeholder: the category illustration (not a picture per step).
 
 ## The curiosity column (current iPad build)
 

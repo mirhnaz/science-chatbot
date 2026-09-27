@@ -23,8 +23,9 @@ existing science tutor. Avoid instructions for hazardous experiments. Keep the
 same topic label for all questions in a category so selection can distinguish
 categories correctly. IDs should continue to identify the same question.
 
-The initial collection is 10 topics with six questions each: Space, Animals,
-Plants, Weather, Light, Sound, Electricity, Earth, Matter, and Forces & motion.
+The collection is 11 topics with six questions each: Space, Animals, Plants,
+Weather, Light, Sound, Electricity, Earth, Matter, Forces & motion, and Body
+(added 2026-09-27 for the tablet's six sparks).
 The bank tests explicitly check that initial inventory; when deliberately
 expanding it, update those count expectations and preserve the diversity and
 exclusion tests. No schema change is required for additional entries.
@@ -47,7 +48,8 @@ in [VERIFICATION.md](VERIFICATION.md) and deploy per [INSTALL.md](INSTALL.md).
 ```
 
 The example shows one entry for brevity; a real response contains four entries
-from four different topics. Responses use `Cache-Control: no-store` and the
+from four different topics, or six from six topics with `count=6` (wide
+layouts). Any other `count` gets a friendly `400`. Responses use `Cache-Control: no-store` and the
 app's existing security headers. Other methods get `405` with `Allow: GET`.
 The endpoint accepts at most 40 excluded IDs of up to 64 characters each and a
 query string of at most 3,000 bytes; larger inputs get a friendly `400`.
@@ -55,8 +57,9 @@ Unknown IDs have no effect.
 
 A newly seeded standard-library hash randomizes the ordering of the small bank.
 This randomness is for variety, not security. Unseen entries are considered first,
-then one question per topic is picked. With the current balanced 60-question bank
-and the 40-ID limit, four unseen topics are always available. If the catalogue is
+then one question per topic is picked. With the current balanced 66-question bank
+and the 40-ID limit, four unseen topics are always available; a batch of six
+may occasionally reuse a recently shown question. If the catalogue is
 later reduced, the selector can reuse excluded entries to fill the result.
 
 ## Browser behavior
