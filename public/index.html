@@ -31,6 +31,22 @@
   </nav>
 
   <main id="main">
+    <!-- First launch only (welcome), then Home. -->
+    <section id="welcome" class="screen welcome" aria-labelledby="welcome-heading" hidden>
+      <span class="brand-mark welcome-mark" id="welcome-mark"></span>
+      <h1 id="welcome-heading" class="welcome-heading">Hi! I’m Curio</h1>
+      <p class="welcome-sub">Your science explorer. Let’s find out how the world works!</p>
+      <label class="welcome-label" for="welcome-name">What’s your first name?</label>
+      <input id="welcome-name" class="welcome-input" type="text" maxlength="40" autocomplete="given-name" spellcheck="false" placeholder="Your first name">
+      <p class="welcome-help">So I can say hello. It stays on this device.</p>
+      <ul class="welcome-steps">
+        <li id="welcome-sparks"><strong>Sparks</strong><span>Tap a spark to ask a big question.</span></li>
+        <li id="welcome-trails"><strong>Trails</strong><span>Follow 5 steps to explore it deeper.</span></li>
+        <li id="welcome-stamps"><strong>Stamps</strong><span>Finish a trail to collect a stamp.</span></li>
+      </ul>
+      <button id="welcome-go" class="primary" type="button">Let’s explore!</button>
+    </section>
+
     <!-- Home (docs/design/redesign-2026-09/Main.dc.html). -->
     <section id="home" class="screen home" aria-labelledby="greeting">
       <header class="app-header">

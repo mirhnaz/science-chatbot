@@ -36,7 +36,7 @@ function* walk(root: Element): Generator<Element> {
 const byClass = (root: Element, name: string) => [...walk(root)].filter(e => e.className.split(' ').includes(name));
 const text = (root: Element): string => root.textContent + root.children.map(text).join('');
 
-async function browser(stored?: string, storageBlocked = false, local: Record<string, string> = {}) {
+async function browser(stored?: string, storageBlocked = false, local: Record<string, string> = { 'curio.welcomed.v1': '1' }) {
   const elements = new Map<string, Element>();
   const get = (id: string): Element => {
     let element = elements.get(id);
@@ -430,4 +430,19 @@ test('sparks prefer uncollected topics and mark them "New stamp!" once a stamp e
   const labels = b.get('spark-grid').children.map(card => card.attributes['aria-label']);
   assert.deepEqual(labels, ['Space, new stamp: Why do stars twinkle?', 'Topic 0: Why do plants grow?',
     'Body, new stamp: Why do we yawn?', 'Sound, new stamp: What is an echo?']);
+});
+
+test('first launch shows the welcome once; the name is saved and Home follows', async () => {
+  const b = await browser(undefined, false, {});
+  assert.equal(b.body.attributes['data-view'], 'welcome');
+  assert.equal(b.get('dock').hidden, true);
+  b.get('welcome-name').value = '  Ayaan ';
+  b.get('welcome-go').listeners.click();
+  assert.equal(b.body.attributes['data-view'], 'home');
+  assert.equal(b.local['curio.name.v1'], 'Ayaan');
+  assert.equal(b.local['curio.welcomed.v1'], '1');
+  const again = await browser(undefined, false, { ...b.local });
+  assert.equal(again.body.attributes['data-view'], 'home', 'only once');
+  const returning = await browser(undefined, false, { 'curio.name.v1': 'Mira' });
+  assert.equal(returning.body.attributes['data-view'], 'home', 'people who used Curio before skip it');
 });

@@ -89,6 +89,13 @@ interface AppElements {
   'nav-mark': HTMLSpanElement;
   'nav-home': HTMLButtonElement;
   'nav-stamps': HTMLButtonElement;
+  welcome: HTMLElement;
+  'welcome-mark': HTMLSpanElement;
+  'welcome-name': HTMLInputElement;
+  'welcome-go': HTMLButtonElement;
+  'welcome-sparks': HTMLLIElement;
+  'welcome-trails': HTMLLIElement;
+  'welcome-stamps': HTMLLIElement;
   'stamps-screen': HTMLElement;
   'stamps-back': HTMLButtonElement;
   'stamps-summary': HTMLParagraphElement;
@@ -186,6 +193,8 @@ function save(key: string, value: unknown) {
   try { localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value)); } catch { /* Optional storage. */ }
 }
 const nameKey = 'curio.name.v1';
+/** Set once the first-launch welcome has been shown (or skipped). */
+const welcomedKey = 'curio.welcomed.v1';
 const stampsKey = 'curio.stamps.v1';
 const trailsKey = 'curio.trails.v1';
 /** Unfinished trails (up to three, newest first), kept 7 days so Home can
@@ -221,7 +230,7 @@ function childName(): string {
 
 /** Steps in a full trail; after the last answer the trail can be finished. */
 const trailLength = 5;
-type View = 'home' | 'trail' | 'complete' | 'stamps';
+type View = 'welcome' | 'home' | 'trail' | 'complete' | 'stamps';
 let view: View = 'home';
 let steps: Step[] = [];
 let trailId = newTrailId();
@@ -570,12 +579,13 @@ function go(next: View) {
 
 function render() {
   document.body.setAttribute('data-view', view);
+  $('welcome').hidden = view !== 'welcome';
   $('home').hidden = view !== 'home';
   $('trail-screen').hidden = view !== 'trail';
   $('complete').hidden = view !== 'complete';
   $('stamps-screen').hidden = view !== 'stamps';
   // The last step offers Finish instead of the question box.
-  $('dock').hidden = view === 'complete' || view === 'stamps' || (view === 'trail' && isComplete() && !controller);
+  $('dock').hidden = view === 'welcome' || view === 'complete' || view === 'stamps' || (view === 'trail' && isComplete() && !controller);
   const name = trailName();
   $('question').placeholder = view === 'trail' ? `Ask more about ${name ? name.toLowerCase() : 'this'}…` : 'Ask anything…';
   persistTrails();
@@ -1164,9 +1174,9 @@ function updateField() {
     fieldWorker.postMessage({ type: 'run', running: performance.now() < celebrateUntil && document.visibilityState === 'visible' });
     return;
   }
-  const scene = width < 700 ? 0 : view === 'home' || width >= 1400 ? 2 : 1;
+  const scene = width < 700 || view === 'welcome' ? 0 : view === 'home' || width >= 1400 ? 2 : 1;
   fieldWorker.postMessage({ type: 'scene', scene, intensity: view === 'trail' ? 0.45 : 1 });
-  fieldWorker.postMessage({ type: 'run', running: (view === 'home' || view === 'trail') && document.visibilityState === 'visible' });
+  fieldWorker.postMessage({ type: 'run', running: view !== 'stamps' && document.visibilityState === 'visible' });
   // After this render's layout: where the empty gap is now.
   requestAnimationFrame(sendFieldFocus);
 }
@@ -1263,6 +1273,25 @@ $('settings-done').addEventListener('click', () => {
 wideQuery.addEventListener?.('change', () => { void refreshSparks(); });
 synthesis?.addEventListener('voiceschanged', renderTrail);
 window.addEventListener('pagehide', () => { controller?.abort('cancel'); stopSpeech(); });
+
+// First launch: the welcome, unless this browser already has a name, a
+// stamp, or a saved trail (someone who used Curio before it existed).
+try {
+  if (!localStorage.getItem(welcomedKey)) {
+    if (!childName() && !stamps.length && !steps.length) view = 'welcome';
+    else localStorage.setItem(welcomedKey, '1');
+  }
+} catch { /* Blocked storage: skip the welcome. */ }
+$('welcome-mark').innerHTML = icons.comet;
+withIcon($('welcome-sparks'), svg('<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/>'));
+withIcon($('welcome-trails'), svg('<path d="M4 19c4-1 3-6 7-7s3-6 7-7"/><circle cx="4" cy="19" r="2"/><circle cx="18" cy="5" r="2"/>'));
+withIcon($('welcome-stamps'), svg('<circle cx="12" cy="12" r="8"/><path d="M12 8l1.2 2.6 2.8.3-2.1 1.9.6 2.8L12 14.2 9.5 15.6l.6-2.8L8 10.9l2.8-.3z"/>'));
+$('welcome-go').addEventListener('click', () => {
+  const name = $('welcome-name').value.trim().slice(0, 40);
+  if (name) save(nameKey, name);
+  save(welcomedKey, '1');
+  go('home');
+});
 
 render();
 void refreshSparks();
