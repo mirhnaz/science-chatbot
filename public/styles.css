@@ -345,9 +345,18 @@ main { position: relative; z-index: 1; }
 /* Phones show two choices; wider layouts show all three. */
 .dive-chips .chip:nth-child(n+3) { display: none; }
 .finish { margin-top: 20px; }
-.loading { display: flex; align-items: center; gap: 12px; color: var(--muted); padding: 14px 0; }
-.spinner { width: 20px; height: 20px; border: 3px solid var(--border); border-top-color: var(--accent-text); border-radius: 50%; animation: spin 1s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
+.loading { display: flex; align-items: center; gap: 16px; color: var(--muted); padding: 16px 0; }
+/* A 3×3 pixel "thinking" animation (compositor-only: opacity and transform). */
+.thinking { flex-shrink: 0; display: grid; grid-template-columns: repeat(3, 8px); gap: 3px; }
+.thinking-pixel { width: 8px; height: 8px; border-radius: 2px; background: var(--field-crest); animation: think 1.2s ease-in-out infinite; }
+.thinking-pixel:nth-child(2), .thinking-pixel:nth-child(4) { animation-delay: .15s; }
+.thinking-pixel:nth-child(3), .thinking-pixel:nth-child(5), .thinking-pixel:nth-child(7) { animation-delay: .3s; }
+.thinking-pixel:nth-child(6), .thinking-pixel:nth-child(8) { animation-delay: .45s; }
+.thinking-pixel:nth-child(9) { animation-delay: .6s; }
+@keyframes think { 0%, 100% { opacity: .25; transform: scale(.8); } 50% { opacity: 1; transform: none; } }
+.loading-words { display: flex; flex-direction: column; gap: 4px; }
+.loading-title { font-weight: 700; }
+.fact-line { font-size: 15px; line-height: 21px; color: var(--ink); }
 .error { margin-top: 14px; padding: 16px; border-radius: var(--radius-card); background: var(--danger-tint); color: var(--danger); display: flex; flex-direction: column; align-items: flex-start; gap: 12px; line-height: 1.5; }
 
 /* Trail complete */

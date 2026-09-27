@@ -107,6 +107,11 @@ fn asset(path: &str) -> Option<(&'static str, &'static str)> {
             "build/client/field-worker.js",
             "text/javascript; charset=utf-8",
         ),
+        // Short facts shown while an answer loads (also bundled in the iOS app).
+        "/did-you-know.json" => (
+            "backend/data/did-you-know.json",
+            "application/json; charset=utf-8",
+        ),
         "/styles.css" => ("public/styles.css", "text/css; charset=utf-8"),
         "/favicon.ico" => ("public/favicon.ico", "image/vnd.microsoft.icon"),
         "/favicon-32.png" => ("public/favicon-32.png", "image/png"),

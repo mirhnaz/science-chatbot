@@ -431,6 +431,29 @@ function renderSparks() {
   updateControls();
 }
 
+// ---- Did you know? (while an answer loads) --------------------------------
+
+let facts: string[] = [];
+let factIndex = Math.floor(Math.random() * 24);
+let factTimer: ReturnType<typeof setInterval> | undefined;
+
+async function loadFacts() {
+  try {
+    const data: unknown = await (await fetch('/did-you-know.json')).json();
+    if (Array.isArray(data)) facts = data.filter((fact): fact is string => typeof fact === 'string' && !!fact.trim() && fact.length <= 200);
+  } catch { /* Optional: loading shows no fact without them. */ }
+}
+
+/** Changes the fact in place every 6 seconds while an answer loads. */
+function startFacts() {
+  clearInterval(factTimer);
+  factTimer = setInterval(() => {
+    factIndex++;
+    const line = document.querySelector('.fact-line');
+    if (line && facts.length) line.textContent = `Did you know? ${facts[factIndex % facts.length]}`;
+  }, 6000);
+}
+
 // ---- Asking --------------------------------------------------------------
 
 function startTrail(spark: Spark) {
@@ -468,6 +491,8 @@ async function ask(question: unknown, options: { newTrail?: boolean; topic?: str
   controller = current;
   const timer = setTimeout(() => current.abort('timeout'), 125000);
   $('status').textContent = 'Exploring your question…';
+  factIndex++;
+  startFacts();
   go('trail');
   scrollToTop();
   try {
@@ -502,6 +527,7 @@ async function ask(question: unknown, options: { newTrail?: boolean; topic?: str
     return { error: step.error };
   } finally {
     clearTimeout(timer);
+    clearInterval(factTimer);
     if (controller === current) controller = null;
     if (steps.length === 0) go('home'); else render();
     if (sparks.length < sparkCount()) void refreshSparks();
@@ -770,8 +796,16 @@ function currentStep(step: Step, number: number) {
     error.append(again);
     article.append(error);
   } else if (step.answer === undefined) {
+    // A pixel "thinking" animation and a Did-you-know fact that changes
+    // every few seconds (tickFact) while the tutor works.
     const loading = element('div', 'loading');
-    loading.append(element('span', 'spinner'), element('span', undefined, 'Working on your answer…'));
+    const pixels = element('span', 'thinking');
+    pixels.setAttribute('aria-hidden', 'true');
+    for (let i = 0; i < 9; i++) pixels.append(element('span', 'thinking-pixel'));
+    const words = element('span', 'loading-words');
+    words.append(element('span', 'loading-title', 'Working on your answer…'));
+    if (facts.length) words.append(element('span', 'fact-line', `Did you know? ${facts[factIndex % facts.length]}`));
+    loading.append(pixels, words);
     article.append(loading);
   } else {
     const body = element('div', 'step-body');
@@ -1232,6 +1266,7 @@ window.addEventListener('pagehide', () => { controller?.abort('cancel'); stopSpe
 
 render();
 void refreshSparks();
+void loadFacts();
 startPixelField();
 
 const toolsLifecycle = new AbortController();

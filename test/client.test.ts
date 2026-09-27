@@ -75,10 +75,15 @@ async function browser(stored?: string, storageBlocked = false, local: Record<st
     AbortController,
     setTimeout(callback: () => void, ms: number) { const id = ++timerId; timers.set(id, { callback, ms }); return id; },
     clearTimeout(id: number) { timers.delete(id); },
-    fetch: (url: string, options: PendingRequest['options']) => new Promise((resolve, reject) => {
-      requests.push({ url, options, complete: (body, ok = true) => resolve({ ok, json: async () => body }) });
-      options.signal?.addEventListener('abort', () => reject(new Error('Aborted')));
-    })
+    // The fact rotation's interval is not exercised here.
+    setInterval() { return 0; },
+    clearInterval() {},
+    fetch: (url: string, options: PendingRequest['options']) => url === '/did-you-know.json'
+      ? Promise.resolve({ ok: true, json: async () => ['Octopuses have three hearts.', 'Glass is made from sand.'] })
+      : new Promise((resolve, reject) => {
+        requests.push({ url, options, complete: (body, ok = true) => resolve({ ok, json: async () => body }) });
+        options.signal?.addEventListener('abort', () => reject(new Error('Aborted')));
+      })
   });
   vm.runInContext(await readFile(new URL('../client/app.js', import.meta.url), 'utf8'), context);
   const trail = () => get('trail');
@@ -109,6 +114,7 @@ test('a spark asks at once and opens its trail', async () => {
   assert.equal(b.get('trail-detail').textContent, 'Thinking…');
   assert.equal(b.get('question').placeholder, 'Ask more about topic 0…');
   assert.ok(byClass(b.trail(), 'loading').length === 1);
+  assert.match(text(byClass(b.trail(), 'loading')[0]), /Did you know\? (Octopuses|Glass)/, 'a fact while it loads');
   assert.ok(b.get('spark-grid').children.every(card => card.disabled), 'sparks wait for the answer');
   assert.equal(b.get('cancel').hidden, false);
   await answerLatest(b);

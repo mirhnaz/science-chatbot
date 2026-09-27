@@ -71,6 +71,15 @@ enum BundledText {
         return text
     }()
 
+    /// Short facts shown while an answer loads (backend/data/did-you-know.json).
+    static let didYouKnow: [String] = {
+        guard let url = Bundle.main.url(forResource: "did-you-know", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let facts = try? JSONDecoder().decode([String].self, from: data)
+        else { return [] }
+        return facts
+    }()
+
     static let suggestionBank: SuggestionBank = {
         guard let url = Bundle.main.url(forResource: "questions", withExtension: "json"),
               let data = try? Data(contentsOf: url),

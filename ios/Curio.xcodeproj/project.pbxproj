@@ -22,6 +22,7 @@
 		2B372D440549F52DFF4DF3C1 /* ModelStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9742A41C47D7419076FDA162 /* ModelStore.swift */; };
 		2F74D875F0EDFB545B8BB277 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DC7B15AA78E520137D7E6C4 /* NetworkMonitor.swift */; };
 		3667258F494F8DDBB90402E9 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A9672358DBE787F24899222 /* ContentView.swift */; };
+		A1C0510E0000000000000017 /* did-you-know.json in Resources */ = {isa = PBXBuildFile; fileRef = A1C0510E0000000000000018 /* did-you-know.json */; };
 		4CD577A46103241B28F53109 /* questions.json in Resources */ = {isa = PBXBuildFile; fileRef = EDF52CCE772F2659CBB58973 /* questions.json */; };
 		5E9D1D54B1631216BCD8D9BC /* LocalEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D915168E0CA058C9F138059 /* LocalEngine.swift */; };
 		77C23C41241224B9B00D4AE7 /* Speech.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A8239AA4721DD4FE59AEB6 /* Speech.swift */; };
@@ -64,6 +65,7 @@
 		D4BA6F97377721ABAB8C05DE /* LlamaFramework */ = {isa = PBXFileReference; lastKnownFileType = folder; path = LlamaFramework; sourceTree = SOURCE_ROOT; };
 		D93A94107CE05F1BB3343D5E /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		E12547E2EFB35175E491887F /* tutor.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = tutor.txt; sourceTree = "<group>"; };
+		A1C0510E0000000000000018 /* did-you-know.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "did-you-know.json"; sourceTree = "<group>"; };
 		EDF52CCE772F2659CBB58973 /* questions.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = questions.json; sourceTree = "<group>"; };
 		F8A8239AA4721DD4FE59AEB6 /* Speech.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Speech.swift; sourceTree = "<group>"; };
 		A1C0510E0000000000000006 /* Fredoka.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = Fonts/Fredoka.ttf; sourceTree = "<group>"; };
@@ -98,6 +100,7 @@
 			isa = PBXGroup;
 			children = (
 				EDF52CCE772F2659CBB58973 /* questions.json */,
+				A1C0510E0000000000000018 /* did-you-know.json */,
 			);
 			path = data;
 			sourceTree = "<group>";
@@ -260,6 +263,7 @@
 				A1C0510E0000000000000007 /* Nunito.ttf in Resources */,
 				A1C0510E0000000000000005 /* Fredoka.ttf in Resources */,
 				4CD577A46103241B28F53109 /* questions.json in Resources */,
+				A1C0510E0000000000000017 /* did-you-know.json in Resources */,
 				A6EF7523266D6AAB7AE3EC77 /* tutor.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
