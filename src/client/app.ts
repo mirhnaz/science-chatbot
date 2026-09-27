@@ -984,7 +984,8 @@ function toggleSpeech(step: Step) {
 
 // ---- Pixel field (docs/DESIGN.md → Pixel field) ---------------------------
 
-// A science scene in pixels behind Home and Trail, drawn by a WebGL shader in
+// A science scene in pixels over the bottom half of Home and Trail, behind the
+// content, drawn by a WebGL shader in
 // a worker (field-worker.ts) on an OffscreenCanvas: this page's thread only
 // sends small messages. Browsers without workers or OffscreenCanvas skip it.
 let fieldWorker: Worker | null = null;
@@ -1018,29 +1019,19 @@ function startPixelField() {
   window.addEventListener('pointermove', event => pointer(event, false), { passive: true });
   window.addEventListener('pointerdown', event => pointer(event, true), { passive: true });
   document.addEventListener('visibilitychange', updateField);
-  let focusQueued = false;
-  window.addEventListener('scroll', () => {
-    if (focusQueued) return;
-    focusQueued = true;
-    requestAnimationFrame(() => { focusQueued = false; sendFieldFocus(); });
-  }, { passive: true });
   updateField();
 }
 
-/** The empty gap the scene fills: from the bottom of the visible content to
- *  the top of the question bar (or the window), in canvas coordinates. */
+/** Where the scene sits: centred in the band (the bottom half of the
+ *  window) above the question bar, whatever content is on top of it. */
 function sendFieldFocus() {
   if (!fieldWorker || !fieldCanvas) return;
   const box = fieldCanvas.getBoundingClientRect();
-  const blocks = view === 'home'
-    ? [...document.querySelectorAll<HTMLElement>('#home .home-side, #home .sparks, #home .made-with-love')]
-    : [$('trail')];
-  const contentBottom = Math.max(0, ...blocks.map(block => block.getBoundingClientRect().bottom));
   const dock = $('dock');
-  const floor = dock.hidden ? window.innerHeight : dock.getBoundingClientRect().top;
-  const top = Math.max(contentBottom, box.top) + 12, bottom = floor - 12;
+  const floor = (dock.hidden ? window.innerHeight : dock.getBoundingClientRect().top) - box.top;
+  const top = box.height * 0.1, bottom = floor - 12;
   const column = (view === 'trail' ? $('trail') : $('home')).getBoundingClientRect();
-  fieldWorker.postMessage({ type: 'focus', x: (column.left + column.right) / 2 - box.left, y: (top + bottom) / 2 - box.top, r: Math.max(0, (bottom - top) / 2) });
+  fieldWorker.postMessage({ type: 'focus', x: (column.left + column.right) / 2 - box.left, y: (top + bottom) / 2, r: Math.max(0, (bottom - top) / 2) });
 }
 
 /** Scene by width (stars on phones, an atom on tablets, the solar system on
@@ -1049,7 +1040,7 @@ function updateField() {
   if (!fieldWorker || !fieldCanvas) return;
   const width = window.innerWidth;
   const scene = width >= 1400 ? 2 : width >= 700 ? 1 : 0;
-  fieldWorker.postMessage({ type: 'scene', scene, intensity: view === 'trail' ? 0.55 : 1 });
+  fieldWorker.postMessage({ type: 'scene', scene, intensity: view === 'trail' ? 0.45 : 1 });
   fieldWorker.postMessage({ type: 'run', running: view !== 'complete' && document.visibilityState === 'visible' });
   // After this render's layout: where the empty gap is now.
   requestAnimationFrame(sendFieldFocus);

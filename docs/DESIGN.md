@@ -56,12 +56,14 @@ stamps and finished trails are kept **on the device only**.
   itself). Hidden on the web, where browser speech services may send audio
   to third parties.
 - Still a placeholder: the category illustration (not a picture per step).
-- **Pixel field** (2026-09-27, after omarchy.org's pixel hero): the empty
-  space at the end of Home and Trail shows a science scene in 8 pt square
-  pixels, densest at the bottom and fading upward: a starfield with a comet
+- **Pixel field** (2026-09-27, after omarchy.org's pixel hero): a band over
+  the bottom half of Home and Trail, fixed behind the content (cards cover
+  it where they overlap), shows a science scene in 8 pt square pixels,
+  densest at the bottom and fading upward, centred in the band above the
+  question bar: a starfield with a comet
   on phones, an atom on tablets, the solar system on wide web (≥1400 px).
   Planets/electrons use topic inks; the field levels are tokens. Trail runs
-  it at 55 % opacity; Trail complete has none. Hover glows, a tap ripples.
+  it at 45 % opacity; Trail complete has none. Hover glows, a tap ripples.
   Performance rules: drawn by the GPU off the main thread (web: WebGL in a
   worker on an OffscreenCanvas; iOS: a Metal colorEffect), ≤30 fps, paused
   when hidden, a still frame with Reduce Motion.

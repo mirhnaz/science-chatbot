@@ -200,9 +200,9 @@ h1, h2, h3, p { margin: 0; }
   .resume-card:not(:disabled):hover, .primary:hover { filter: brightness(1.06); }
 }
 
-/* Pixel field: a science scene behind Home and Trail (field-worker.ts). It
-   never takes pointer events; content sits above it. */
-.pixel-field { position: fixed; left: 0; right: 0; bottom: 0; width: 100%; height: 46vh; z-index: 0; pointer-events: none; }
+/* Pixel field: a science scene in the bottom half of Home and Trail
+   (field-worker.ts), fixed behind the content. It never takes pointer events. */
+.pixel-field { position: fixed; left: 0; right: 0; bottom: 0; width: 100%; height: 50vh; z-index: 0; pointer-events: none; }
 body[data-view="complete"] .pixel-field { display: none; }
 main { position: relative; z-index: 1; }
 

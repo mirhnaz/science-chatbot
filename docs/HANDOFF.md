@@ -620,6 +620,14 @@ iOS builds and is installed on the iPhone and iPad. **Not verified on iOS
 by eye:** the Mac run through Xcode stalled (AppleScript to Xcode hung,
 probably a dialog in Xcode), so the iOS look needs the user's check.
 
+Placement fix (same day, user feedback from iPhone/iPad): the first version
+filled only the space left under the content, which on Home was often a
+single row of pixels. Now the field is a fixed band over the bottom half of
+the screen behind the content (web: 50vh canvas; iOS:
+`pixelFieldBackground`), with the scene centred in the band above the
+question bar regardless of content; taps and hover reach it through the
+content. Trail intensity 45 %.
+
 ## Agreed direction, not yet implemented
 
 The user expects login, conversation history, and more functionality over time.
