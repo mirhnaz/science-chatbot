@@ -119,3 +119,63 @@ final class SuggestionTests: XCTestCase {
         }
     }
 }
+
+final class OpenTrailShelfTests: XCTestCase {
+    private func trail(_ name: String, savedAgo: TimeInterval = 0, answer: String = "An answer.",
+                       now: Date = Date(timeIntervalSince1970: 1_000_000)) -> SavedTrail {
+        SavedTrail(id: UUID(), saved: now.addingTimeInterval(-savedAgo),
+                   steps: [.init(question: "\(name)?", topic: "Space", chosen: nil, answer: answer,
+                                 followUps: ["A?", "B?", "C?"], trailName: name)])
+    }
+
+    func testShelvingKeepsTheTwoNewestEarlierTrails() {
+        var shelf = OpenTrailShelf()
+        let (a, b, c) = (trail("A"), trail("B"), trail("C"))
+        shelf.shelve(a); shelf.shelve(b); shelf.shelve(c)
+        XCTAssertEqual(shelf.earlier.map(\.id), [c.id, b.id], "newest first; the oldest drops off")
+        shelf.shelve(nil)
+        XCTAssertEqual(shelf.earlier.count, 2, "a finished trail (nil) changes nothing")
+        shelf.shelve(b)
+        XCTAssertEqual(shelf.earlier.map(\.id), [b.id, c.id], "shelving again moves it to the front, no duplicate")
+    }
+
+    func testReopeningSwapsWithTheCurrentTrail() {
+        let (a, b, current) = (trail("A"), trail("B"), trail("Now"))
+        var shelf = OpenTrailShelf(earlier: [a, b])
+        XCTAssertEqual(shelf.reopen(b.id, replacing: current), b)
+        XCTAssertEqual(shelf.earlier.map(\.id), [current.id, a.id])
+        XCTAssertNil(shelf.reopen(UUID(), replacing: nil), "unknown trail")
+        XCTAssertEqual(shelf.toSave(current: b).map(\.id), [b.id, current.id, a.id], "current first, at most three")
+        XCTAssertEqual(shelf.toSave(current: nil).map(\.id), [current.id, a.id], "a finished current trail is not saved")
+    }
+
+    func testRestoreDropsOldAndInvalidTrails() {
+        let now = Date(timeIntervalSince1970: 1_000_000)
+        let fresh = trail("Fresh", savedAgo: 60, now: now)
+        let sixDays = trail("Six days", savedAgo: 6 * 86_400, now: now)
+        let eightDays = trail("Eight days", savedAgo: 8 * 86_400, now: now)
+        let future = trail("Future", savedAgo: -60, now: now)
+        let broken = trail("Broken", answer: "   ", now: now)
+        let (current, shelf) = OpenTrailShelf.restore([fresh, eightDays, broken, future, sixDays], now: now) {
+            $0.validatedReplies(limit: 5) != nil
+        }
+        XCTAssertEqual(current, fresh)
+        XCTAssertEqual(shelf.earlier, [sixDays], "over a week old, future-dated, or failing the reply rules: dropped")
+    }
+
+    func testDecodeReadsTheListOrTheOlderSingleTrail() throws {
+        let one = trail("Old")
+        let single = try JSONEncoder().encode(one)
+        XCTAssertEqual(OpenTrailShelf.decode(list: nil, single: single), [one])
+        let list = try JSONEncoder().encode([one, trail("Two")])
+        XCTAssertEqual(OpenTrailShelf.decode(list: list, single: single).count, 2, "the list wins")
+        XCTAssertEqual(OpenTrailShelf.decode(list: Data("not json".utf8), single: nil), [])
+    }
+
+    func testValidatedRepliesKeepTheExtrasAndRejectBadSteps() {
+        XCTAssertEqual(trail("Comets").validatedReplies(limit: 5)?.first?.trailName, "Comets")
+        XCTAssertNil(trail("Bad", answer: "").validatedReplies(limit: 5))
+        let empty = SavedTrail(id: UUID(), saved: .now, steps: [])
+        XCTAssertNil(empty.validatedReplies(limit: 5))
+    }
+}
