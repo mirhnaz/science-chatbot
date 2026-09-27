@@ -111,12 +111,15 @@ struct CircleIconButton: View {
     }
 }
 
-/// The bottom bar shared by Home and Trail: question box and send (or stop).
-/// The design's microphone is not built yet (speech-to-text is a new feature).
+/// The bottom bar shared by Home and Trail: microphone (when this device
+/// can recognise speech offline), question box, and send (or stop).
 struct BottomBar: View {
     @Bindable var chat: ChatModel
     var focused: FocusState<Bool>.Binding
     let placeholder: String
+    var voice: VoiceInput?
+    /// Runs before listening starts (stops Read aloud).
+    var beforeListening: () -> Void = {}
     let send: () -> Void
 
     private var canSend: Bool {
@@ -125,6 +128,9 @@ struct BottomBar: View {
 
     var body: some View {
         HStack(alignment: .bottom, spacing: 10) {
+            if let voice, voice.isAvailable {
+                micButton(voice)
+            }
             TextField("", text: $chat.question,
                       prompt: Text(placeholder).foregroundStyle(Curio.placeholder), axis: .vertical)
             .lineLimit(1...5)
@@ -176,7 +182,38 @@ struct BottomBar: View {
     }
 
     private func submit() {
+        voice?.stop()
         focused.wrappedValue = false
         send()
+    }
+
+    /// "Speak your question": the words appear in the box as the child talks.
+    private func micButton(_ voice: VoiceInput) -> some View {
+        Button {
+            if voice.isListening {
+                voice.stop()
+            } else {
+                beforeListening()
+                focused.wrappedValue = false
+                let before = chat.question.trimmingCharacters(in: .whitespacesAndNewlines)
+                Task {
+                    await voice.start { heard in
+                        chat.question = before.isEmpty ? heard : "\(before) \(heard)"
+                    }
+                }
+            }
+        } label: {
+            Image(systemName: voice.isListening ? "waveform" : "mic")
+                .font(.system(size: 20, weight: .semibold))
+                .symbolEffect(.variableColor.iterative, isActive: voice.isListening)
+                .foregroundStyle(voice.isListening ? Curio.onAccent : Curio.accent)
+                .frame(width: 48, height: 48)
+                .background(voice.isListening ? Curio.accentFill : Curio.surface, in: .circle)
+                .overlay(Circle().strokeBorder(voice.isListening ? .clear : Curio.border, lineWidth: Curio.borderWidth))
+                .contentShape(.circle)
+        }
+        .buttonStyle(.plain)
+        .disabled(chat.isLoading)
+        .accessibilityLabel(voice.isListening ? "Stop listening" : "Speak your question")
     }
 }

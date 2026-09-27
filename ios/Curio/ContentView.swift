@@ -15,6 +15,7 @@ struct ContentView: View {
     @State private var chat = ChatModel(persists: !ProcessInfo.processInfo.arguments.contains("-autoAsk"))
     @State private var network = NetworkMonitor()
     @State private var speech = Speech()
+    @State private var voice = VoiceInput()
     @State private var speakingStep: UUID?
     @State private var showSettings = false
     @State private var screen = Screen.home
@@ -105,6 +106,14 @@ struct ContentView: View {
         .onChange(of: speech.isSpeaking) { _, speaking in if !speaking { speakingStep = nil } }
         .onChange(of: chat.steps.isEmpty) { _, empty in if empty { go(.home) } }
         .sheet(isPresented: $showSettings) { SettingsView() }
+        .alert("Ask out loud", isPresented: Binding(get: { voice.problem != nil }, set: { if !$0 { voice.problem = nil } })) {
+            Button("OK") { voice.problem = nil }
+        } message: {
+            Text(voice.problem ?? "")
+        }
+        // Leaving a screen, or an answer starting, ends listening.
+        .onChange(of: screen) { voice.stop() }
+        .onChange(of: chat.isLoading) { _, loading in if loading { voice.stop() } }
         #if DEBUG
         .task {
             // Debug builds only: `-autoAsk` asks the first spark, then a
@@ -141,7 +150,8 @@ struct ContentView: View {
     /// under the main column from `leading` to 40 pt from the edge.
     @ViewBuilder
     private func bar(placeholder: String, leading: CGFloat? = nil, send: @escaping () -> Void) -> some View {
-        let box = BottomBar(chat: chat, focused: $composing, placeholder: placeholder, send: send)
+        let box = BottomBar(chat: chat, focused: $composing, placeholder: placeholder, voice: voice,
+                            beforeListening: stopSpeech, send: send)
         if let leading {
             box.padding(.leading, leading).padding(.trailing, 40).padding(.bottom, 12)
         } else {

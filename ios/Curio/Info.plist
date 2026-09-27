@@ -22,6 +22,10 @@
 	<string>1</string>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Curio listens so you can ask your question out loud. Your voice is turned into text on this iPad and is not sent anywhere.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Curio turns your spoken question into text on this iPad, without sending your voice anywhere.</string>
 	<key>ScienceServerHost</key>
 	<string>$(SCIENCE_SERVER_HOST)</string>
 	<key>UIAppFonts</key>
