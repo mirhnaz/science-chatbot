@@ -1,0 +1,397 @@
+<title>How Curio Works</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap">
+<style>
+  :root {
+    --ground: #FFF9F0; --surface: #FFFFFF; --border: #EDE6DA; --ink: #211E3B; --muted: #5B5775; --label: #6B6785;
+    --accent: #4F46C9; --accent-tint: #E6E1FF; --on-accent: #FFFFFF;
+    --screen-fill: #DCEBFB; --screen-ink: #1D5FA8;
+    --tunnel-fill: #E6E1FF; --tunnel-ink: #4F46C9;
+    --home-fill: #DBF3E3; --home-ink: #1F7A45;
+    --brain-fill: #FCEBC4; --brain-ink: #8A5A00;
+    --arrow: #8F85EA;
+    --display: "Fredoka", "Avenir Next Rounded", "Arial Rounded MT Bold", system-ui, sans-serif;
+    --body: "Nunito", "Avenir Next", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --ground: #17152A; --surface: #221F3A; --border: #332F52; --ink: #F3F0FF; --muted: #A9A4C6; --label: #8E89AE;
+      --accent: #A9A2FF; --accent-tint: #2A2652; --on-accent: #17152A;
+      --screen-fill: #1C2E48; --screen-ink: #8FC3FF;
+      --tunnel-fill: #2A2652; --tunnel-ink: #B1AAFF;
+      --home-fill: #1B3326; --home-ink: #7ED9A1;
+      --brain-fill: #3A2E12; --brain-ink: #FFD37A;
+      --arrow: #7C73E6;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --ground: #17152A; --surface: #221F3A; --border: #332F52; --ink: #F3F0FF; --muted: #A9A4C6; --label: #8E89AE;
+    --accent: #A9A2FF; --accent-tint: #2A2652; --on-accent: #17152A;
+    --screen-fill: #1C2E48; --screen-ink: #8FC3FF;
+    --tunnel-fill: #2A2652; --tunnel-ink: #B1AAFF;
+    --home-fill: #1B3326; --home-ink: #7ED9A1;
+    --brain-fill: #3A2E12; --brain-ink: #FFD37A;
+    --arrow: #7C73E6;
+  }
+
+  * { box-sizing: border-box; }
+  body { background: var(--ground); color: var(--ink); font-family: var(--body); font-weight: 600; font-size: 16px; line-height: 1.5; }
+  .page { max-width: 1120px; margin: 0 auto; padding: 40px 20px 56px; display: flex; flex-direction: column; gap: 56px; }
+  h1, h2, h3 { font-family: var(--display); margin: 0; text-wrap: balance; }
+  h1 { font-size: clamp(34px, 6vw, 52px); line-height: 1.05; font-weight: 700; }
+  h2 { font-size: clamp(24px, 3.4vw, 32px); font-weight: 700; }
+  h3 { font-size: 19px; font-weight: 600; line-height: 1.25; }
+  p { margin: 0; }
+  .eyebrow { font-size: 13px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+  .lede { font-size: 19px; color: var(--muted); max-width: 60ch; }
+  section { display: flex; flex-direction: column; gap: 20px; }
+  .section-head { display: flex; flex-direction: column; gap: 6px; max-width: 70ch; }
+  .section-head p { color: var(--muted); }
+  svg.icon { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
+  /* Hero */
+  .hero { display: flex; flex-direction: column; gap: 14px; }
+  .brand { display: flex; align-items: center; gap: 12px; font-family: var(--display); font-weight: 700; font-size: 22px; }
+  .mark { width: 44px; height: 44px; border-radius: 13px; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; }
+  .mark svg { width: 24px; height: 24px; }
+  .places { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+  .place { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; font-weight: 800; font-size: 15px; }
+  .place.screen { background: var(--screen-fill); color: var(--screen-ink); }
+  .place.tunnel { background: var(--tunnel-fill); color: var(--tunnel-ink); }
+  .place.home { background: var(--home-fill); color: var(--home-ink); }
+
+  /* The round trip: three lanes (places), steps flowing down through them. */
+  .flow-wrap { position: relative; }
+  .flow { position: relative; display: grid; grid-template-columns: 1fr .85fr 1.25fr; grid-template-rows: repeat(9, auto); column-gap: 16px; row-gap: 40px; padding: 0 0 24px; }
+  .lane-bg { grid-row: 1 / span 9; border-radius: 24px; z-index: 0; }
+  .lane-bg.screen { grid-column: 1; background: var(--screen-fill); opacity: .55; }
+  .lane-bg.tunnel { grid-column: 2; background: var(--tunnel-fill); opacity: .55; }
+  .lane-bg.home { grid-column: 3; background: var(--home-fill); opacity: .55; }
+  .lane-head { grid-row: 1; z-index: 2; display: flex; align-items: center; gap: 8px; padding: 18px 18px 0; font-family: var(--display); font-weight: 600; font-size: 18px; }
+  .lane-head small { display: block; font-family: var(--body); font-size: 13px; font-weight: 700; color: var(--muted); }
+  .lane-head.screen { grid-column: 1; color: var(--screen-ink); }
+  .lane-head.tunnel { grid-column: 2; color: var(--tunnel-ink); }
+  .lane-head.home { grid-column: 3; color: var(--home-ink); }
+  .arrows { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; overflow: visible; }
+  .arrows path { fill: none; stroke: var(--arrow); stroke-width: 3; stroke-linecap: round; }
+  .arrows path.loop { stroke-dasharray: 2 9; }
+  .arrows .head { fill: var(--arrow); stroke: none; }
+  .step { z-index: 2; margin: 0 14px; background: var(--surface); border: 1.5px solid var(--border); border-radius: 18px; padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 6px; }
+  .step.brain { background: var(--brain-fill); border-color: transparent; }
+  .step-top { display: flex; align-items: center; gap: 10px; }
+  .num { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--on-accent); font-family: var(--display); font-weight: 600; font-size: 16px; display: grid; place-items: center; flex-shrink: 0; }
+  .step p { color: var(--muted); font-size: 15px; }
+  .step .say { font-size: 14px; color: var(--label); font-style: italic; }
+  .chip { display: none; align-self: flex-start; font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; }
+  .chip.screen { background: var(--screen-fill); color: var(--screen-ink); }
+  .chip.tunnel { background: var(--tunnel-fill); color: var(--tunnel-ink); }
+  .chip.home { background: var(--home-fill); color: var(--home-ink); }
+  .loop-note { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 15px; }
+  .loop-note b { color: var(--ink); }
+  .loop-note .dash { width: 44px; height: 0; border-top: 3px dotted var(--arrow); flex-shrink: 0; }
+
+  /* Spark to stamp */
+  .trail { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; list-style: none; margin: 0; padding: 0; }
+  .trail li { position: relative; background: var(--surface); border: 1.5px solid var(--border); border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+  .trail li:not(:last-child)::after { content: ""; position: absolute; top: 34px; right: -13px; width: 12px; height: 12px; border-top: 3px solid var(--arrow); border-right: 3px solid var(--arrow); transform: rotate(45deg); }
+  .trail .ico { width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-tint); color: var(--accent); }
+  .trail p { color: var(--muted); font-size: 15px; }
+  .dots { display: flex; gap: 5px; }
+  .dots i { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+
+  /* Parts */
+  .parts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; align-items: start; }
+  .group { border-radius: 24px; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+  .group.screen { background: var(--screen-fill); }
+  .group.tunnel { background: var(--tunnel-fill); }
+  .group.home { background: var(--home-fill); }
+  .group > h3 { display: flex; align-items: center; gap: 8px; }
+  .group.screen > h3 { color: var(--screen-ink); }
+  .group.tunnel > h3 { color: var(--tunnel-ink); }
+  .group.home > h3 { color: var(--home-ink); }
+  .part { background: var(--surface); border-radius: 16px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+  .part h4 { margin: 0; font-family: var(--display); font-weight: 600; font-size: 17px; }
+  .part p { color: var(--muted); font-size: 15px; }
+  .part .like { font-size: 14px; color: var(--label); }
+  .part .like b { color: var(--ink); font-weight: 800; }
+
+  /* Teacher questions */
+  .qa { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .q { background: var(--surface); border: 1.5px solid var(--border); border-radius: 18px; padding: 16px 18px; display: flex; flex-direction: column; gap: 6px; }
+  .q h3 { font-size: 18px; }
+  .q p { color: var(--muted); font-size: 15.5px; }
+  footer { display: flex; align-items: center; gap: 8px; color: var(--label); font-size: 14px; font-weight: 700; }
+  footer svg { width: 14px; height: 14px; fill: #E5484D; stroke: none; }
+
+  @media (max-width: 900px) {
+    .trail { grid-template-columns: 1fr; }
+    .trail li:not(:last-child)::after { top: auto; bottom: -13px; right: auto; left: 34px; transform: rotate(135deg); }
+    .parts, .qa { grid-template-columns: 1fr; }
+  }
+  /* Phones: one column; each step names its place. */
+  @media (max-width: 700px) {
+    .flow { grid-template-columns: 1fr; grid-template-rows: none; row-gap: 34px; }
+    .lane-bg, .lane-head { display: none; }
+    .step { grid-column: 1 !important; grid-row: auto !important; margin: 0; }
+    .chip { display: inline-block; }
+  }
+</style>
+
+<main class="page">
+  <header class="hero">
+    <div class="brand">
+      <span class="mark" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24"><path d="M4 20l7-7"/><path d="M7 21l6-6"/><path d="M3 17l6-6"/><circle cx="16" cy="8" r="4"/></svg></span>
+      Curio
+    </div>
+    <h1>How Curio works</h1>
+    <p class="lede">Curio is a science explorer for kids. You ask a question, an AI tutor explains it in a simple, exciting way, and three new questions help you keep exploring. Here is what happens behind the screen.</p>
+    <div class="places" aria-label="The three places a question visits">
+      <span class="place screen"><svg class="icon" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M11 18h2"/></svg>Your screen</span>
+      <span class="place tunnel"><svg class="icon" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>A secure tunnel</span>
+      <span class="place home"><svg class="icon" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Our home computer</span>
+    </div>
+  </header>
+
+  <section aria-labelledby="trip">
+    <div class="section-head">
+      <span class="eyebrow">The big picture</span>
+      <h2 id="trip">One question’s round trip</h2>
+      <p>Follow the numbers. A question travels from your screen down to our home computer, and the answer travels back up. It takes about three seconds.</p>
+    </div>
+    <div class="flow-wrap">
+      <div class="flow" id="flow">
+        <div class="lane-bg screen" aria-hidden="true"></div>
+        <div class="lane-bg tunnel" aria-hidden="true"></div>
+        <div class="lane-bg home" aria-hidden="true"></div>
+        <div class="lane-head screen"><div>Your screen<small>website, iPad or iPhone</small></div></div>
+        <div class="lane-head tunnel"><div>Secure tunnel<small>across the internet</small></div></div>
+        <div class="lane-head home"><div>Our home computer<small>where the AI lives</small></div></div>
+
+        <article class="step" data-step="1" style="grid-column:1;grid-row:2">
+          <span class="chip screen">Your screen</span>
+          <div class="step-top"><span class="num">1</span><h3>You ask</h3></div>
+          <p>Tap a spark, type a question, or say it out loud.</p>
+          <p class="say">“Why is the sky blue?”</p>
+        </article>
+        <article class="step" data-step="2" style="grid-column:2;grid-row:3">
+          <span class="chip tunnel">Secure tunnel</span>
+          <div class="step-top"><span class="num">2</span><h3>Into the tunnel</h3></div>
+          <p>The question is scrambled into secret code so nobody on the way can read it.</p>
+        </article>
+        <article class="step" data-step="3" style="grid-column:3;grid-row:4">
+          <span class="chip home">Home computer</span>
+          <div class="step-top"><span class="num">3</span><h3>Curio checks it</h3></div>
+          <p>Is it empty? Is it too long? Curio answers two questions at a time, so a third one is asked to try again.</p>
+        </article>
+        <article class="step" data-step="4" style="grid-column:3;grid-row:5">
+          <span class="chip home">Home computer</span>
+          <div class="step-top"><span class="num">4</span><h3>Adds the rulebook</h3></div>
+          <p>Our tutor instructions go with the question: explain simply, make it exciting, stay safe, and suggest three new questions.</p>
+        </article>
+        <article class="step brain" data-step="5" style="grid-column:3;grid-row:6">
+          <span class="chip home">Home computer</span>
+          <div class="step-top"><span class="num">5</span><h3>The AI thinks</h3></div>
+          <p>Gemma, an AI made by Google, runs on our computer’s graphics card and writes the answer plus three “dive deeper” questions.</p>
+        </article>
+        <article class="step" data-step="6" style="grid-column:3;grid-row:7">
+          <span class="chip home">Home computer</span>
+          <div class="step-top"><span class="num">6</span><h3>Curio checks the reply</h3></div>
+          <p>Is there an answer? Are there exactly three different new questions? Only then does it go back.</p>
+        </article>
+        <article class="step" data-step="7" style="grid-column:2;grid-row:8">
+          <span class="chip tunnel">Secure tunnel</span>
+          <div class="step-top"><span class="num">7</span><h3>Back through the tunnel</h3></div>
+          <p>The answer travels home to your screen, in secret code again.</p>
+        </article>
+        <article class="step" data-step="8" style="grid-column:1;grid-row:9">
+          <span class="chip screen">Your screen</span>
+          <div class="step-top"><span class="num">8</span><h3>You read and explore</h3></div>
+          <p>The answer appears with a picture. Listen to it, then tap a dive-deeper question to start again at step 1.</p>
+        </article>
+        <svg class="arrows" id="arrows" aria-hidden="true"></svg>
+      </div>
+    </div>
+    <p class="loop-note"><span class="dash" aria-hidden="true"></span><span><b>The dotted line</b> is the loop: every dive-deeper question makes the same round trip again.</span></p>
+  </section>
+
+  <section aria-labelledby="trail">
+    <div class="section-head">
+      <span class="eyebrow">Using the app</span>
+      <h2 id="trail">From a spark to a stamp</h2>
+      <p>Questions link together into a trail. Finish a trail and you earn a stamp for your collection.</p>
+    </div>
+    <ol class="trail">
+      <li>
+        <span class="ico"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg></span>
+        <h3>Pick a spark</h3>
+        <p>Home shows starter questions, called sparks. Shuffle for new ones.</p>
+      </li>
+      <li>
+        <span class="ico"><svg class="icon" viewBox="0 0 24 24"><path d="M4 19c4-1 3-6 7-7s3-6 7-7"/><circle cx="4" cy="19" r="2"/><circle cx="18" cy="5" r="2"/></svg></span>
+        <h3>Follow the trail</h3>
+        <div class="dots" aria-label="5 steps"><i></i><i></i><i></i><i></i><i></i></div>
+        <p>Five steps. Each answer offers three dive-deeper questions.</p>
+      </li>
+      <li>
+        <span class="ico"><svg class="icon" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span>
+        <h3>Finish</h3>
+        <p>After step 5, see what you learned and share it with a grown-up.</p>
+      </li>
+      <li>
+        <span class="ico"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8l1.2 2.6 2.8.3-2.1 1.9.6 2.8L12 14.2 9.5 15.6l.6-2.8L8 10.9l2.8-.3z"/></svg></span>
+        <h3>Earn a stamp</h3>
+        <p>One stamp per trail, in the topic you explored, like Space or Animals.</p>
+      </li>
+      <li>
+        <span class="ico"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg></span>
+        <h3>Collect them all</h3>
+        <p>12 kinds of stamp to find. New sparks point you to topics you haven’t collected yet.</p>
+      </li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="parts">
+    <div class="section-head">
+      <span class="eyebrow">The parts</span>
+      <h2 id="parts">What each part does</h2>
+      <p>Each part has one job. The comparisons help explain them.</p>
+    </div>
+    <div class="parts">
+      <div class="group screen">
+        <h3><svg class="icon" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="3"/><path d="M11 18h2"/></svg>On your screen</h3>
+        <div class="part">
+          <h4>The app</h4>
+          <p>A website for any computer or phone, and an app for iPad and iPhone. It shows the questions, answers and stamps.</p>
+          <p class="like">It’s like <b>the front desk</b>.</p>
+        </div>
+        <div class="part">
+          <h4>Sparks</h4>
+          <p>66 starter questions we wrote, across 11 science topics. Picking them needs no AI.</p>
+          <p class="like">It’s like <b>a deck of question cards</b>.</p>
+        </div>
+        <div class="part">
+          <h4>Your saved stuff</h4>
+          <p>Your first name, stamps and unfinished trails are saved only on your own device.</p>
+          <p class="like">It’s like <b>a notebook that stays in your bag</b>.</p>
+        </div>
+        <div class="part">
+          <h4>Talking and listening</h4>
+          <p>On iPad and iPhone you can say your question, and the device turns it into words itself. Any answer can be read aloud.</p>
+          <p class="like">It’s like <b>a helper who writes down what you say</b>.</p>
+        </div>
+        <div class="part">
+          <h4>Backup brain</h4>
+          <p>If the home computer can’t be reached, the iPad and iPhone app can use a smaller AI that runs on the device itself.</p>
+          <p class="like">It’s like <b>a spare tyre</b>: slower and simpler, but it keeps you going.</p>
+        </div>
+        <div class="part">
+          <h4>Pixel animation</h4>
+          <p>The moving solar system, atom and stars at the bottom are drawn by the device’s graphics chip, so the app stays smooth.</p>
+        </div>
+      </div>
+      <div class="group tunnel">
+        <h3><svg class="icon" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>Across the internet</h3>
+        <div class="part">
+          <h4>The secure tunnel</h4>
+          <p>A service called Tailscale lets the app reach our home computer from anywhere, with everything scrambled (encrypted) on the way.</p>
+          <p class="like">It’s like <b>a locked pipe from your screen to our house</b>.</p>
+        </div>
+      </div>
+      <div class="group home">
+        <h3><svg class="icon" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>At our home computer</h3>
+        <div class="part">
+          <h4>Curio server</h4>
+          <p>Our program that receives questions, checks them, adds the rulebook, and checks the AI’s reply. Written in a language called Rust.</p>
+          <p class="like">It’s like <b>a traffic controller and a gatekeeper</b>.</p>
+        </div>
+        <div class="part">
+          <h4>The rulebook</h4>
+          <p>The tutor instructions we wrote: explain for kids, keep it simple and exciting, around 100 words, safe ideas only, three new questions.</p>
+          <p class="like">It’s like <b>a teacher’s lesson plan</b>.</p>
+        </div>
+        <div class="part">
+          <h4>Ollama and Gemma</h4>
+          <p>Gemma 4 is the AI model, made by Google. Ollama is the program that runs it. We can swap in a different model without changing the app.</p>
+          <p class="like">It’s like <b>the brain, and the body it lives in</b>.</p>
+        </div>
+        <div class="part">
+          <h4>Graphics card</h4>
+          <p>A powerful chip, made for games, that does the AI’s maths very fast. That’s why answers take only a few seconds.</p>
+          <p class="like">It’s like <b>an engine</b>.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="questions">
+    <div class="section-head">
+      <span class="eyebrow">Be ready</span>
+      <h2 id="questions">Questions teachers might ask</h2>
+      <p>Short, true answers to the questions people usually ask about Curio.</p>
+    </div>
+    <div class="qa">
+      <div class="q"><h3>Did you make the AI?</h3><p>No. The AI is Gemma, made by Google. We built everything around it: the app, the rulebook, the sparks, the trails and stamps, and the design.</p></div>
+      <div class="q"><h3>Does it search the internet for answers?</h3><p>No. Gemma answers from what it learned when it was trained. Curio doesn’t look anything up online.</p></div>
+      <div class="q"><h3>Is it always right?</h3><p>No. AI can make mistakes. Curio checks that the reply has the right shape, not that every fact is true. That’s why the app says “AI can make mistakes. Check surprising facts with an adult.”</p></div>
+      <div class="q"><h3>How do you keep it safe for kids?</h3><p>The rulebook tells the AI to be kind, simple and suggest only safe ideas. The server rejects empty or very long questions and checks every reply. There are no ads and no accounts. It isn’t perfect, so ask an adult if something seems wrong.</p></div>
+      <div class="q"><h3>Does it keep my questions?</h3><p>Your stamps and unfinished trails stay on your own device. Our home computer doesn’t save the questions or answers. Each question is answered fresh.</p></div>
+      <div class="q"><h3>Why use a home computer instead of a big AI website?</h3><p>Questions stay between the device and our home, it costs nothing per question, and we learned how AI really runs. The graphics card makes it fast.</p></div>
+      <div class="q"><h3>What if the home computer is off?</h3><p>The website shows a friendly message to try again later. The iPad and iPhone app can switch to its backup brain, a smaller AI on the device.</p></div>
+      <div class="q"><h3>Where do the sparks come from?</h3><p>We wrote 66 starter questions across 11 topics, like Space, Animals, Light and the Body. Curio picks a few at random and prefers topics you haven’t earned a stamp for.</p></div>
+      <div class="q"><h3>How does talking to it work?</h3><p>The iPad or iPhone turns your voice into words using its own speech recogniser, right on the device. The words appear in the question box, and you tap Ask when they look right.</p></div>
+      <div class="q"><h3>What languages is it written in?</h3><p>The server is in Rust, the website in TypeScript, and the iPad and iPhone app in Swift. Ollama runs the AI.</p></div>
+      <div class="q"><h3>Why five steps and stamps?</h3><p>Five steps are enough to go deep without getting tired, and a stamp makes finishing feel like a win. Collecting all 12 kinds means exploring every part of science.</p></div>
+      <div class="q"><h3>Does it remember what I asked before?</h3><p>Your trail shows your earlier steps, and each new question builds on the one you picked. The AI itself doesn’t remember you between questions.</p></div>
+    </div>
+  </section>
+
+  <footer><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-8-5.2-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.8-8 11-8 11z"/></svg>Made with love by Ayaan and Naz</footer>
+</main>
+
+<script>
+  // Arrows between the steps, drawn from where the cards actually are, so
+  // they follow the layout at any width (three lanes, or one column on phones).
+  (function () {
+    const flow = document.getElementById('flow');
+    const svg = document.getElementById('arrows');
+    const NS = 'http://www.w3.org/2000/svg';
+    /** An arrowhead with its tip at (x, y), pointing in direction `dir`. */
+    function head(x, y, dir) {
+      const p = document.createElementNS(NS, 'path');
+      const s = 11;
+      const l = dir + Math.PI - 0.45, r = dir + Math.PI + 0.45;
+      p.setAttribute('d', `M${x},${y} L${x + s * Math.cos(l)},${y + s * Math.sin(l)} L${x + s * Math.cos(r)},${y + s * Math.sin(r)} Z`);
+      p.setAttribute('class', 'head');
+      return p;
+    }
+    function draw() {
+      const box = flow.getBoundingClientRect();
+      svg.setAttribute('viewBox', `0 0 ${box.width} ${box.height}`);
+      svg.replaceChildren();
+      const steps = [...flow.querySelectorAll('.step')].sort((a, b) => a.dataset.step - b.dataset.step)
+        .map(el => { const r = el.getBoundingClientRect(); return { l: r.left - box.left, r: r.right - box.left, t: r.top - box.top, b: r.bottom - box.top }; });
+      for (let i = 0; i < steps.length - 1; i++) {
+        const a = steps[i], b = steps[i + 1];
+        const x1 = (a.l + a.r) / 2, y1 = a.b + 2, x2 = (b.l + b.r) / 2, y2 = b.t - 4;
+        const mid = (y1 + y2) / 2;
+        const path = document.createElementNS(NS, 'path');
+        path.setAttribute('d', `M${x1},${y1} C${x1},${mid} ${x2},${mid} ${x2},${y2 - 6}`);
+        svg.append(path, head(x2, y2, Math.PI / 2));
+      }
+      // The loop: from the last step back up to the first, down the left side.
+      const first = steps[0], last = steps[steps.length - 1];
+      const x = first.l - 12;
+      const y1 = (last.t + last.b) / 2, y2 = (first.t + first.b) / 2;
+      const loop = document.createElementNS(NS, 'path');
+      loop.setAttribute('d', `M${last.l - 2},${y1} L${x},${y1} L${x},${y2} L${first.l - 8},${y2}`);
+      loop.setAttribute('class', 'loop');
+      svg.append(loop, head(first.l - 2, y2, 0));
+    }
+    draw();
+    new ResizeObserver(draw).observe(flow);
+    if (document.fonts) document.fonts.ready.then(draw);
+  })();
+</script>

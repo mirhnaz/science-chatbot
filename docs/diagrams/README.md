@@ -10,6 +10,17 @@ back along the bottom. The dashed arrow starts another question.
   editable text and shapes. Open it in a vector editor or browser. It uses Noto
   Sans with a generic sans-serif fallback; text appearance may vary by computer.
 
+## Full flowchart (2026-09-27)
+
+[curio-flowchart.html](curio-flowchart.html) covers the whole current app
+for a 10–14-year-old presenter: one question's round trip across three
+places (screen, secure tunnel, home computer) in eight steps, the spark →
+five-step trail → stamp flow, what each part does (with everyday
+comparisons), and twelve likely teacher questions with short answers. It
+reflects the redesigned app (sparks, trails, stamps, voice, the iPad's
+backup model, Gemma 4 on Ollama) and supersedes the six-step diagram below
+where they differ. Open it in a browser; it follows light and dark mode.
+
 ## Speaking notes: about two minutes
 
 **Introduction:** “Our project, Curio, is a science chatbot for children. You can ask a
