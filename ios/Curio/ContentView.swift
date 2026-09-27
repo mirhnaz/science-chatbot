@@ -21,6 +21,10 @@ struct ContentView: View {
     @State private var speakingStep: UUID?
     @State private var showSettings = false
     @State private var path: [Screen] = []
+    /// First launch: the welcome, once (see `offerWelcome`).
+    @AppStorage("welcomed") private var welcomed = false
+    @AppStorage("childName") private var childName = ""
+    @State private var showWelcome = false
     /// At least 1100 pt wide: the two-column iPad layouts.
     @State private var wide = false
     @State private var stamps = StampStore(persists: !ProcessInfo.processInfo.arguments.contains("-autoAsk"))
@@ -64,6 +68,13 @@ struct ContentView: View {
         .environment(\.curioWide, wide)
         .onGeometryChange(for: Bool.self) { $0.size.width >= 1100 } action: { wide = $0 }
         .onChange(of: wide, initial: true) { _, wide in chat.sparkCount = wide ? 6 : 4 }
+        .onAppear(perform: offerWelcome)
+        .fullScreenCover(isPresented: $showWelcome) {
+            WelcomeView {
+                welcomed = true
+                showWelcome = false
+            }
+        }
         .onChange(of: stamps.stamps.count, initial: true) { chat.uncollectedTopics = stamps.uncollectedTopics }
         .onChange(of: chat.isLoading) { _, loading in if loading { stopSpeech() } }
         .onChange(of: speech.isSpeaking) { _, speaking in if !speaking { speakingStep = nil } }
@@ -170,6 +181,19 @@ struct ContentView: View {
         if chat.isLoading { return "Thinking…" }
         if engines.isEmpty { return "Not set up yet" }
         return "Trail · Step \(chat.steps.count)"
+    }
+
+    /// Shows the welcome on first launch, unless this device already has a
+    /// name, a stamp or a saved trail (Curio was used before the welcome
+    /// existed), or for Debug test runs.
+    private func offerWelcome() {
+        guard !welcomed else { return }
+        let autoRun = ProcessInfo.processInfo.arguments.contains("-autoAsk")
+        if childName.isEmpty && stamps.stamps.isEmpty && chat.openTrails.isEmpty && !autoRun {
+            showWelcome = true
+        } else {
+            welcomed = true
+        }
     }
 
     /// Home clears the stack; Trail and Trail complete each sit directly on
