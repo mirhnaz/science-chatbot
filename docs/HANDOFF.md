@@ -710,8 +710,9 @@ Changed on the branch: `tutor.txt`, default model `gemma4:12b` in
 iOS offline model (4B Qwen fallback; its prompt copy now names Gemma),
 `src/client/app.ts` ("private Qwen tutor" tool text) and the classroom
 diagrams, which still say Qwen. **Not yet done:** merge into `main`, rebuild
-and restart the live service with `OLLAMA_MODEL=gemma4:12b`; no Rust tests
-were run on the branch (string-only changes). Proposed next: stream answers
+and restart the live service with `OLLAMA_MODEL=gemma4:12b`. After merging
+the latest `main` into the branch: `npm test` (25 Rust + 44 HTTP/frontend),
+`npm run typecheck`, `npm run check:rust` and `git diff --check` passed. Proposed next: stream answers
 (first words in well under a second) as a joint task with frontend work.
 
 ## Agreed direction, not yet implemented
