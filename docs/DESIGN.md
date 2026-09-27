@@ -56,6 +56,17 @@ stamps and finished trails are kept **on the device only**.
   itself). Hidden on the web, where browser speech services may send audio
   to third parties.
 - Still a placeholder: the category illustration (not a picture per step).
+- **Stamps screen**: 12 kinds (11 topics + Curious Mind, sparkles icon),
+  earned with a count or dashed "Not yet", then the latest ten with dates;
+  opened from the stamps pill (and the web nav).
+- **Delight** (2026-09-27): the new stamp lands with a spring and a pixel
+  burst (shader scene 3) on Trail complete, plus a success haptic on iOS;
+  up to half the sparks come from topics not yet collected, with a "New
+  stamp!" badge once the child has a stamp; while answering, a 3×3 pixel
+  "thinking" grid and a "Did you know?" fact every 6 s
+  (`backend/data/did-you-know.json`); a one-time welcome (name, sparks /
+  trails / stamps, "Let's explore!"), skipped by existing users. All honour
+  Reduce Motion.
 - **Pixel field** (2026-09-27, after omarchy.org's pixel hero): a band over
   the bottom half of Home and Trail, fixed behind the content (cards cover
   it where they overlap), shows a science scene in 8 pt square pixels,

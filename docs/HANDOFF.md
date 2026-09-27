@@ -646,6 +646,20 @@ omarchy** (the user runs it). ScienceCore `OpenTrailShelf`/`SavedTrail`
 with 5 new tests (15 total). Web tests 41 (new Stamps test).
 Stamps screenshots checked at 390 px (light) and 1440 px (dark).
 
+### Frontend delight batch (2026-09-27)
+
+Worked on `main` while a separate `prompt-tuning` worktree changes the
+prompt (not touched here). Done: stamp celebration (`bafa5f9`),
+collection-aware sparks with `prefer=` on `/api/suggestions` and the Swift
+port (`1691345`), loading pixel grid + Did-you-know facts (`b22f414`,
+`/did-you-know.json` route), first-launch welcome on web (`2b6c20e`) and
+iOS. Verified: 25 Rust, 44 HTTP/frontend, 15 ScienceCore tests; web
+screenshots of the burst, badges, loading and welcome in light and dark.
+iOS builds and is installed; **its new screens were not checked by eye**
+(the Mac run via Xcode is unreliable), so the iOS look needs the user.
+The live server needs a rebuild and restart for the new routes
+(`/did-you-know.json`, `prefer=`).
+
 ## Agreed direction, not yet implemented
 
 The user expects login, conversation history, and more functionality over time.

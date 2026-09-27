@@ -38,6 +38,11 @@ screens make shared state and reusable components useful.
   finished" and a stamps count) and the Trail gets a side rail showing every
   step, the steps still to come, and "So far you know"; at ≥1400 px a nav
   (Home, My trails, profile chip) is added. See DESIGN.md → Screens.
+- **Welcome**: first visit only (`curio.welcomed.v1`), skipped when a name,
+  stamp or saved trail exists.
+- **Stamps**: the collection screen (pill or nav); **celebration** burst on
+  Trail complete; sparks send `prefer=` (uncollected topics) and show "New
+  stamp!"; loading shows a pixel grid and facts from `/did-you-know.json`.
 - **Open trails**: up to three unfinished trails, newest first. Starting a
   trail sets the current one aside; tapping an earlier row reopens it.
 - **Stop** removes the unanswered step and puts the question back in the
