@@ -349,6 +349,70 @@ label `#B8452E` on `#FFE3D6` is 4.38:1 and placeholder `#7A7690` on white is
   decision, ties into history).
 - Parent digest (open in the design): not started.
 
+### Redesign v2 audit (2026-09-27, step 1 of 5, no code changed)
+
+The handoff grew to eight artboards (adds MainDark, TrailDark, TabletHome,
+TabletTrail, WebTrail), official dark tokens, and breakpoints (`<700` phone ·
+`700–1100` phone layout with wider gutters and 3-column sparks · `≥1100` two
+columns · `≥1400` web three columns with nav). AGENTS.md now points all
+screens (phone, iPad, web, light, dark) at it. Plan agreed with the user:
+1 audit · 2 tokens · 3 trail overlap fix · 4 phone Home/Trail/Complete in
+light and dark · 5 responsive ≥1100 / ≥1400.
+
+**Already matches**
+- iOS light tokens, type scale, radii (`CurioTheme.swift`); fonts bundled.
+- iOS phone Home, Trail, Complete structure (`774807f`, `29c62cf`), including
+  the overlap fix (carousel and Ask your own removed) on iOS.
+- Web theming mechanism: `theme.ts` + `data-theme` + `prefers-color-scheme`
+  fallback is the pattern the handoff asks for.
+
+**Conflicts (handoff wins)**
+- iOS dark values were derived by the agent on 2026-09-26 and differ from
+  the handoff's (ground `#16142A`→`#17152A`, border, muted, label, accent
+  text `#A9A2FF`, new separate accent-H1 `#B1AAFF`, accent fill
+  `#5E55D8`→`#6A61E8`, connector, locked, success, heart, all category
+  pairs). DESIGN.md's token table records the derived set and must be
+  replaced.
+- iOS colours live in Swift (`Color(light:dark:)`), not the asset catalog the
+  handoff asks for; `Accent.colorset` still holds the old `#4E45B6`/`#C1B2FF`
+  (tints system controls and Settings).
+- iOS spark icon discs are white in dark; handoff: Ground. Stamp ring uses
+  category colour; handoff: accent. Light category: handoff `#FCEBC4`/`#8A5A00`
+  vs derived `#FFF0C7`/`#855A00`.
+- Web is still entirely the old design: old tokens (`#4e45b6`, grey
+  surfaces), glass and shadows (handoff: no shadows), system font, emoji
+  topic labels, hero, "Answered in N seconds", and the New-spark dock that
+  causes the overlap bug. Web breakpoint is 600 px, not 700/1100/1400.
+
+**Missing**
+- Web: all three redesigned screens, Complete, stamps, name greeting.
+- iOS/web: width breakpoints. iPad landscape (1180) should be two-column;
+  today iOS switches on size class only (4-across sparks, phone layout).
+- iPad/web trail rail with upcoming dashed steps, "So far you know" card,
+  3-across Dive deeper, 360×260 / 760×280 illustration crops.
+- Five bank topics have no official colours (Earth, Electricity, Forces &
+  motion, Matter, Plants); "Body" is in the handoff but not in the bank.
+- Dark artboard greets "tonight"; phone says "today" (time-of-day greeting
+  not specified).
+
+**Infeasible without new features or contract changes**
+- Six sparks on tablet: `/api/suggestions`, the Rust bank (`COUNT = 4`), the
+  Swift port, and web validation all fix four.
+- Web nav My trails / Stamps / Grown-ups, profile chip, "Trails you
+  finished", "N stamps" pill: need saved trails and stamps. There is no
+  login or database; on-device storage would be per browser/device.
+- Web fonts: the CSP (`default-src 'self'`, `style-src 'self'`) blocks Google
+  Fonts, and the Rust asset allowlist serves no font files. Self-hosting
+  needs new routes in `http.rs`, a release build, and a service restart to
+  go live.
+- Generated per-step illustrations, short step labels ("The nucleus"),
+  trail names ("Comets"), and generated recap facts need model or response
+  schema changes.
+- Mic: iOS can use on-device recognition; on the web, Chrome's speech
+  recognition sends audio to Google, a privacy decision for children.
+- "Show a grown-up" on web: Web Share with files is not universal; needs a
+  download fallback. What it shares is an open decision.
+
 ## Agreed direction, not yet implemented
 
 The user expects login, conversation history, and more functionality over time.

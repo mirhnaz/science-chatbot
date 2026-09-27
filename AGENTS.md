@@ -6,6 +6,11 @@ Read [README.md](README.md) for commands and layout, and the relevant guide:
 [migration](docs/RUST_MIGRATION.md), [installation](docs/INSTALL.md), or
 [verification](docs/VERIFICATION.md).
 
+Current design direction for all screens (phone, iPad, web, light and dark):
+[docs/design/redesign-2026-09/curio-redesign-handoff.md](docs/design/redesign-2026-09/curio-redesign-handoff.md).
+It supersedes earlier screen layouts in [docs/DESIGN.md](docs/DESIGN.md) where
+they conflict; the eight `.dc.html` files beside it are the layouts of record.
+
 ## Working with the user
 
 - Ask before running commands on the user's machine. Describe the proposed
@@ -68,5 +73,3 @@ Choose checks appropriate to the change. Documentation-only changes need link,
 content, and diff checks, not a server restart or a complete application test run.
 Report actual results and any limitations; a health check alone does not verify
 Ollama generation. Detailed coverage is in [docs/VERIFICATION.md](docs/VERIFICATION.md).
-
-Current design direction: docs/design/redesign-2026-09/curio-redesign-handoff.md (supersedes earlier screen layouts in docs/DESIGN.md where they conflict).
