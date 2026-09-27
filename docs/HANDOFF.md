@@ -747,13 +747,18 @@ that rect; 2 px `connector` outline). iOS: the same placement in
 `pixelFieldContent()` marks Home's columns and Trail's steps; the field
 runs to the screen bottom behind the bar) and the same outline.
 
-Verified: 46 HTTP/frontend tests (a new browser Back/Forward test), Rust
+Verified: 45 HTTP/frontend tests (a new browser Back/Forward test), Rust
 checks, typecheck; headless-Chrome screenshots at 1440, 1180, 900 and
 390 px in light and dark (Home, Trail, Stamps, browser Back from Stamps).
 iOS builds and is installed on the iPhone and iPad. **Not checked by eye
 on iOS:** the Mac "Designed for iPad" run started through Xcode but its
 self-snapshot never saved, and the simulator cannot build (llama.xcframework
 has no simulator slice).
+
+Deployed to mir-omarchy-pc (`c1a4c35`: pull, `npm run build`, `systemctl
+--user restart curio-web`); health ok and the served page, app.js and
+styles.css carry the new code. A real question was not asked after the
+restart.
 
 ## Agreed direction, not yet implemented
 
