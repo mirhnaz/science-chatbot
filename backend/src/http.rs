@@ -16,7 +16,10 @@ use serde_json::{Value, json};
 use tokio::sync::Semaphore;
 use tokio_util::sync::CancellationToken;
 
-use crate::chat::{validate_question, validate_reply};
+use crate::chat::{
+    MAX_FACT_LENGTH, MAX_LABEL_LENGTH, MAX_TRAIL_NAME_LENGTH, optional_text, validate_question,
+    validate_reply,
+};
 
 pub const TUTOR_PROMPT: &str = include_str!("tutor.txt");
 const SCHEMA: &str = include_str!("reply-schema.json");
@@ -150,9 +153,17 @@ async fn dispatch(state: &AppState, request: Request) -> Response {
         {
             return error(400, "Too many recent suggestions.");
         }
+        // `count=6` for wide layouts; four when absent.
+        let count = match url.query_pairs().find(|(key, _)| key == "count") {
+            None => 4,
+            Some((_, value)) => match value.parse::<usize>() {
+                Ok(count) if crate::suggestions::COUNTS.contains(&count) => count,
+                _ => return error(400, "Ask for 4 or 6 suggestions."),
+            },
+        };
         return json_response(
             200,
-            json!({"suggestions": crate::suggestions::select(&recent)}),
+            json!({"suggestions": crate::suggestions::select(&recent, count)}),
         );
     }
     if request.method() == Method::GET {
@@ -283,11 +294,22 @@ async fn ask(state: &AppState, question: &str) -> Response {
                 .collect()
         })
         .unwrap_or_default();
+    let extras = [
+        ("label", MAX_LABEL_LENGTH),
+        ("trailName", MAX_TRAIL_NAME_LENGTH),
+        ("fact", MAX_FACT_LENGTH),
+    ];
     match validate_reply(answer, &follow_ups) {
-        Ok(reply) => json_response(
-            200,
-            json!({"answer": reply.answer, "followUps": reply.follow_ups, "elapsedMs": started.elapsed().as_millis()}),
-        ),
+        Ok(valid) => {
+            let mut body = json!({"answer": valid.answer, "followUps": valid.follow_ups, "elapsedMs": started.elapsed().as_millis()});
+            // Optional: included only when the model gave a usable value.
+            for (key, limit) in extras {
+                if let Some(text) = optional_text(reply.get(key).and_then(Value::as_str), limit) {
+                    body[key] = Value::String(text);
+                }
+            }
+            json_response(200, body)
+        }
         Err(_) => error(502, UNCLEAR),
     }
 }

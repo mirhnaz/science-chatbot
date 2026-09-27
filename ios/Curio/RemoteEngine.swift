@@ -21,6 +21,9 @@ struct RemoteEngine: TutorEngine {
     private struct Reply: Decodable {
         let answer: String?
         let followUps: [String]?
+        let label: String?
+        let trailName: String?
+        let fact: String?
         let error: String?
     }
 
@@ -63,7 +66,8 @@ struct RemoteEngine: TutorEngine {
             throw TutorError.message(ValidationError.emptyAnswer.description)
         }
         await ReachabilityMemory.shared.reached(baseURL)
-        return try validateReply(answer: answer, followUps: followUps)
+        return try validateReply(answer: answer, followUps: followUps,
+                                 label: reply?.label, trailName: reply?.trailName, fact: reply?.fact)
     }
 
     /// Uses the server's /healthz route; this does not run the model.

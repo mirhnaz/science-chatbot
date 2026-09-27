@@ -7,7 +7,8 @@ use std::{
 };
 
 pub const RECENT_LIMIT: usize = 40;
-const COUNT: usize = 4;
+/// Phones show four sparks; wide layouts (iPad landscape, web) show six.
+pub const COUNTS: [usize; 2] = [4, 6];
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Suggestion {
@@ -25,7 +26,8 @@ pub fn bank() -> &'static [Suggestion] {
     })
 }
 
-pub fn select(excluded: &[&str]) -> Vec<&'static Suggestion> {
+/// `count` questions from different topics, preferring ones not in `excluded`.
+pub fn select(excluded: &[&str], count: usize) -> Vec<&'static Suggestion> {
     // A fresh randomly seeded hash orders the small bank differently per call.
     // This is for variety, not security, and needs no shared mutable counter.
     let random = RandomState::new();
@@ -35,7 +37,7 @@ pub fn select(excluded: &[&str]) -> Vec<&'static Suggestion> {
     candidates
         .into_iter()
         .filter(|q| topics.insert(q.topic.as_str()))
-        .take(COUNT)
+        .take(count)
         .collect()
 }
 
@@ -46,7 +48,7 @@ mod tests {
 
     #[test]
     fn bank_is_valid_diverse_and_has_stable_unique_ids() {
-        assert_eq!(bank().len(), 60);
+        assert_eq!(bank().len(), 66);
         let mut ids = HashSet::new();
         let mut questions = HashSet::new();
         let mut topics = std::collections::HashMap::new();
@@ -60,7 +62,7 @@ mod tests {
             assert!(!q.icon.is_empty() && !q.topic.is_empty());
             *topics.entry(&q.topic).or_insert(0) += 1;
         }
-        assert_eq!(topics.len(), 10);
+        assert_eq!(topics.len(), 11);
         assert!(topics.values().all(|count| *count == 6));
     }
 
@@ -69,11 +71,11 @@ mod tests {
         let mut recent: Vec<String> = Vec::new();
         for _ in 0..100 {
             let excluded: Vec<_> = recent.iter().map(String::as_str).collect();
-            let batch = select(&excluded);
-            assert_eq!(batch.len(), COUNT);
+            let batch = select(&excluded, 4);
+            assert_eq!(batch.len(), 4);
             assert_eq!(
                 batch.iter().map(|q| &q.topic).collect::<HashSet<_>>().len(),
-                COUNT
+                4
             );
             assert!(batch.iter().all(|q| !recent.contains(&q.id)));
             recent.extend(batch.iter().map(|q| q.id.clone()));
@@ -84,8 +86,26 @@ mod tests {
     }
 
     #[test]
+    fn six_sparks_come_from_six_topics() {
+        let mut recent: Vec<String> = Vec::new();
+        for _ in 0..100 {
+            let excluded: Vec<_> = recent.iter().map(String::as_str).collect();
+            let batch = select(&excluded, 6);
+            assert_eq!(batch.len(), 6);
+            let topics: HashSet<_> = batch.iter().map(|q| &q.topic).collect();
+            assert_eq!(topics.len(), 6);
+            recent.extend(batch.iter().map(|q| q.id.clone()));
+            if recent.len() > RECENT_LIMIT {
+                recent.drain(..recent.len() - RECENT_LIMIT);
+            }
+        }
+    }
+
+    #[test]
     fn exhausted_exclusions_still_produce_a_full_batch() {
         let all: Vec<_> = bank().iter().map(|q| q.id.as_str()).collect();
-        assert_eq!(select(&all).len(), COUNT);
+        for count in COUNTS {
+            assert_eq!(select(&all, count).len(), count);
+        }
     }
 }

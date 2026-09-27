@@ -1,4 +1,6 @@
-use curio_server::chat::{TutorReply, ValidationError, validate_question, validate_reply};
+use curio_server::chat::{
+    TutorReply, ValidationError, optional_text, validate_question, validate_reply,
+};
 
 fn follow_ups() -> Vec<String> {
     [
@@ -201,4 +203,22 @@ fn validation_errors_preserve_existing_user_messages() {
             "The answer did not come through clearly. Could you try your question again?"
         );
     }
+}
+
+#[test]
+fn optional_extras_are_trimmed_or_dropped_never_rejected() {
+    assert_eq!(
+        optional_text(Some("  The nucleus\n"), 40),
+        Some("The nucleus".to_owned())
+    );
+    assert_eq!(optional_text(Some("\u{FEFF} "), 40), None);
+    assert_eq!(optional_text(None, 40), None);
+    assert_eq!(
+        optional_text(Some(&"x".repeat(40)), 40),
+        Some("x".repeat(40))
+    );
+    assert_eq!(optional_text(Some(&"x".repeat(41)), 40), None);
+    // UTF-16 units, like the other limits: 20 emoji are 40 units.
+    assert!(optional_text(Some(&"🌙".repeat(20)), 40).is_some());
+    assert!(optional_text(Some(&"🌙".repeat(21)), 40).is_none());
 }

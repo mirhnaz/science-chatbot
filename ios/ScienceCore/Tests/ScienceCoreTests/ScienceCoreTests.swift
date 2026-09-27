@@ -74,9 +74,19 @@ final class ValidationTests: XCTestCase {
         XCTAssertThrowsError(try decodeReply("not json"))
     }
 
-    func testGrammarDescribesBothFields() {
-        XCTAssertTrue(replyGrammar.contains("\\\"answer\\\""))
-        XCTAssertTrue(replyGrammar.contains("\\\"followUps\\\""))
+    func testDecodeReplyKeepsUsableExtrasOnly() throws {
+        let json = #"{"answer":"Ice and dust.","fact":" Comets are dirty snowballs. ","label":"The nucleus","trailName":"\#(String(repeating: "x", count: 31))","followUps":["A?","B?","C?"]}"#
+        let reply = try decodeReply(json)
+        XCTAssertEqual(reply.fact, "Comets are dirty snowballs.")
+        XCTAssertEqual(reply.label, "The nucleus")
+        XCTAssertNil(reply.trailName, "too long: dropped, not an error")
+        XCTAssertNil(optionalText("   ", limit: 40))
+    }
+
+    func testGrammarDescribesEveryField() {
+        for field in ["answer", "fact", "label", "trailName", "followUps"] {
+            XCTAssertTrue(replyGrammar.contains("\\\"\(field)\\\""), field)
+        }
     }
 }
 
@@ -93,7 +103,11 @@ final class SuggestionTests: XCTestCase {
 
     func testSelectionIsDiverseAndAvoidsRecent() throws {
         let bank = try bank()
-        XCTAssertEqual(bank.all.count, 60)
+        XCTAssertEqual(bank.all.count, 66)
+        XCTAssertEqual(Set(bank.all.map(\.topic)).count, 11)
+        let six = bank.select(excluding: [], count: 6)
+        XCTAssertEqual(six.count, 6)
+        XCTAssertEqual(Set(six.map(\.topic)).count, 6)
         var recent = RecentSuggestions()
         for _ in 0..<10 {
             let picked = bank.select(excluding: recent.ids)

@@ -4,14 +4,27 @@
 public let maxQuestionLength = 2_000
 public let maxFollowUpLength = 180
 public let followUpCount = 3
+/// Short extras that decorate an answer (see optionalText).
+public let maxLabelLength = 40
+public let maxTrailNameLength = 30
+public let maxFactLength = 160
 
 public struct TutorReply: Equatable, Sendable {
     public let answer: String
     public let followUps: [String]
+    /// What this answer explains, for example "The nucleus".
+    public let label: String?
+    /// The overall subject, for example "Comets".
+    public let trailName: String?
+    /// One sentence to remember from this answer.
+    public let fact: String?
 
-    public init(answer: String, followUps: [String]) {
+    public init(answer: String, followUps: [String], label: String? = nil, trailName: String? = nil, fact: String? = nil) {
         self.answer = answer
         self.followUps = followUps
+        self.label = label
+        self.trailName = trailName
+        self.fact = fact
     }
 }
 
@@ -42,7 +55,17 @@ public func validateQuestion(_ input: String) throws -> String {
     return question
 }
 
-public func validateReply(answer: String, followUps: [String]) throws -> TutorReply {
+/// Trims an optional extra; nil when missing, blank, or longer than `limit`
+/// UTF-16 units. Extras only decorate the answer, so a bad one is dropped
+/// instead of failing the whole reply (as in chat.rs).
+public func optionalText(_ text: String?, limit: Int) -> String? {
+    guard let text else { return nil }
+    let trimmed = trimJavaScript(text)
+    return trimmed.isEmpty || trimmed.utf16.count > limit ? nil : trimmed
+}
+
+public func validateReply(answer: String, followUps: [String], label: String? = nil,
+                          trailName: String? = nil, fact: String? = nil) throws -> TutorReply {
     let answer = trimJavaScript(answer)
     if answer.isEmpty { throw ValidationError.emptyAnswer }
     if followUps.count != followUpCount { throw ValidationError.invalidFollowUpCount }
@@ -56,7 +79,10 @@ public func validateReply(answer: String, followUps: [String]) throws -> TutorRe
         if !seen.insert(suggestion.lowercased()).inserted { throw ValidationError.duplicateFollowUps }
         normalized.append(suggestion)
     }
-    return TutorReply(answer: answer, followUps: normalized)
+    return TutorReply(answer: answer, followUps: normalized,
+                      label: optionalText(label, limit: maxLabelLength),
+                      trailName: optionalText(trailName, limit: maxTrailNameLength),
+                      fact: optionalText(fact, limit: maxFactLength))
 }
 
 /// The whitespace set JavaScript's String.trim removes (and Rust mirrors).

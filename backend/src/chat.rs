@@ -7,6 +7,11 @@ use std::fmt;
 pub const MAX_QUESTION_LENGTH: usize = 2_000;
 pub const MAX_FOLLOW_UP_LENGTH: usize = 180;
 pub const FOLLOW_UP_COUNT: usize = 3;
+/// Short extras that decorate an answer: a step label ("The nucleus"), a
+/// trail name ("Comets"), and one fact to remember.
+pub const MAX_LABEL_LENGTH: usize = 40;
+pub const MAX_TRAIL_NAME_LENGTH: usize = 30;
+pub const MAX_FACT_LENGTH: usize = 160;
 
 /// Owned answer text, suitable for returning after the model response is dropped.
 #[derive(Debug, PartialEq, Eq)]
@@ -105,6 +110,22 @@ pub fn validate_reply(answer: &str, follow_ups: &[String]) -> Result<TutorReply,
         answer: answer.to_owned(),
         follow_ups,
     })
+}
+
+/// Trim an optional extra from the model; `None` when missing, blank, or longer
+/// than `limit` UTF-16 units. Extras only decorate the answer, so a bad one is
+/// dropped instead of failing the whole reply.
+///
+/// ```
+/// use curio_server::chat::optional_text;
+///
+/// assert_eq!(optional_text(Some("  Comets "), 30), Some("Comets".to_owned()));
+/// assert_eq!(optional_text(Some(" "), 30), None);
+/// assert_eq!(optional_text(None, 30), None);
+/// ```
+pub fn optional_text(text: Option<&str>, limit: usize) -> Option<String> {
+    let text = trim_javascript(text?);
+    (!text.is_empty() && javascript_length(text) <= limit).then(|| text.to_owned())
 }
 
 // JavaScript String.length counts UTF-16 units, not UTF-8 bytes or Rust chars.

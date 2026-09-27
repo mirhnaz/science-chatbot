@@ -358,5 +358,41 @@
     "topic": "Forces & motion",
     "icon": "🧲",
     "question": "How do bicycle brakes slow the wheels?"
+  },
+  {
+    "id": "body-1",
+    "topic": "Body",
+    "icon": "🫀",
+    "question": "Why does your heart beat faster when you run?"
+  },
+  {
+    "id": "body-2",
+    "topic": "Body",
+    "icon": "🫀",
+    "question": "Why do we get goosebumps when we are cold?"
+  },
+  {
+    "id": "body-3",
+    "topic": "Body",
+    "icon": "🫀",
+    "question": "How do bones grow as children get older?"
+  },
+  {
+    "id": "body-4",
+    "topic": "Body",
+    "icon": "🫀",
+    "question": "Why do we yawn?"
+  },
+  {
+    "id": "body-5",
+    "topic": "Body",
+    "icon": "🫀",
+    "question": "How does your nose tell different smells apart?"
+  },
+  {
+    "id": "body-6",
+    "topic": "Body",
+    "icon": "🫀",
+    "question": "Why do people need to sleep every night?"
   }
 ]

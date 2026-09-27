@@ -8,11 +8,13 @@ public struct Suggestion: Codable, Hashable, Identifiable, Sendable {
     public let question: String
 }
 
-/// Port of backend/src/suggestions.rs: four questions from different topics,
-/// preferring ones not shown recently. Runs locally in both engine modes.
+/// Port of backend/src/suggestions.rs: four (or, for wide layouts, six)
+/// questions from different topics, preferring ones not shown recently. Runs
+/// locally in both engine modes.
 public struct SuggestionBank: Sendable {
     public static let recentLimit = 40
-    static let count = 4
+    /// Phones show four sparks; wide layouts show six.
+    public static let counts = [4, 6]
 
     public let all: [Suggestion]
 
@@ -20,7 +22,7 @@ public struct SuggestionBank: Sendable {
         all = try JSONDecoder().decode([Suggestion].self, from: json)
     }
 
-    public func select(excluding recent: [String]) -> [Suggestion] {
+    public func select(excluding recent: [String], count: Int = 4) -> [Suggestion] {
         let excluded = Set(recent)
         // Shuffle first, then move recently shown questions to the back.
         let ordered = all.shuffled().enumerated().sorted { a, b in
@@ -30,7 +32,7 @@ public struct SuggestionBank: Sendable {
         var topics = Set<String>()
         return ordered.map(\.element)
             .filter { topics.insert($0.topic).inserted }
-            .prefix(Self.count)
+            .prefix(count)
             .map { $0 }
     }
 }

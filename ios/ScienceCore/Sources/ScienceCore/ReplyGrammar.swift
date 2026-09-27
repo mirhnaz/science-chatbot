@@ -1,11 +1,15 @@
 /// GBNF grammar for llama.cpp that only allows JSON shaped like
-/// backend/src/reply-schema.json: {"answer": "...", "followUps": [three strings]}.
+/// backend/src/reply-schema.json: {"answer", "fact", "label", "trailName",
+/// "followUps": [three strings]}, in that order.
 /// This is the on-device equivalent of Ollama's `format` option. The follow-up
 /// limit counts JSON characters, so validateReply still has the final say.
 /// Whitespace is bounded so the model cannot loop on blank output.
 public let replyGrammar = #"""
-root      ::= "{" ws "\"answer\"" ws ":" ws answer ws "," ws "\"followUps\"" ws ":" ws "[" ws followup ws "," ws followup ws "," ws followup ws "]" ws "}"
+root      ::= "{" ws "\"answer\"" ws ":" ws answer ws "," ws "\"fact\"" ws ":" ws fact ws "," ws "\"label\"" ws ":" ws label ws "," ws "\"trailName\"" ws ":" ws trailname ws "," ws "\"followUps\"" ws ":" ws "[" ws followup ws "," ws followup ws "," ws followup ws "]" ws "}"
 answer    ::= "\"" char+ "\""
+fact      ::= "\"" char{1,160} "\""
+label     ::= "\"" char{1,40} "\""
+trailname ::= "\"" char{1,30} "\""
 followup  ::= "\"" char{1,180} "\""
 char      ::= [^"\\\x7F\x00-\x1F] | "\\" (["\\/bfnrt] | "u" [0-9a-fA-F]{4})
 ws        ::= [ \t\n]{0,4}

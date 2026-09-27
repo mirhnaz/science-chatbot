@@ -137,6 +137,24 @@ test('empty model content does not appear as success', async t => {
   assert.equal((await f.post({ question: 'Gravity?' })).status, 502);
 });
 
+test('usable extras (fact, label, trail name) pass through; missing or bad ones are dropped', async t => {
+  const base = { answer: 'Comets are icy.', followUps: ['One?', 'Two?', 'Three?'] };
+  const cases: [Record<string, unknown>, Record<string, unknown>][] = [
+    [{ fact: ' Comets are dirty snowballs. ', label: 'The nucleus', trailName: 'Comets' }, { fact: 'Comets are dirty snowballs.', label: 'The nucleus', trailName: 'Comets' }],
+    [{}, {}],
+    [{ fact: ' ', label: 'x'.repeat(41), trailName: 42 }, {}],
+    [{ fact: 'x'.repeat(160), label: 'x'.repeat(40), trailName: 'x'.repeat(30) }, { fact: 'x'.repeat(160), label: 'x'.repeat(40), trailName: 'x'.repeat(30) }]
+  ];
+  for (const [extras, expected] of cases) {
+    const content = JSON.stringify({ ...base, ...extras });
+    const f = await fixture(t, (_, res) => res.end(JSON.stringify({ message: { content } })));
+    const reply = await f.post({ question: 'What is a comet?' });
+    assert.equal(reply.status, 200, 'extras never fail the answer');
+    const data = await readObject(reply);
+    for (const key of ['fact', 'label', 'trailName']) assert.equal(data[key], expected[key], key);
+  }
+});
+
 test('malformed answers and invalid suggestions return a retryable error', async t => {
   for (const content of [
     'not JSON',
@@ -408,4 +426,16 @@ test('starter suggestions rotate across four topics without calling Ollama', asy
   assert.equal((await fetch(f.url + '/api/suggestions?exclude=' + Array(41).fill('space-1').join(','))).status, 400);
   assert.equal((await fetch(f.url + '/api/suggestions?exclude=' + 'x'.repeat(65))).status, 400);
   assert.equal((await fetch(f.url + '/api/suggestions?exclude=' + 'x'.repeat(3001))).status, 400);
+});
+
+test('wide layouts can ask for six sparks from six topics; other counts are refused', async t => {
+  const f = await fixture(t, (_, res) => answer(res));
+  const six = await (await fetch(f.url + '/api/suggestions?count=6')).json() as { suggestions: { topic: string }[] };
+  assert.equal(six.suggestions.length, 6);
+  assert.equal(new Set(six.suggestions.map(q => q.topic)).size, 6);
+  for (const count of ['5', '0', '7', 'six', '']) {
+    const res = await fetch(f.url + '/api/suggestions?count=' + count);
+    assert.equal(res.status, 400, count);
+    assert.deepEqual(await res.json(), { error: 'Ask for 4 or 6 suggestions.' });
+  }
 });
