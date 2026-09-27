@@ -571,6 +571,18 @@ Home screenshots (light/dark) with three trails and the pill. **Needs the
 user on the iPhone:** the back swipe, reopening an earlier trail, and the
 trails surviving a relaunch.
 
+### Answer length regression and fix (2026-09-27)
+
+The user noticed shorter answers. Measured on local qwen3:8b (8 questions ×
+3 runs, the server's exact request): old prompt (`926f71b`) mean 74 words;
+the prompt with fact/label/trailName (`bf810ef`) mean 40. Reordering the
+schema alone gave 51; a sentence saying the extras do not change the answer
+(which must still follow the length and brief-reply rules) gave 69–85 and
+kept the creator line and the off-topic redirect exact. That wording is
+now in `tutor.txt` (schema and grammar unchanged). Pre-existing quirk, not
+changed: "Who created Qwen?" gets the app-creator line instead of the
+Alibaba Cloud answer, with the old prompt too.
+
 ## Agreed direction, not yet implemented
 
 The user expects login, conversation history, and more functionality over time.
