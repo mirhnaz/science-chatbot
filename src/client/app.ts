@@ -1157,44 +1157,68 @@ function startPixelField() {
   };
   window.addEventListener('pointermove', event => pointer(event, false), { passive: true });
   window.addEventListener('pointerdown', event => pointer(event, true), { passive: true });
-  // Scrolling moves the content, so the empty space moves too.
+  // Scrolling moves the content, and content changes (sparks arriving,
+  // an answer) resize it, so the empty space moves too.
   let placing = false;
-  $('main').addEventListener('scroll', () => {
+  const place = () => {
     if (placing) return;
     placing = true;
     requestAnimationFrame(() => { placing = false; sendFieldFocus(); });
-  }, { passive: true });
+  };
+  $('main').addEventListener('scroll', place, { passive: true });
+  const resized = new ResizeObserver(place);
+  for (const screen of [$('home'), $('spark-grid'), $('trail')]) resized.observe(screen);
   document.addEventListener('visibilitychange', updateField);
   updateField();
 }
 
 /** Where the pixels go, in the canvas's coordinates (the bottom half of
  *  the window, down to its bottom edge behind the see-through bar).
- *  From 700 px: background pixels fill the space below the screen's content
- *  (`fill`), and the scene sits in the empty part of it above the bar, never
- *  behind text or cards: the solar system on the left of Home, the atom
- *  centred under the Trail step. Phones keep the scene centred in the band,
- *  with the content scrolling over it. */
+ *  From 700 px: background pixels fill the space below the content, per
+ *  column on wide Home (the Home column and Sparks end at different
+ *  heights), and the scene sits in the largest empty space, never behind
+ *  text or cards: the solar system on Home, the atom centred under the
+ *  Trail step. Phones keep the scene centred in the band, with the content
+ *  scrolling over it. */
 function sendFieldFocus() {
   if (!fieldWorker || !fieldCanvas) return;
   const box = fieldCanvas.getBoundingClientRect();
   const dock = $('dock');
   const floor = (dock.hidden ? window.innerHeight : dock.getBoundingClientRect().top) - box.top;
-  const post = (fill: number, x0: number, y0: number, x1: number, y1: number) =>
-    fieldWorker!.postMessage({ type: 'focus', fill, rect: [x0, y0, x1, Math.max(y0, y1)] });
-  if (box.width < 700 || view === 'welcome' || view === 'complete') { post(0, 0, box.height * 0.1, box.width, floor - 12); return; }
-  const screen = view === 'trail' ? $('trail') : $('home');
-  // The lowest visible content (the Trail's step and choices; Home's
-  // columns and the credit line).
-  let bottom = -Infinity;
-  for (const child of Array.from(screen.children)) {
-    const rect = child.getBoundingClientRect();
-    if (rect.height > 0) bottom = Math.max(bottom, rect.bottom);
+  type Rect = [number, number, number, number];
+  const post = (fill: [number, number, number], rect: Rect) =>
+    fieldWorker!.postMessage({ type: 'focus', fill, rect: [rect[0], rect[1], rect[2], Math.max(rect[1], rect[3])] });
+  if (box.width < 700 || view === 'welcome' || view === 'complete') { post([0, 0, 0], [0, box.height * 0.1, box.width, floor - 12]); return; }
+  /** Where background pixels start below content that ends at `bottom`. */
+  const line = (bottom: number, limit: number) => Math.max(1, Math.min(bottom - box.top + 16, limit - 16));
+  const lowest = (elements: Element[]) => elements.reduce((low, item) => {
+    const rect = item.getBoundingClientRect();
+    return rect.height > 0 ? Math.max(low, rect.bottom) : low;
+  }, -Infinity);
+  if (view === 'trail') {
+    const fill = line(lowest(Array.from($('trail').children)), floor);
+    const column = $('trail').getBoundingClientRect();
+    post([0, fill, fill], [column.left - box.left, fill + 8, column.right - box.left, floor - 12]);
+    return;
   }
-  const fill = Math.max(1, Math.min(bottom - box.top + 16, floor - 16));
-  const column = screen.getBoundingClientRect();
-  if (view === 'trail') post(fill, column.left - box.left, fill + 8, column.right - box.left, floor - 12);
-  else post(fill, 0, fill + 8, box.width * 0.7, floor - 12);
+  // The cards themselves: grid rows stretch the columns' own boxes.
+  const sparksBox = $('spark-grid').getBoundingClientRect();
+  const side = document.querySelector('.home-side');
+  if (!side || !sparksBox.height || window.innerWidth < 1100) {
+    const fill = line(lowest(Array.from($('home').children)), floor);
+    post([0, fill, fill], [0, fill + 8, box.width * 0.7, floor - 12]);
+    return;
+  }
+  // Two columns: the bar sits under Sparks only, so the Home column's empty
+  // space runs to the bottom edge.
+  const split = sparksBox.left - box.left - 16;
+  const bottom = box.height - 16;
+  const left = line(lowest([...Array.from(side.children), $('made-with-love')]), bottom);
+  const right = line(sparksBox.bottom, floor);
+  const spaces: Rect[] = [[0, left + 8, split, bottom], [split + 16, right + 8, box.width - 16, floor - 12]];
+  // The larger space for a solar system: height, unless it is narrow.
+  const score = ([x0, y0, x1, y1]: Rect) => Math.min(y1 - y0, (x1 - x0) * 0.35);
+  post([split, left, right], score(spaces[0]) >= score(spaces[1]) ? spaces[0] : spaces[1]);
 }
 
 /** Scene by width and screen: stars on phones (and the welcome); from 700 px

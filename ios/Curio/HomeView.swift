@@ -47,9 +47,10 @@ struct HomeView: View {
                         MadeWithLove()
                     }
                     .frame(width: 380, alignment: .leading)
+                    .pixelFieldContent()
                     SparksGrid(chat: chat, newTopics: stamps.uncollectedTopics, start: start, edit: edit)
+                        .pixelFieldContent()
                 }
-                .pixelFieldContent()
                 .padding(.horizontal, 40)
                 .padding(.top, 24)
                 .padding(.bottom, 16)

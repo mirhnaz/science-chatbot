@@ -16,10 +16,11 @@ struct PixelField: View {
     let scene: Scene
     /// 1 on Home, quieter on Trail.
     var intensity = 1.0
-    /// In this view's coordinates: the line background pixels start below
-    /// (0: a gradient over the whole field) and the empty space the scene
-    /// fits in (nil: centred in the field).
-    var fill = 0.0
+    /// In this view's coordinates: where background pixels start, per
+    /// column (the x of the split, the line left of it, the line right of
+    /// it; 0: a gradient over the whole field), and the empty space the
+    /// scene fits in (nil: centred in the field).
+    var fill: [Double] = [0, 0, 0]
     var space: CGRect?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var phase
@@ -49,7 +50,7 @@ struct PixelField: View {
                     .float2(size.width, size.height), .float(time), .float(scene.rawValue), .float(intensity),
                     .float3(pointer.point.x, pointer.point.y, age(pointer)),
                     .float3(tap.point.x, tap.point.y, age(tap)),
-                    .float(fill),
+                    .float3(fill[0], fill[1], fill[2]),
                     .float4(rect.minX, rect.minY, rect.maxX, rect.maxY),
                     .color(Curio.fieldDim), .color(Curio.fieldMid), .color(Curio.fieldLit), .color(Curio.fieldCrest),
                     // Planets and electrons in topic colours; the sun and nucleus in Light's.
@@ -66,42 +67,41 @@ struct PixelField: View {
 extension View {
     /// Shows the pixel field over the bottom half of this view, down to the
     /// screen's bottom edge behind bottom bars, and behind its content.
-    /// On iPad the scene sits in the empty space below content marked with
-    /// `pixelFieldContent()` (the solar system on the left, the atom
-    /// centred), with background pixels filling the rest; phones keep it
-    /// centred with the content scrolling over it. Hover and taps on the
+    /// On iPad background pixels fill the space below content marked with
+    /// `pixelFieldContent()` (per column when two are marked, as on wide
+    /// Home) and the scene sits in the largest empty part (the solar system
+    /// on Home, the atom centred on Trail), never behind the content; phones
+    /// keep it centred with the content scrolling over it. Hover and taps on the
     /// view reach the field (content still gets them).
     func pixelFieldBackground(_ scene: PixelField.Scene, intensity: Double = 1) -> some View {
         modifier(PixelFieldBackground(scene: scene, intensity: intensity))
     }
 
-    /// Marks the content the pixel field's scene must stay below.
+    /// Marks content (a column) the pixel field's scene must stay below.
     func pixelFieldContent() -> some View {
         background {
             GeometryReader { proxy in
-                Color.clear.preference(key: ContentBottom.self, value: proxy.frame(in: .global).maxY)
+                Color.clear.preference(key: MarkedContent.self, value: [proxy.frame(in: .global)])
             }
         }
     }
 }
 
-/// The lowest marked content, in global coordinates.
-private struct ContentBottom: PreferenceKey {
-    static let defaultValue: Double? = nil
-    static func reduce(value: inout Double?, nextValue: () -> Double?) {
-        if let next = nextValue() { value = max(value ?? next, next) }
-    }
+/// The marked content's frames, in global coordinates.
+private struct MarkedContent: PreferenceKey {
+    static let defaultValue: [CGRect] = []
+    static func reduce(value: inout [CGRect], nextValue: () -> [CGRect]) { value += nextValue() }
 }
 
 private struct PixelFieldBackground: ViewModifier {
     let scene: PixelField.Scene
     let intensity: Double
     /// All in global coordinates: this view's safe area (its top and the
-    /// question bar's top), the field, and the lowest marked content.
+    /// question bar's top), the field, and the marked content.
     @State private var safe = CGRect.zero
     @State private var top = 0.0
     @State private var field = CGRect.zero
-    @State private var contentBottom: Double?
+    @State private var marked: [CGRect] = []
     @State private var pointer = PixelField.Touch()
     @State private var tap = PixelField.Touch()
 
@@ -128,8 +128,8 @@ private struct PixelFieldBackground: ViewModifier {
                 top = values[0]
                 safe = CGRect(x: values[1], y: values[2], width: values[3], height: values[4])
             }
-            .onPreferenceChange(ContentBottom.self) { bottom in
-                MainActor.assumeIsolated { contentBottom = bottom }
+            .onPreferenceChange(MarkedContent.self) { frames in
+                MainActor.assumeIsolated { marked = frames }
             }
             .onContinuousHover(coordinateSpace: .global) { hover in
                 if case .active(let point) = hover { pointer = .init(point: inField(point), at: .now) }
@@ -142,13 +142,29 @@ private struct PixelFieldBackground: ViewModifier {
 
     /// In the field's coordinates: where background pixels start and the
     /// empty space for the scene, between the content and the bar.
-    private func placement() -> (Double, CGRect?) {
+    private func placement() -> ([Double], CGRect?) {
         let floor = safe.maxY - field.minY
-        guard scene != .starfield, let contentBottom else {
-            return (0, CGRect(x: 0, y: 12, width: field.width, height: max(0, floor - 24)))
+        /// Where background pixels start below content ending at `bottom`.
+        func line(_ bottom: Double, _ limit: Double) -> Double { max(1, min(bottom - field.minY + 16, limit - 16)) }
+        let columns = marked.sorted { $0.minX < $1.minX }
+        guard scene != .starfield, let first = columns.first else {
+            return ([0, 0, 0], CGRect(x: 0, y: 12, width: field.width, height: max(0, floor - 24)))
         }
-        let fill = max(1, min(contentBottom - field.minY + 16, floor - 16))
-        let width = scene == .solarSystem ? field.width * 0.7 : field.width
-        return (fill, CGRect(x: 0, y: fill + 8, width: width, height: max(0, floor - 12 - fill - 8)))
+        guard columns.count > 1 else {
+            let fill = line(first.maxY, floor)
+            let width = scene == .solarSystem ? field.width * 0.7 : field.width
+            return ([0, fill, fill], CGRect(x: 0, y: fill + 8, width: width, height: max(0, floor - 12 - fill - 8)))
+        }
+        // Two columns (wide Home): the bar sits under the right one only, so
+        // the left column's empty space runs to the bottom edge.
+        let right = columns[1], split = right.minX - field.minX - 16
+        let bottom = field.height - 24
+        let leftFill = line(first.maxY, bottom), rightFill = line(right.maxY, floor)
+        let spaces = [CGRect(x: 0, y: leftFill + 8, width: split, height: max(0, bottom - leftFill - 8)),
+                      CGRect(x: split + 16, y: rightFill + 8, width: max(0, field.width - split - 32),
+                             height: max(0, floor - 12 - rightFill - 8))]
+        // The larger space for a solar system: its height, unless narrow.
+        let score = { (space: CGRect) in min(space.height, space.width * 0.35) }
+        return ([split, leftFill, rightFill], spaces.max { score($0) < score($1) })
     }
 }

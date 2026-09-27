@@ -760,6 +760,25 @@ Deployed to mir-omarchy-pc (`c1a4c35`: pull, `npm run build`, `systemctl
 styles.css carry the new code. A real question was not asked after the
 restart.
 
+### iPad feedback: solar system, Trail halves, microphone (2026-09-27)
+
+User on the iPad: no solar system on Home, only pixels; Trail wastes the
+space under the picture (wanted picture left half, answer right half, one
+font size down); the microphone switched off within seconds.
+Causes and fixes: (1) placement looked for space below *all* content and
+the long Home column (open trails + "Trails you finished") left none;
+now each column gets its own fill line and the scene takes the larger
+empty space (under Sparks here, centred there), clipped to it. On the web
+the Sparks' grid cell also stretched to the column's height and the
+position was measured before sparks loaded; it now measures the cards and
+re-measures on resize. (2) Trail at ≥1100: a two-column grid, picture as
+tall as the answer, answer 18/28 (was 20/32), web and iOS. (3) Voice: the
+2.5 s pause timer started at the tap, so a slow start or slow first
+partial ended listening; now 8 s for the first words, then 3 s pauses,
+and if nothing was heard an alert says so with the system's reason.
+Verified: web screenshots at 1180/1440 with a long Home column; tests.
+iOS installed on iPhone and iPad, not checked by eye here.
+
 ## Agreed direction, not yet implemented
 
 The user expects login, conversation history, and more functionality over time.

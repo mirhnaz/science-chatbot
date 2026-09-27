@@ -278,12 +278,16 @@ struct CurrentStep: View {
                 .overlay(RoundedRectangle(cornerRadius: Curio.cardRadius).strokeBorder(Curio.border, lineWidth: Curio.borderWidth))
             } else if let reply = step.reply {
                 if wide {
-                    // iPad: the picture beside the answer, three choices.
+                    // iPad: the picture fills the left half, as tall as the
+                    // answer beside it; three choices.
                     HStack(alignment: .top, spacing: 28) {
                         CategoryIllustration(topic: topic)
-                            .frame(width: 360, height: 260)
+                            .frame(maxWidth: .infinity, minHeight: 260, maxHeight: .infinity)
                         answer(reply.answer)
+                            .frame(maxWidth: .infinity, alignment: .topLeading)
                     }
+                    // Both halves take the taller one's height.
+                    .fixedSize(horizontal: false, vertical: true)
                 } else {
                     CategoryIllustration(topic: topic)
                     answer(reply.answer)
@@ -300,11 +304,11 @@ struct CurrentStep: View {
         .padding(.top, 2)
     }
 
-    /// 17/26 on phones, 20/32 when wide.
+    /// 17/26 on phones, 18/28 when wide.
     private func answer(_ text: String) -> some View {
         Text(text)
-            .font(Curio.body(wide ? 20 : 17, .semibold))
-            .lineSpacing(wide ? 12 : 9)
+            .font(Curio.body(wide ? 18 : 17, .semibold))
+            .lineSpacing(wide ? 10 : 9)
             .foregroundStyle(Curio.ink)
             .textSelection(.enabled)
             .frame(maxWidth: .infinity, alignment: .leading)

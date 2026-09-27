@@ -7,8 +7,11 @@ using namespace metal;
 // Scenes: 0 starfield + comet (phones), 1 atom (Trail), 2 solar system (Home),
 // 3 the stamp celebration burst (from the tap point).
 // `rect` is the empty space the scene must fit in (left, top, right,
-// bottom); `fill` the line background pixels start below (0: a gradient
-// over the whole field, as on phones).
+// bottom); the scene never draws outside it. `fill`: background pixels
+// start below a line per column (x of the split, the line left of it, the
+// line right of it; 0: a gradient over the whole field, as on phones).
+// A space touching the left edge puts the sun there with the orbits' left
+// halves off the field; elsewhere the solar system is centred.
 
 static float hash(float2 p) {
     p = fract(p * float2(123.34, 456.21));
@@ -26,7 +29,7 @@ static float ringDist(float2 q, float2 ab) {
 }
 
 [[ stitchable ]] half4 pixelField(float2 position, half4 color, float2 size, float time, float scene,
-                                  float intensity, float3 pointer, float3 tap, float fill, float4 rect,
+                                  float intensity, float3 pointer, float3 tap, float3 fill, float4 rect,
                                   half4 dim, half4 mid, half4 lit, half4 crest,
                                   half4 p1, half4 p2, half4 p3, half4 p4) {
     const float C = 8.0;
@@ -51,10 +54,12 @@ static float ringDist(float2 q, float2 ab) {
         return half4(bc.rgb * a, a);
     }
     // Below the fill line: 0 at the line, 1 at the bottom edge.
-    float yy = fill > 0.5 ? (center.y - fill) / max(size.y - fill, 1.0) : y01;
-    float d = fill > 0.5 ? smoothstep(0.0, 0.3, yy) * mix(0.2, 1.0, yy * yy) : pow(smoothstep(0.45, 1.0, y01), 2.0);
+    float line = center.x < fill.x ? fill.y : fill.z;
+    bool filled = line > 0.5;
+    float yy = filled ? (center.y - line) / max(size.y - line, 1.0) : y01;
+    float d = filled ? smoothstep(0.0, 0.3, yy) * mix(0.2, 1.0, yy * yy) : pow(smoothstep(0.45, 1.0, y01), 2.0);
     float v = h1 < d * 0.9 ? 0.18 + 0.22 * (0.5 + 0.5 * sin(t * 0.8 + h2 * 6.2832)) : 0.0;
-    if (h2 > (scene < 0.5 ? 0.985 : 0.992)) v = max(v, (0.35 + 0.35 * sin(t * 2.3 + h1 * 40.0)) * smoothstep(fill > 0.5 ? 0.0 : 0.05, fill > 0.5 ? 0.15 : 0.4, yy));
+    if (h2 > (scene < 0.5 ? 0.985 : 0.992)) v = max(v, (0.35 + 0.35 * sin(t * 2.3 + h1 * 40.0)) * smoothstep(filled ? 0.0 : 0.05, filled ? 0.15 : 0.4, yy));
 
     float s = 0.0, ci = 0.0, r = (rect.w - rect.y) * 0.5;
     float2 f = float2(rect.x + rect.z, rect.y + rect.w) * 0.5;
@@ -80,8 +85,9 @@ static float ringDist(float2 q, float2 ab) {
         // The sun near the left of the space; orbits out to its right edge
         // and within its height (the left halves run off the field).
         float sun = min(4.5 * C, r - 2.0 * C);
-        float2 c = float2(rect.x + (rect.z - rect.x) * 0.06 + sun + 2.0 * C, f.y);
-        float dn = length(center - c), reach = rect.z - c.x - 2.0 * C;
+        bool edge = rect.x < 1.0;
+        float2 c = float2(edge ? rect.x + (rect.z - rect.x) * 0.06 + sun + 2.0 * C : f.x, f.y);
+        float dn = length(center - c), reach = (edge ? rect.z - c.x : (rect.z - rect.x) * 0.5) - 2.0 * C;
         if (dn < sun) { s = 1.0; ci = 3.0; } else if (dn < sun + 2.0 * C) s = 0.5;
         for (int i = 0; i < 4; i++) {
             float fi = float(i), a = reach * (0.34 + 0.22 * fi);
@@ -92,6 +98,7 @@ static float ringDist(float2 q, float2 ab) {
         }
     }
 
+    if (any(center < rect.xy - C) || any(center > rect.zw + C)) { s = 0.0; ci = 0.0; }
     float age = pointer.z, pd = length(center - pointer.xy);
     float hover = exp(-pd * pd / (24.5 * C * C)) * clamp(1.0 - age * 0.6, 0.0, 1.0) * (h1 > 0.3 ? 1.0 : 0.4);
     float tapAge = tap.z, td = length(center - tap.xy);
@@ -100,6 +107,8 @@ static float ringDist(float2 q, float2 ab) {
     if (level < 0.05) return half4(0.0);
     half4 col = level < 0.3 ? dim : level < 0.55 ? mid : level < 0.8 ? lit : crest;
     if (ci > 0.5 && s >= max(v, fx)) col = ci < 1.5 ? p1 : ci < 2.5 ? p2 : ci < 3.5 ? p3 : p4;
-    half alpha = half(intensity * (fill > 0.5 ? smoothstep(-0.02, 0.1, yy) : smoothstep(0.0, 0.3, y01)));
+    // The scene shows fully in its space; background pixels fade in below the line.
+    float fade = filled ? smoothstep(-0.02, 0.1, yy) : smoothstep(0.0, 0.3, y01);
+    half alpha = half(intensity * (filled && s > 0.05 && s >= max(v, fx) ? 1.0 : fade));
     return half4(col.rgb * alpha, alpha);
 }
