@@ -1,7 +1,7 @@
 # Curio
 
 A self-hosted science tutor with a TypeScript browser frontend and a Rust backend
-that calls Ollama. It uses `qwen3:8b`, a fixed tutor prompt, and independent
+that calls Ollama. It uses `gemma4:12b`, a fixed tutor prompt, and independent
 questions without conversation history. Each answer includes three clickable,
 self-contained follow-up questions. The tutor uses a kind, patient tone for
 children aged 10–12.
@@ -16,7 +16,7 @@ configured model installed:
 
 ```sh
 npm ci
-ollama pull qwen3:8b
+ollama pull gemma4:12b
 npm start
 ```
 
@@ -69,7 +69,7 @@ The app reads environment variables, not `.env` files.
 | `PORT` | `11437` | Development port; systemd explicitly uses `11436` |
 | `ASSET_ROOT` | `.` | Repository/deployment root containing `public/` and `build/` |
 | `OLLAMA_BASE_URL` | `http://127.0.0.1:11434` | Ollama endpoint |
-| `OLLAMA_MODEL` | `qwen3:8b` | Installed model |
+| `OLLAMA_MODEL` | `gemma4:12b` | Installed model |
 | `PUBLIC_ORIGIN` | Unset | Exact allowed browser origin; when unset, compares request host |
 | `OLLAMA_TIMEOUT_MS` | `120000` | Complete upstream deadline, including response body reads |
 

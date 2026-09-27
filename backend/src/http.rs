@@ -41,7 +41,7 @@ impl Default for Config {
         Self {
             root: PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(".."),
             upstream: "http://127.0.0.1:11434".into(),
-            model: "qwen3:8b".into(),
+            model: "gemma4:12b".into(),
             public_origin: String::new(),
             timeout: Duration::from_secs(120),
         }

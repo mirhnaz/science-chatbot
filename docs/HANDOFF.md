@@ -628,6 +628,55 @@ the screen behind the content (web: 50vh canvas; iOS:
 question bar regardless of content; taps and hover reach it through the
 content. Trail intensity 45 %.
 
+### Tutor prompt and model: Gemma 4 12B (2026-09-27, branch `prompt-tuning`)
+
+Worked in a separate worktree (`../science-chatbot-prompt`, branch
+`prompt-tuning`) so the frontend/service agent on `main` was not disturbed.
+User brief: answers too short and uneven ("How do alveoli work?" got one
+21-word sentence); tone, curiosity and accurate content matter far more than
+length; the model reply must be ready within 2–3 s (the network adds 2–3 s);
+thinking mode rejected as too slow. No answer length was ever enforced in
+code: only `minLength: 1` in the schema and the prompt's word guide.
+
+Evals: a scratch script sends the server's exact Ollama request (system
+prompt, question, schema `format`, `think: false`) for 16 questions × 2–3
+runs, including the creator line, political redirect, an unsafe request and
+a model question; answers were read side by side, not only measured. Model
+runs used the Omarchy PC's Ollama (0.33.3, RTX 5080) through an SSH tunnel.
+`gemma4:12b` and `qwen3.5:9b` were pulled there and are to be kept.
+
+| Model (5080, same prompt) | Reply time mean / max | Notes |
+|---|---|---|
+| `qwen3:8b` | 0.9 / 1.1 s | short; myths (black hole "vacuum cleaner") |
+| `qwen3.5:9b` | 1.5 / 2.5 s | lively but unsafe (sparkler with a match), backwards facts |
+| `gemma4:12b` (tuned prompt) | 2.3 / 3.0 s | most accurate, teaches how and why; chosen |
+
+Prompt changes: the style paragraph asks the tutor to spark and satisfy
+curiosity, explain how and why even for narrow questions, end with one more
+true, amazing detail, give the scientific consensus and say when scientists
+are unsure; comparisons must be right. For Gemma: open with a plain
+statement rather than a question (it began most answers with "Did you
+know"), keep each answer under 110 words (softer targets gave ~145 words and
+~2.8 s), reply to creator questions with exactly the creator sentence, and
+the underlying model is now described as Gemma by Google. Result with
+`gemma4:12b`, 16 × 3: science answers 100–162 words (mean 120), 2.5 s mean /
+3.0 s max for science answers; creator, redirect and model replies exact.
+
+Lessons: rules about "your first/last sentence" made 8B models stop after one
+sentence; Gemma follows a word ceiling better than a target. Gemma garbled
+the end of 3 of 190 answers (cut mid-sentence, stray "1.", a trailing `",`);
+a server check could catch these later. The 5080 generates ~93 tokens/s with
+Gemma; the fact, label, trail name and follow-ups cost ~0.75 s of each reply.
+
+Changed on the branch: `tutor.txt`, default model `gemma4:12b` in
+`main.rs`, `http.rs`, both `deploy/` units and the README. Not changed: the
+iOS offline model (4B Qwen fallback; its prompt copy now names Gemma),
+`src/client/app.ts` ("private Qwen tutor" tool text) and the classroom
+diagrams, which still say Qwen. **Not yet done:** merge into `main`, rebuild
+and restart the live service with `OLLAMA_MODEL=gemma4:12b`; no Rust tests
+were run on the branch (string-only changes). Proposed next: stream answers
+(first words in well under a second) as a joint task with frontend work.
+
 ## Agreed direction, not yet implemented
 
 The user expects login, conversation history, and more functionality over time.

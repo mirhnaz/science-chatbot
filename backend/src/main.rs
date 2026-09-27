@@ -15,7 +15,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let config = Config {
         root: PathBuf::from(setting("ASSET_ROOT", ".")),
         upstream: setting("OLLAMA_BASE_URL", "http://127.0.0.1:11434"),
-        model: setting("OLLAMA_MODEL", "qwen3:8b"),
+        model: setting("OLLAMA_MODEL", "gemma4:12b"),
         public_origin: setting("PUBLIC_ORIGIN", ""),
         timeout: Duration::from_millis(setting("OLLAMA_TIMEOUT_MS", "120000").parse()?),
     };

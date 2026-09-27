@@ -13,7 +13,7 @@ WorkingDirectory=%h/dev/science-chatbot
 Environment=HOST=127.0.0.1
 Environment=PORT=11436
 Environment=OLLAMA_BASE_URL=http://127.0.0.1:11434
-Environment=OLLAMA_MODEL=qwen3:8b
+Environment=OLLAMA_MODEL=gemma4:12b
 Environment=PUBLIC_ORIGIN=https://curio.example.com
 # Run npm ci and npm run build before starting or restarting this service.
 ExecStart=%h/dev/science-chatbot/backend/target/release/curio-server
