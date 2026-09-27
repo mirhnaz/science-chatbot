@@ -113,7 +113,7 @@ struct StepNumber: View {
     var body: some View {
         Text("\(number)")
             .font(Curio.body(13, .heavy, relativeTo: .footnote))
-            .foregroundStyle(current ? Color.white : Curio.accent)
+            .foregroundStyle(current ? Curio.onAccent : Curio.accent)
             .frame(width: 26, height: 26)
             .background(current ? Curio.accentFill : Curio.accentTint, in: .circle)
             .accessibilityHidden(true)
@@ -214,7 +214,7 @@ struct CurrentStep: View {
                 Text(step.question)
                     .font(Curio.display(24, .semibold, relativeTo: .title))
                     .lineSpacing(3)
-                    .foregroundStyle(Curio.accent)
+                    .foregroundStyle(Curio.accentHeading)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityAddTraits(.isHeader)
                 if step.reply != nil {
@@ -235,7 +235,7 @@ struct CurrentStep: View {
                 VStack(alignment: .leading, spacing: 12) {
                     Label(error, systemImage: "exclamationmark.triangle")
                         .font(Curio.body(16))
-                        .foregroundStyle(Color(light: 0xB3261E, dark: 0xFF9A93))
+                        .foregroundStyle(Curio.danger)
                     Button(action: retry) {
                         Label("Try again", systemImage: "arrow.clockwise")
                             .font(Curio.body(15, .heavy))
@@ -285,15 +285,15 @@ struct CategoryIllustration: View {
                 ]
                 for (x, y, r) in dots {
                     let rect = CGRect(x: x * size.width - r, y: y * size.height - r, width: r * 2, height: r * 2)
-                    context.fill(Path(ellipseIn: rect), with: .color(.white.opacity(0.9)))
+                    context.fill(Path(ellipseIn: rect), with: .color(Curio.sparkle.opacity(0.9)))
                 }
             }
-            Circle().fill(.white.opacity(0.5)).frame(width: 92, height: 92)
+            Circle().fill(Curio.sparkle.opacity(0.35)).frame(width: 92, height: 92)
             Image(systemName: style.symbol)
                 .font(.system(size: 38, weight: .medium))
                 .foregroundStyle(style.foreground)
                 .frame(width: 64, height: 64)
-                .background(Color.white, in: .circle)
+                .background(Curio.iconDisc, in: .circle)
         }
         .frame(maxWidth: .infinity)
         .frame(height: 124)
@@ -349,7 +349,7 @@ struct FinishButton: View {
         Button(action: action) {
             Label("Finish your trail", systemImage: "flag.checkered")
                 .font(Curio.body(17, .heavy, relativeTo: .headline))
-                .foregroundStyle(.white)
+                .foregroundStyle(Curio.onAccent)
                 .frame(maxWidth: .infinity, minHeight: 52)
                 .background(Curio.accentFill, in: .capsule)
                 .contentShape(.capsule)

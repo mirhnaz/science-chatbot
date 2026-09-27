@@ -107,6 +107,12 @@ fn asset(path: &str) -> Option<(&'static str, &'static str)> {
         "/icon-192.png" => ("public/icon-192.png", "image/png"),
         "/icon-512.png" => ("public/icon-512.png", "image/png"),
         "/site.webmanifest" => ("public/site.webmanifest", "application/manifest+json"),
+        // Fredoka and Nunito (SIL Open Font License), self-hosted: the CSP
+        // allows fonts only from this origin.
+        "/fonts/fredoka-latin.woff2" => ("public/fonts/fredoka-latin.woff2", "font/woff2"),
+        "/fonts/fredoka-latin-ext.woff2" => ("public/fonts/fredoka-latin-ext.woff2", "font/woff2"),
+        "/fonts/nunito-latin.woff2" => ("public/fonts/nunito-latin.woff2", "font/woff2"),
+        "/fonts/nunito-latin-ext.woff2" => ("public/fonts/nunito-latin-ext.woff2", "font/woff2"),
         _ => return None,
     })
 }

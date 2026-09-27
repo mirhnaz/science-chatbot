@@ -413,6 +413,34 @@ light and dark · 5 responsive ≥1100 / ≥1400.
 - "Show a grown-up" on web: Web Share with files is not universal; needs a
   download fallback. What it shares is an open decision.
 
+### Redesign v2 step 2: tokens (2026-09-27)
+
+User decisions: yesterday's feature decisions are final (5-step trails,
+one stamp per finished trail with a total counter, shuffle-only sparks);
+iPad/web artboards are layout references. "Show a grown-up" shares the
+recap image plus the trail's questions. Saved trails/stamps stay on the
+device (UserDefaults / localStorage). Web fonts are self-hosted via Rust.
+
+Done: [DESIGN.md](DESIGN.md) → Tokens is now the single source of truth
+(semantic names shared by CSS and iOS; handoff dark values replace the
+agent-derived ones; five bank topics keep derived colours, Forces & motion
+moved from pink to slate to stay distinct from the handoff's Body).
+iOS: 45 colour sets in `Assets.xcassets/Colors` (Any/Dark), `Accent.colorset`
+→ `#4F46C9`/`#A9A2FF`, literal colours in screens replaced (icon discs use
+ground in dark, stamp ring uses accent fill, current question uses
+accent-heading). Web: token layer at the top of `public/styles.css`
+(`prefers-color-scheme` + `data-theme`), old names remapped, shadows
+removed, `theme-color` and manifest colours set to ground (manifest `?v=5`).
+Fonts: four latin/latin-ext woff2 files in `public/fonts/` served by new
+allowlist routes in `backend/src/http.rs` (`font/woff2`, covered by the
+asset test); no CSP change was needed.
+
+Verified: `npm test` 21 Rust + 32 HTTP/frontend passed, typecheck,
+rustfmt + Clippy, iOS unsigned build. Web at 390 px in light and dark via
+headless Chrome against the dev server (127.0.0.1:11437, mock tutor). The
+live service still runs the old binary: the font routes and new CSS need a
+release build and restart to go live (not done).
+
 ## Agreed direction, not yet implemented
 
 The user expects login, conversation history, and more functionality over time.

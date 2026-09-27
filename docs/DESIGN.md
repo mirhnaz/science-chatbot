@@ -5,9 +5,11 @@ The shared design for Curio. The iPad/iOS app implements it first
 Guidelines for Liquid Glass (iOS/iPadOS 26 and later). The web page now
 uses the same curiosity column in plain TypeScript ([FRONTEND.md](FRONTEND.md)).
 
-> **Superseded where they conflict** by the 2026-09 redesign (Home, Trail,
-> Trail complete): [design/redesign-2026-09/curio-redesign-handoff.md](design/redesign-2026-09/curio-redesign-handoff.md).
-> It applies to iPhone and iPad. Tokens below are reconciled with it.
+> **Tokens** (below) are the single source of truth for phone, iPad and web,
+> light and dark. Screen layouts follow the 2026-09 redesign
+> ([handoff](design/redesign-2026-09/curio-redesign-handoff.md), dated review
+> record); the curiosity-column, principles, layout and web-notes sections
+> are the earlier design, superseded where they conflict.
 
 ## The curiosity column (current iPad build)
 
@@ -111,55 +113,92 @@ iPad; the principles and tokens still apply to both.
 
 ## Tokens
 
-Reconciled with the 2026-09 redesign
-([design/redesign-2026-09/curio-redesign-handoff.md](design/redesign-2026-09/curio-redesign-handoff.md));
-the redesign wins where they conflict. It applies to the iOS app on both
-iPhone and iPad. "Was" records the replaced value.
+This table is the single source of truth for Curio's design tokens on every
+platform. The dated review record is
+[design/redesign-2026-09/curio-redesign-handoff.md](design/redesign-2026-09/curio-redesign-handoff.md);
+where this table and the handoff disagree, change this table deliberately
+and note why. Values without a mark come from the handoff; ᵃ are read from
+its iPad/web artboards (dark derived); ᵈ are derived here.
 
-| Token | Light (design) | Dark (derived, to review) | Was (earlier design) |
+- **Web**: CSS custom properties at the top of `public/styles.css`. Light on
+  `:root`; dark under `:root[data-theme="dark"]` and under
+  `prefers-color-scheme: dark` when no theme is set. `theme.ts` sets
+  `data-theme` from the Light/Dark/System choice before the first paint.
+- **iOS**: colour sets with Any/Dark appearances in
+  `ios/Curio/Assets.xcassets/Colors/`, read through `Curio.*` in
+  `CurioTheme.swift`. The app's Light/Dark/System setting overrides the
+  window style, so the sets follow it. `Accent.colorset` (the app tint for
+  system controls) matches `accent-text`.
+- Do not write literal colours in screens; add a token here first.
+
+### Colour
+
+| Token (CSS `--name` · iOS colour set) | Light | Dark | Use |
 | --- | --- | --- | --- |
-| Ground (page background) | `#FFF9F0` | `#16142A` | system background |
-| Surface (cards, chips, buttons) | `#FFFFFF` | `#221F3A` | `.background.secondary`; controls on glass |
-| Border | `#EDE6DA`, 1.5 px | `#38345A` | no borders ("hierarchy from type, not outlines") |
-| Ink | `#211E3B` | `#F3F0FF` | `.primary` |
-| Muted / labels | `#5B5775` / `#6B6785` | `#BDB8D6` / `#A9A4C4` | `.secondary` |
-| Placeholder, disabled icon | `#7A7690` | `#8E89A8` | system |
-| Accent as text/icons (brand, Space) | `#4F46C9` | `#B8B0FF` | `#4E45B6` (dark `#C1B2FF`) |
-| Accent as fill under white text | `#4F46C9` | `#5E55D8` | same as accent |
-| Accent tint / trail connector | `#E6E1FF` / `#CFC8FF` | `#2B2650` / `#4A4480` | accent at 9 % opacity |
-| Weather | fill `#DCEBFB`, fg `#1D5FA8` | fill `#1B2B42`, fg `#8CC0F5` | — (emoji only) |
-| Animals | fill `#DBF3E3`, fg `#1F7A45` | fill `#173426`, fg `#7FD6A0` | — |
-| Space | fill `#E6E1FF`, fg `#4F46C9` | fill `#2B2650`, fg `#B8B0FF` | — |
-| Sound | fill `#FFE3D6`, fg `#B8452E` | fill `#3E2219`, fg `#F5A38C` | — |
-| Earth *(derived)* | fill `#F1E7D6`, fg `#7A5424` | fill `#33291B`, fg `#E0B98A` | — |
-| Electricity *(derived)* | fill `#D9F2F1`, fg `#116B69` | fill `#163332`, fg `#7AD6D2` | — |
-| Forces & motion *(derived)* | fill `#FCE1EC`, fg `#A3305F` | fill `#3B1D2B`, fg `#F29BC0` | — |
-| Light *(derived)* | fill `#FFF0C7`, fg `#855A00` | fill `#3A3016`, fg `#F2C766` | — |
-| Matter *(derived)* | fill `#EEE2F7`, fg `#77389F` | fill `#2F2140`, fg `#D3A6F0` | — |
-| Plants *(derived)* | fill `#E6F2D2`, fg `#4A6E12` | fill `#25321A`, fg `#B5D986` | — |
-| Success check | `#1F7A45` | `#7FD6A0` | — |
-| Locked stamp outline | `#D6CFC2`, 2 px dashed | `#4A4666` | — |
-| Heart (credit line) | `#E0554A` | `#F07A70` | ❤️ emoji |
-| Display type | Fredoka 500/600/700 | same | San Francisco |
-| Body type | Nunito 600/700/800 | same | San Francisco |
-| Answer text | 17/26, Nunito 600 | same | `.title3`, line spacing 6 |
-| Radius | cards 20, illustration 18, chips 14, bars/pills 24–26 | same | 16 everywhere |
-| Touch targets | ≥ 44 px; bar controls 48 | same | system |
-| Icons | 2 px stroke, round caps (Lucide-style); no emoji in chrome. iOS uses the closest SF Symbols | same | SF Symbols and emoji |
-| Readable width (iPad) | 680 pt | same | unchanged, kept |
-| Bottom bar width (iPad) | 720 pt max | same | unchanged, kept |
+| `ground` · `Ground` | `#FFF9F0` | `#17152A` | Page background |
+| `surface` · `Surface` | `#FFFFFF` | `#221F3A` | Cards, inputs, pills, round buttons |
+| `border` · `Border` | `#EDE6DA` | `#332F52` | 1.5 px outlines; disabled Send fill |
+| `ink` · `Ink` | `#211E3B` | `#F3F0FF` | Body text |
+| `muted` · `Muted` | `#5B5775` | `#A9A4C6` | Secondary text, earlier-step rows |
+| `label` · `Label` | `#6B6785` | `#8E89AE` | Captions, section labels, credit line |
+| `placeholder` · `Placeholder` | `#7A7690` | `#8E89AE` | Input placeholder; disabled Send icon |
+| `accent-fill` · `AccentFill` | `#4F46C9` | `#6A61E8` | Buttons, resume card, current-step disc (never `#4F46C9` on dark) |
+| `on-accent` · `OnAccent` | `#FFFFFF` | `#FFFFFF` | Text and icons on accent fill |
+| `accent-text` · `AccentText` | `#4F46C9` | `#A9A2FF` | Links, chips, icons on ground/surface; focus ring; iOS app tint |
+| `accent-heading` · `AccentHeading` | `#4F46C9` | `#B1AAFF` | Current question heading |
+| `accent-tint` · `AccentTint` | `#E6E1FF` | `#2A2652` | Earlier-step discs, active nav item, Space fill |
+| `connector` · `Connector` | `#CFC8FF` | `#3E3870` | Trail rail between done steps |
+| `upcoming-connector` · `UpcomingConnector` ᵃ | `#E4DFD3` | `#332F52` | Rail toward upcoming steps (iPad/web) |
+| `upcoming` · `Upcoming` ᵃ | `#9A95B5` | `#8E89AE` | Upcoming-step text (iPad/web) |
+| `locked` · `Locked` | `#D6CFC2` | `#3E3870` | Dashed outlines: locked stamp, upcoming disc |
+| `success` · `Success` | `#1F7A45` | `#6FCF97` | Recap check marks |
+| `heart` · `Heart` | `#E0554A` | `#FF7A6E` | Credit-line heart |
+| `icon-disc` · `IconDisc` | `#FFFFFF` | `#17152A` | Behind category icons (dark: a ground cut-out) |
+| `sun` · `Sun` | `#FFCF6E` | `#FFCF6E` | The Sun in illustrations |
+| `sparkle` · `Sparkle` | `#FFFFFF` | `#F3F0FF` | Stars and dust in illustrations |
+| `danger` · `Danger` ᵈ | `#B3261E` | `#FF9A93` | Error text |
+| `danger-tint` · `DangerTint` ᵈ | `#FDECEA` | `#3A1F24` | Error background |
+| `ground-veil` (CSS only) | ground at 92 % | ground at 92 % | Blurred bars over scrolling content |
 
-Implemented in `ios/Curio/CurioTheme.swift`. Fredoka and Nunito (SIL Open Font
-License) are bundled in `ios/Curio/Fonts/`. The derived colours keep each
-category's hue; check them on the device before treating them as final.
+### Categories
 
-Principles superseded by the redesign: "controls on glass" (controls are now
-solid white with a border), "no borders or small spaced capitals" (section
-labels are 11–12 px uppercase), "platform colours so Dark Mode works" (fixed
-warm palette), and "Answered in N seconds" (dropped as an engineering metric).
+Spark cards, stamps, and illustration fills. The bank's ten topics plus the
+handoff's Body (not yet in the bank).
 
-Gaps the redesign left open, filled here: colours for the six other bank
-topics and all Dark Mode values (both marked derived above).
+| Topic | CSS `--{key}-fill` / `-ink` · iOS `{Name}Fill` / `{Name}Ink` | Light fill / ink | Dark fill / ink | Icon |
+| --- | --- | --- | --- | --- |
+| Weather | `weather` · `Weather` | `#DCEBFB` / `#1D5FA8` | `#1C2E48` / `#8FC3FF` | cloud-sun |
+| Animals | `animals` · `Animals` | `#DBF3E3` / `#1F7A45` | `#1B3326` / `#7ED9A1` | fish |
+| Space | `space` · `Space` | `#E6E1FF` / `#4F46C9` | `#2A2652` / `#B1AAFF` | comet (iOS `moon.stars`) |
+| Sound | `sound` · `Sound` | `#FFE3D6` / `#B8452E` | `#3D2420` / `#FFA48D` | music note |
+| Light | `light` · `Light` | `#FCEBC4` / `#8A5A00` | `#3A2E12` / `#FFD37A` | light bulb |
+| Body | `body` · `Body` | `#FADCE8` / `#A8336B` | `#3B1F2D` / `#FF9CC4` | heart |
+| Earth ᵈ | `earth` · `Earth` | `#F1E7D6` / `#7A5424` | `#33291B` / `#E0B98A` | mountain |
+| Electricity ᵈ | `electricity` · `Electricity` | `#D9F2F1` / `#116B69` | `#163332` / `#7AD6D2` | bolt |
+| Forces & motion ᵈ | `forces` · `Forces` | `#E3E8EF` / `#3E5A7A` | `#1F2733` / `#A9C1DD` | move arrows |
+| Matter ᵈ | `matter` · `Matter` | `#EEE2F7` / `#77389F` | `#2F2140` / `#D3A6F0` | atom |
+| Plants ᵈ | `plants` · `Plants` | `#E6F2D2` / `#4A6E12` | `#25321A` / `#B5D986` | leaf |
+
+### Type, shape, spacing
+
+| Token | Value |
+| --- | --- |
+| Display type | Fredoka 500/600/700 (`--font-display`) |
+| Body type | Nunito 600/700/800 (`--font-body`); default weight 600 |
+| Fonts | Self-hosted, SIL Open Font License: `public/fonts/` (woff2, latin + latin-ext) and `ios/Curio/Fonts/` (variable TTF) |
+| Answer text | 17/26 phone, 20/32 iPad and web; weight 600 |
+| Radius | cards 20, illustration 18, chips 14, bars and pills 24–26 |
+| Border | 1.5 px `border` |
+| Elevation | none: no shadows in either mode, only border + surface |
+| Touch targets | ≥ 44 px; bar controls 48 (phone) / 52 (iPad, web) |
+| Icons | 2 px stroke, round caps (Lucide-style); no emoji in chrome. iOS uses the closest SF Symbols |
+| Breakpoints | `<700` phone · `700–1100` phone layout, wider gutters · `≥1100` two columns · `≥1400` three columns with nav |
+
+### Known contrast gaps (kept as designed)
+
+WCAG AA asks 4.5:1 for small text. On light: Sound ink on its fill 4.38:1,
+placeholder on surface 4.36:1, upcoming-step text on surface 2.86:1. Every
+other pair above passes (white on dark accent fill: 4.68:1).
 
 ## Web notes (for the later rollout)
 

@@ -179,7 +179,11 @@ test('asset allowlist preserves bytes, MIME types, query handling and security h
     ['/apple-touch-icon.png', 'public/apple-touch-icon.png', 'image/png'],
     ['/icon-192.png', 'public/icon-192.png', 'image/png'],
     ['/icon-512.png', 'public/icon-512.png', 'image/png'],
-    ['/site.webmanifest', 'public/site.webmanifest', 'application/manifest+json']
+    ['/site.webmanifest', 'public/site.webmanifest', 'application/manifest+json'],
+    ['/fonts/fredoka-latin.woff2', 'public/fonts/fredoka-latin.woff2', 'font/woff2'],
+    ['/fonts/fredoka-latin-ext.woff2', 'public/fonts/fredoka-latin-ext.woff2', 'font/woff2'],
+    ['/fonts/nunito-latin.woff2', 'public/fonts/nunito-latin.woff2', 'font/woff2'],
+    ['/fonts/nunito-latin-ext.woff2', 'public/fonts/nunito-latin-ext.woff2', 'font/woff2']
   ];
   for (const [route, file, mime] of files) {
     const res = await fetch(f.url + route + '?v=1');

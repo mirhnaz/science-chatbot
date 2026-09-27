@@ -71,7 +71,7 @@ struct CompleteView: View {
                         .foregroundStyle(style.foreground)
                         .frame(width: 156, height: 156)
                         .background(style.fill, in: .circle)
-                        .overlay(Circle().strokeBorder(style.foreground, lineWidth: 5))
+                        .overlay(Circle().strokeBorder(Curio.accentFill, lineWidth: 5))
                         .accessibilityLabel(stampName)
                         .padding(.top, 26)
                     Text("Trail complete!")
@@ -100,7 +100,7 @@ struct CompleteView: View {
                 Button(action: newSpark) {
                     Text("Start a new spark")
                         .font(Curio.body(17, .heavy, relativeTo: .headline))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Curio.onAccent)
                         .frame(maxWidth: .infinity, minHeight: 52)
                         .background(Curio.accentFill, in: .capsule)
                         .contentShape(.capsule)
@@ -223,9 +223,9 @@ struct StampsRow: View {
                     let new = stamp.id == current
                     Image(systemName: style.symbol)
                         .font(.system(size: 22, weight: .medium))
-                        .foregroundStyle(new ? Color.white : style.foreground)
+                        .foregroundStyle(new ? Curio.onAccent : style.foreground)
                         .frame(width: 56, height: 56)
-                        .background(new ? style.foreground : style.fill, in: .circle)
+                        .background(new ? Curio.accentFill : style.fill, in: .circle)
                         .accessibilityLabel("\(stamp.topic ?? "Curious Mind") stamp, \(new ? "just earned" : "earned")")
                 }
                 Circle()

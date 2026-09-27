@@ -1,27 +1,38 @@
 import ScienceCore
 import SwiftUI
-import UIKit
 
-/// Design tokens from the 2026-09 redesign (docs/DESIGN.md → Tokens). The
-/// light values are the design's; the dark values are derived (same hues on a
-/// dark ground) and listed in the same table.
+/// Semantic colours (docs/DESIGN.md → Tokens). Each is a colour set in
+/// Assets.xcassets/Colors with Any and Dark appearances, so it follows the
+/// app's Light/Dark/System choice without code here.
 enum Curio {
-    static let ground = Color(light: 0xFFF9F0, dark: 0x16142A)
-    static let surface = Color(light: 0xFFFFFF, dark: 0x221F3A)
-    static let border = Color(light: 0xEDE6DA, dark: 0x38345A)
-    static let ink = Color(light: 0x211E3B, dark: 0xF3F0FF)
-    static let muted = Color(light: 0x5B5775, dark: 0xBDB8D6)
-    static let label = Color(light: 0x6B6785, dark: 0xA9A4C4)
-    static let placeholder = Color(light: 0x7A7690, dark: 0x8E89A8)
-    /// Accent as text and icons.
-    static let accent = Color(light: 0x4F46C9, dark: 0xB8B0FF)
-    /// Accent as a filled background under white text.
-    static let accentFill = Color(light: 0x4F46C9, dark: 0x5E55D8)
-    static let accentTint = Color(light: 0xE6E1FF, dark: 0x2B2650)
-    static let connector = Color(light: 0xCFC8FF, dark: 0x4A4480)
-    static let success = Color(light: 0x1F7A45, dark: 0x7FD6A0)
-    static let locked = Color(light: 0xD6CFC2, dark: 0x4A4666)
-    static let heart = Color(light: 0xE0554A, dark: 0xF07A70)
+    static let ground = Color("Ground")
+    static let surface = Color("Surface")
+    static let border = Color("Border")
+    static let ink = Color("Ink")
+    static let muted = Color("Muted")
+    static let label = Color("Label")
+    static let placeholder = Color("Placeholder")
+    /// Accent as a filled background (buttons, resume card, current step).
+    static let accentFill = Color("AccentFill")
+    /// Text and icons on `accentFill`.
+    static let onAccent = Color("OnAccent")
+    /// Accent as text and icons on the ground or a surface.
+    static let accent = Color("AccentText")
+    /// The current question's heading.
+    static let accentHeading = Color("AccentHeading")
+    static let accentTint = Color("AccentTint")
+    static let connector = Color("Connector")
+    static let upcomingConnector = Color("UpcomingConnector")
+    static let upcoming = Color("Upcoming")
+    static let locked = Color("Locked")
+    static let success = Color("Success")
+    static let heart = Color("Heart")
+    /// Behind a category icon: white in light, a ground-coloured cut-out in dark.
+    static let iconDisc = Color("IconDisc")
+    /// Stars and dust in illustrations.
+    static let sparkle = Color("Sparkle")
+    static let danger = Color("Danger")
+    static let dangerTint = Color("DangerTint")
 
     static let borderWidth = 1.5
     static let cardRadius = 20.0
@@ -40,53 +51,33 @@ enum Curio {
     }
 }
 
-extension Color {
-    /// A colour that follows Light/Dark, from 0xRRGGBB values.
-    init(light: UInt32, dark: UInt32) {
-        self.init(uiColor: UIColor { traits in
-            UIColor(rgb: traits.userInterfaceStyle == .dark ? dark : light)
-        })
-    }
-}
-
-extension UIColor {
-    convenience init(rgb: UInt32) {
-        self.init(red: CGFloat((rgb >> 16) & 0xFF) / 255,
-                  green: CGFloat((rgb >> 8) & 0xFF) / 255,
-                  blue: CGFloat(rgb & 0xFF) / 255,
-                  alpha: 1)
-    }
-}
-
-/// A topic's tint, foreground colour, and icon. The design defines Weather,
-/// Animals, Space, and Sound; the other six bank topics are derived.
+/// A topic's tint, foreground colour, and icon. Weather, Animals, Space,
+/// Sound, Light, and Body come from the design; the other bank topics'
+/// colours are derived (marked in docs/DESIGN.md).
 struct CategoryStyle {
     let fill: Color
     let foreground: Color
     let symbol: String
 
+    private init(_ name: String, _ symbol: String) {
+        fill = Color("\(name)Fill")
+        foreground = Color("\(name)Ink")
+        self.symbol = symbol
+    }
+
     static func of(_ topic: String?) -> CategoryStyle {
         switch topic {
-        case "Weather":
-            CategoryStyle(fill: Color(light: 0xDCEBFB, dark: 0x1B2B42), foreground: Color(light: 0x1D5FA8, dark: 0x8CC0F5), symbol: "cloud.sun")
-        case "Animals":
-            CategoryStyle(fill: Color(light: 0xDBF3E3, dark: 0x173426), foreground: Color(light: 0x1F7A45, dark: 0x7FD6A0), symbol: "fish")
-        case "Sound":
-            CategoryStyle(fill: Color(light: 0xFFE3D6, dark: 0x3E2219), foreground: Color(light: 0xB8452E, dark: 0xF5A38C), symbol: "music.note")
-        case "Earth":
-            CategoryStyle(fill: Color(light: 0xF1E7D6, dark: 0x33291B), foreground: Color(light: 0x7A5424, dark: 0xE0B98A), symbol: "mountain.2")
-        case "Electricity":
-            CategoryStyle(fill: Color(light: 0xD9F2F1, dark: 0x163332), foreground: Color(light: 0x116B69, dark: 0x7AD6D2), symbol: "bolt")
-        case "Forces & motion":
-            CategoryStyle(fill: Color(light: 0xFCE1EC, dark: 0x3B1D2B), foreground: Color(light: 0xA3305F, dark: 0xF29BC0), symbol: "move.3d")
-        case "Light":
-            CategoryStyle(fill: Color(light: 0xFFF0C7, dark: 0x3A3016), foreground: Color(light: 0x855A00, dark: 0xF2C766), symbol: "sun.max")
-        case "Matter":
-            CategoryStyle(fill: Color(light: 0xEEE2F7, dark: 0x2F2140), foreground: Color(light: 0x77389F, dark: 0xD3A6F0), symbol: "atom")
-        case "Plants":
-            CategoryStyle(fill: Color(light: 0xE6F2D2, dark: 0x25321A), foreground: Color(light: 0x4A6E12, dark: 0xB5D986), symbol: "leaf")
-        default:  // Space, and questions the child typed
-            CategoryStyle(fill: Curio.accentTint, foreground: Curio.accent, symbol: "moon.stars")
+        case "Weather": CategoryStyle("Weather", "cloud.sun")
+        case "Animals": CategoryStyle("Animals", "fish")
+        case "Sound": CategoryStyle("Sound", "music.note")
+        case "Light": CategoryStyle("Light", "lightbulb")
+        case "Body": CategoryStyle("Body", "heart")
+        case "Earth": CategoryStyle("Earth", "mountain.2")
+        case "Electricity": CategoryStyle("Electricity", "bolt")
+        case "Forces & motion": CategoryStyle("Forces", "move.3d")
+        case "Matter": CategoryStyle("Matter", "atom")
+        case "Plants": CategoryStyle("Plants", "leaf")
+        default: CategoryStyle("Space", "moon.stars")  // and the child's own questions
         }
     }
 }
@@ -169,7 +160,7 @@ struct BottomBar: View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 20, weight: .bold))
-                .foregroundStyle(filled ? Color.white : Curio.placeholder)
+                .foregroundStyle(filled ? Curio.onAccent : Curio.placeholder)
                 .frame(width: 48, height: 48)
                 .background(filled ? Curio.accentFill : Curio.border, in: .circle)
                 .contentShape(.circle)

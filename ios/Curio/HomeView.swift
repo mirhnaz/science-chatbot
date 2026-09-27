@@ -96,7 +96,7 @@ struct ResumeCard: View {
                 }
                 .padding(.top, 2)
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(Curio.onAccent)
             .padding(.vertical, 16)
             .padding(.horizontal, 18)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -120,9 +120,9 @@ struct ProgressDots: View {
         HStack(spacing: 5) {
             ForEach(0..<total, id: \.self) { index in
                 if index < done {
-                    Circle().fill(.white).frame(width: 9, height: 9)
+                    Circle().fill(Curio.onAccent).frame(width: 9, height: 9)
                 } else {
-                    Circle().strokeBorder(.white, lineWidth: 2).frame(width: 9, height: 9).opacity(0.6)
+                    Circle().strokeBorder(Curio.onAccent, lineWidth: 2).frame(width: 9, height: 9).opacity(0.6)
                 }
             }
         }
@@ -185,7 +185,7 @@ struct SparkCard: View {
                     .font(.system(size: 20, weight: .medium))
                     .foregroundStyle(style.foreground)
                     .frame(width: 40, height: 40)
-                    .background(Color.white, in: .circle)
+                    .background(Curio.iconDisc, in: .circle)
                 Spacer(minLength: 0)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(idea.topic)
