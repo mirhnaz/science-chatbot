@@ -628,6 +628,24 @@ the screen behind the content (web: 50vh canvas; iOS:
 question bar regardless of content; taps and hover reach it through the
 content. Trail intensity 45 %.
 
+### Stamps screen, user service, trail tests (2026-09-27)
+
+User decisions: skip a "My trails" screen for now (Home already shows the
+three unfinished trails; finished trails keep no answers until history is
+built); build a Stamps screen; run Curio as a systemd user service so
+deploys need no sudo; move the iOS trail logic under `swift test`; then
+work on tuning Qwen's answers.
+
+Done: Stamps screen on web (`e85f849`, view `stamps`, nav Home / Stamps,
+the stamps pill is a button) and iOS (`61fc4a1`, pushed screen): 12 kinds
+(11 topics + Curious Mind with a sparkles icon), counts or dashed "not
+yet", latest ten with dates. `deploy/curio-web.user.service` and
+INSTALL.md → "Run as a user service" (`c5c57a4`): one-time switch with
+linger, copying PUBLIC_ORIGIN from the live unit; **not yet run on
+omarchy** (the user runs it). ScienceCore `OpenTrailShelf`/`SavedTrail`
+with 5 new tests (15 total). Web tests 41 (new Stamps test).
+Stamps screenshots checked at 390 px (light) and 1440 px (dark).
+
 ## Agreed direction, not yet implemented
 
 The user expects login, conversation history, and more functionality over time.
