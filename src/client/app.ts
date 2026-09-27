@@ -538,6 +538,7 @@ function render() {
   $('nav-home').setAttribute('aria-current', String(view === 'home'));
   $('nav-trail').setAttribute('aria-current', String(view === 'trail'));
   $('nav-trail').disabled = steps.length === 0;
+  updateField();
   updateControls();
 }
 
@@ -981,6 +982,97 @@ function toggleSpeech(step: Step) {
   synthesis.speak(utterance);
 }
 
+// ---- Pixel field (docs/DESIGN.md → Pixel field) ---------------------------
+
+// A science scene in pixels behind Home and Trail, drawn by a WebGL shader in
+// a worker (field-worker.ts) on an OffscreenCanvas: this page's thread only
+// sends small messages. Browsers without workers or OffscreenCanvas skip it.
+let fieldWorker: Worker | null = null;
+let fieldCanvas: HTMLCanvasElement | null = null;
+
+function startPixelField() {
+  if (typeof Worker !== 'function' || typeof OffscreenCanvas !== 'function') return;
+  const canvas = element('canvas', 'pixel-field');
+  if (typeof canvas.transferControlToOffscreen !== 'function') return;
+  canvas.setAttribute('aria-hidden', 'true');
+  $('main').before(canvas);
+  const worker = new Worker('/field-worker.js');
+  const offscreen = canvas.transferControlToOffscreen();
+  worker.postMessage({ type: 'init', canvas: offscreen, reduceMotion: reduceMotion() }, [offscreen]);
+  fieldWorker = worker;
+  fieldCanvas = canvas;
+  const sendSize = () => worker.postMessage({ type: 'size', width: canvas.clientWidth, height: canvas.clientHeight, dpr: window.devicePixelRatio || 1 });
+  new ResizeObserver(() => { sendSize(); updateField(); }).observe(canvas);
+  sendSize();
+  sendFieldColors();
+  // Theme changes: the page's choice (data-theme) or the system's.
+  new MutationObserver(sendFieldColors).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', sendFieldColors);
+  // Hover glow and tap ripple; positions are relative to the canvas.
+  let pending: { x: number; y: number; tap: boolean } | null = null;
+  const pointer = (event: PointerEvent, tap: boolean) => {
+    const box = canvas.getBoundingClientRect();
+    pending = { x: event.clientX - box.left, y: event.clientY - box.top, tap: tap || !!pending?.tap };
+    requestAnimationFrame(() => { if (pending) { worker.postMessage({ type: 'pointer', ...pending }); pending = null; } });
+  };
+  window.addEventListener('pointermove', event => pointer(event, false), { passive: true });
+  window.addEventListener('pointerdown', event => pointer(event, true), { passive: true });
+  document.addEventListener('visibilitychange', updateField);
+  let focusQueued = false;
+  window.addEventListener('scroll', () => {
+    if (focusQueued) return;
+    focusQueued = true;
+    requestAnimationFrame(() => { focusQueued = false; sendFieldFocus(); });
+  }, { passive: true });
+  updateField();
+}
+
+/** The empty gap the scene fills: from the bottom of the visible content to
+ *  the top of the question bar (or the window), in canvas coordinates. */
+function sendFieldFocus() {
+  if (!fieldWorker || !fieldCanvas) return;
+  const box = fieldCanvas.getBoundingClientRect();
+  const blocks = view === 'home'
+    ? [...document.querySelectorAll<HTMLElement>('#home .home-side, #home .sparks, #home .made-with-love')]
+    : [$('trail')];
+  const contentBottom = Math.max(0, ...blocks.map(block => block.getBoundingClientRect().bottom));
+  const dock = $('dock');
+  const floor = dock.hidden ? window.innerHeight : dock.getBoundingClientRect().top;
+  const top = Math.max(contentBottom, box.top) + 12, bottom = floor - 12;
+  const column = (view === 'trail' ? $('trail') : $('home')).getBoundingClientRect();
+  fieldWorker.postMessage({ type: 'focus', x: (column.left + column.right) / 2 - box.left, y: (top + bottom) / 2 - box.top, r: Math.max(0, (bottom - top) / 2) });
+}
+
+/** Scene by width (stars on phones, an atom on tablets, the solar system on
+ *  wide screens), quieter on Trail, and paused when hidden or finished. */
+function updateField() {
+  if (!fieldWorker || !fieldCanvas) return;
+  const width = window.innerWidth;
+  const scene = width >= 1400 ? 2 : width >= 700 ? 1 : 0;
+  fieldWorker.postMessage({ type: 'scene', scene, intensity: view === 'trail' ? 0.55 : 1 });
+  fieldWorker.postMessage({ type: 'run', running: view !== 'complete' && document.visibilityState === 'visible' });
+  // After this render's layout: where the empty gap is now.
+  requestAnimationFrame(sendFieldFocus);
+}
+
+function sendFieldColors() {
+  if (!fieldWorker) return;
+  const style = getComputedStyle(document.documentElement);
+  const rgb = (name: string): [number, number, number] => {
+    const hex = style.getPropertyValue(name).trim().replace('#', '');
+    const n = /^[0-9a-f]{6}$/i.test(hex) ? parseInt(hex, 16) : 0x888888;
+    return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255];
+  };
+  fieldWorker.postMessage({
+    type: 'colors',
+    colors: {
+      dim: rgb('--field-dim'), mid: rgb('--field-mid'), lit: rgb('--field-lit'), crest: rgb('--field-crest'),
+      // Planets and electrons use topic colours; the sun and nucleus the Light topic's.
+      planets: [rgb('--weather-ink'), rgb('--sound-ink'), rgb('--light-ink'), rgb('--animals-ink')]
+    }
+  });
+}
+
 // ---- Settings (name here; theme.ts saves the theme) ----------------------
 
 function openSettings() {
@@ -1046,6 +1138,7 @@ window.addEventListener('pagehide', () => { controller?.abort('cancel'); stopSpe
 
 render();
 void refreshSparks();
+startPixelField();
 
 const toolsLifecycle = new AbortController();
 if (document.modelContext?.registerTool) {
