@@ -4,8 +4,11 @@ using namespace metal;
 // The pixel field (docs/DESIGN.md → Pixel field): the same maths as the web's
 // src/client/field-worker.ts, as a SwiftUI colorEffect so the GPU draws it.
 // One cell = 8 pt; each cell is a square "pixel" with a small gap.
-// Scenes: 0 starfield + comet (phones), 1 atom (tablets), 2 solar system,
+// Scenes: 0 starfield + comet (phones), 1 atom (Trail), 2 solar system (Home),
 // 3 the stamp celebration burst (from the tap point).
+// `rect` is the empty space the scene must fit in (left, top, right,
+// bottom); `fill` the line background pixels start below (0: a gradient
+// over the whole field, as on phones).
 
 static float hash(float2 p) {
     p = fract(p * float2(123.34, 456.21));
@@ -23,7 +26,7 @@ static float ringDist(float2 q, float2 ab) {
 }
 
 [[ stitchable ]] half4 pixelField(float2 position, half4 color, float2 size, float time, float scene,
-                                  float intensity, float3 pointer, float3 tap, float3 focus,
+                                  float intensity, float3 pointer, float3 tap, float fill, float4 rect,
                                   half4 dim, half4 mid, half4 lit, half4 crest,
                                   half4 p1, half4 p2, half4 p3, half4 p4) {
     const float C = 8.0;
@@ -47,13 +50,15 @@ static float ringDist(float2 q, float2 ab) {
         half a = half(intensity);
         return half4(bc.rgb * a, a);
     }
-    float d = smoothstep(0.45, 1.0, y01); d *= d;
+    // Below the fill line: 0 at the line, 1 at the bottom edge.
+    float yy = fill > 0.5 ? (center.y - fill) / max(size.y - fill, 1.0) : y01;
+    float d = fill > 0.5 ? smoothstep(0.0, 0.3, yy) * mix(0.2, 1.0, yy * yy) : pow(smoothstep(0.45, 1.0, y01), 2.0);
     float v = h1 < d * 0.9 ? 0.18 + 0.22 * (0.5 + 0.5 * sin(t * 0.8 + h2 * 6.2832)) : 0.0;
-    if (h2 > (scene < 0.5 ? 0.985 : 0.992)) v = max(v, (0.35 + 0.35 * sin(t * 2.3 + h1 * 40.0)) * smoothstep(0.05, 0.4, y01));
+    if (h2 > (scene < 0.5 ? 0.985 : 0.992)) v = max(v, (0.35 + 0.35 * sin(t * 2.3 + h1 * 40.0)) * smoothstep(fill > 0.5 ? 0.0 : 0.05, fill > 0.5 ? 0.15 : 0.4, yy));
 
-    float s = 0.0, ci = 0.0, r = focus.z;
-    float2 f = focus.xy;
-    if (r < 3.0 * C) {
+    float s = 0.0, ci = 0.0, r = (rect.w - rect.y) * 0.5;
+    float2 f = float2(rect.x + rect.z, rect.y + rect.w) * 0.5;
+    if (r < 5.0 * C) {
     } else if (scene < 0.5) {
         float ph = fract(t / 7.0);
         float2 head = float2(mix(-0.1, 1.1, ph) * size.x, f.y + (ph - 0.5) * r * 1.2);
@@ -62,7 +67,7 @@ static float ringDist(float2 q, float2 ab) {
         if (along > 0.0 && along < len && perp < C * (0.6 + 1.4 * along / len)) s = 0.85 * (1.0 - along / len);
         s = max(s, exp(-dot(rel, rel) / (2.8 * C * C)));
     } else if (scene < 1.5) {
-        float a = min(r * 1.05, size.x * 0.3);
+        float a = min(r * 1.05, (rect.z - rect.x) * 0.3);
         float2 ab = float2(a, a * 0.34);
         if (length(center - f) < C * 2.2 * (1.0 + 0.08 * sin(t * 2.0))) { s = 1.0; ci = 3.0; }
         for (int i = 0; i < 3; i++) {
@@ -72,12 +77,15 @@ static float ringDist(float2 q, float2 ab) {
             if (length(center - f - rot(float2(ab.x * cos(w), ab.y * sin(w)), ang)) < 1.4 * C) { s = 1.0; ci = 1.0; }
         }
     } else {
-        float2 c = float2(size.x * 0.08 + 5.0 * C, f.y + r * 0.4);  // low, clear of text above
-        float dn = length(center - c);
-        if (dn < 4.5 * C) { s = 1.0; ci = 3.0; } else if (dn < 6.5 * C) s = 0.5;
+        // The sun near the left of the space; orbits out to its right edge
+        // and within its height (the left halves run off the field).
+        float sun = min(4.5 * C, r - 2.0 * C);
+        float2 c = float2(rect.x + (rect.z - rect.x) * 0.06 + sun + 2.0 * C, f.y);
+        float dn = length(center - c), reach = rect.z - c.x - 2.0 * C;
+        if (dn < sun) { s = 1.0; ci = 3.0; } else if (dn < sun + 2.0 * C) s = 0.5;
         for (int i = 0; i < 4; i++) {
-            float fi = float(i), a = size.x * (0.15 + 0.15 * fi);
-            float2 ab = float2(a, min(a * 0.22, r * 0.9));
+            float fi = float(i), a = reach * (0.34 + 0.22 * fi);
+            float2 ab = float2(a, min(a * 0.22, r - 2.0 * C));
             if (ringDist(center - c, ab) < 0.5 * C) s = max(s, 0.4);
             float w = t * (0.5 / (1.0 + 0.6 * fi)) + fi * 1.7;
             if (length(center - c - float2(ab.x * cos(w), ab.y * sin(w))) < C * (1.3 + 0.35 * fi)) { s = 1.0; ci = fi + 1.0; }
@@ -92,6 +100,6 @@ static float ringDist(float2 q, float2 ab) {
     if (level < 0.05) return half4(0.0);
     half4 col = level < 0.3 ? dim : level < 0.55 ? mid : level < 0.8 ? lit : crest;
     if (ci > 0.5 && s >= max(v, fx)) col = ci < 1.5 ? p1 : ci < 2.5 ? p2 : ci < 3.5 ? p3 : p4;
-    half alpha = half(intensity * smoothstep(0.0, 0.3, y01));
+    half alpha = half(intensity * (fill > 0.5 ? smoothstep(-0.02, 0.1, yy) : smoothstep(0.0, 0.3, y01)));
     return half4(col.rgb * alpha, alpha);
 }

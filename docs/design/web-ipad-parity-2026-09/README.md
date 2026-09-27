@@ -13,3 +13,10 @@ app), for review before implementation.
 Browser Back (web): each screen change becomes a history entry, so the
 browser's Back and the app's back controls do the same thing (Trail,
 Stamps and Trail complete go back to Home).
+
+**Review (2026-09-27):** the user annotated `web-home-1440.png`,
+`web-trail-1440.png` and `ipad-home-1180.png` (red/yellow/green notes);
+those notes are what was implemented (see docs/HANDOFF.md → "Web matches
+iPad; pixel placement"). The Trail strip described above was dropped at
+the user's request: pixels continue under the bar, and the step content
+fades out above it instead.

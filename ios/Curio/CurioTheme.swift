@@ -147,7 +147,8 @@ struct BottomBar: View {
             .padding(.vertical, 13)
             .frame(minHeight: 48)
             .background(Curio.surface, in: .rect(cornerRadius: 24))
-            .overlay(RoundedRectangle(cornerRadius: 24).strokeBorder(Curio.border, lineWidth: Curio.borderWidth))
+            // A clear outline: the bar is see-through over the pixel field.
+            .overlay(RoundedRectangle(cornerRadius: 24).strokeBorder(Curio.connector, lineWidth: 2))
             .accessibilityLabel("Your science question")
             .onChange(of: chat.question) { _, text in
                 // Return sends, like Messages; a vertical field would

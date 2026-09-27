@@ -33,11 +33,12 @@ stamps and finished trails are kept **on the device only**.
   bar under Sparks; Trail: 340 px side rail (All sparks, identity, every step
   with dashed upcoming steps and the stamp, "So far you know") beside the
   step (heading 34/40, illustration 360×260 beside the answer 20/32, three
-  Dive deeper chips). `≥1400` (web): 232 px nav, 300 px rail, step centred
-  at 760 px with a 760×280 illustration above the answer.
+  Dive deeper chips). Web matches iPad at every wide width (2026-09-27: the
+  earlier ≥1400 px side nav was removed); Trail and Stamps have back
+  controls, and each screen away from Home is one browser history entry, so
+  the browser's Back returns Home.
 - Sparks: 2×2 (four) on phones, 3×2 (six, `/api/suggestions?count=6`) at
-  ≥1100 px. Deviations: the stamps pill is a count, not a link; the web nav shows Home and My trails only (Stamps and Grown-ups need
-  screens); no Complete layout was designed for wide screens, so it stays one
+  ≥1100 px. Deviations: the stamps pill is a count, not a link; no Complete layout was designed for wide screens, so it stays one
   centred column.
 - From the tutor (optional reply fields, 2026-09-27): the step label
   ("Step 3 · The nucleus"), the trail name in headers and stamps ("Comets"),
@@ -58,7 +59,7 @@ stamps and finished trails are kept **on the device only**.
 - Still a placeholder: the category illustration (not a picture per step).
 - **Stamps screen**: 12 kinds (11 topics + Curious Mind, sparkles icon),
   earned with a count or dashed "Not yet", then the latest ten with dates;
-  opened from the stamps pill (and the web nav).
+  opened from the stamps pill.
 - **Delight** (2026-09-27): the new stamp lands with a spring and a pixel
   burst (shader scene 3) on Trail complete, plus a success haptic on iOS;
   up to half the sparks come from topics not yet collected, with a "New
@@ -67,15 +68,17 @@ stamps and finished trails are kept **on the device only**.
   (`backend/data/did-you-know.json`); a one-time welcome (name, sparks /
   trails / stamps, "Let's explore!"), skipped by existing users. All honour
   Reduce Motion.
-- **Pixel field** (2026-09-27, after omarchy.org's pixel hero): a band over
-  the bottom half of Home and Trail, fixed behind the content (cards cover
-  it where they overlap), shows a science scene in 8 pt square pixels,
-  densest at the bottom and fading upward, centred in the band above the
-  question bar. Home: stars and a comet on phones, the solar system from
-  700 px (an atom overlapped the cards). Trail: stars on phones, an atom at
-  tablet widths, the solar system on wide web. Earlier wording: a starfield with a comet
-  on phones, an atom on tablets, the solar system on wide web (≥1400 px).
-  Planets/electrons use topic inks; the field levels are tokens. Trail runs
+- **Pixel field** (2026-09-27, after omarchy.org's pixel hero): the bottom
+  half of Home and Trail, fixed behind the content and reaching the bottom
+  edge behind the see-through question bar, shows a science scene in 8 pt
+  square pixels. Phones: stars and a comet centred in that band, densest at
+  the bottom, with the content scrolling over it. From 700 px (web) and on
+  iPad (placement per the user's annotated mockups in
+  `design/web-ipad-parity-2026-09/`): background pixels fill the space
+  below the content, and the scene fits the empty part of it above the bar,
+  never behind text or cards: the solar system on the left 70 % of Home, an
+  atom centred under the Trail step. With no room, only the background
+  pixels show. Planets/electrons use topic inks; the field levels are tokens. Trail runs
   it at 45 % opacity; Trail complete has none. Hover glows, a tap ripples.
   Performance rules: drawn by the GPU off the main thread (web: WebGL in a
   worker on an OffscreenCanvas; iOS: a Metal colorEffect), ≤30 fps, paused
@@ -105,6 +108,8 @@ question box. Built in `ios/Curio/ContentView.swift`:
   windows centre it.
 - The question box is a filled field with a thin outline (not see-through
   glass, which vanished on a light background); the send button keeps glass.
+  (2026-09-27: the outline is 2 px `connector`, clear over the pixel field;
+  the bar around it is see-through and content fades out above it.)
 - The dock is a `safeAreaBar`, so the trail fades and blurs beneath it like
   under the toolbar (web: a gradient mask or `backdrop-filter` behind the
   sticky dock).
@@ -267,7 +272,7 @@ handoff's Body (not yet in the bank).
 | Elevation | none: no shadows in either mode, only border + surface |
 | Touch targets | ≥ 44 px; bar controls 48 (phone) / 52 (iPad, web) |
 | Icons | 2 px stroke, round caps (Lucide-style); no emoji in chrome. iOS uses the closest SF Symbols |
-| Breakpoints | `<700` phone · `700–1100` phone layout, wider gutters · `≥1100` two columns · `≥1400` three columns with nav |
+| Breakpoints | `<700` phone · `700–1100` phone layout, wider gutters · `≥1100` two columns (iPad and web) |
 
 ### Known contrast gaps (kept as designed)
 

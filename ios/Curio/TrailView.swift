@@ -64,6 +64,7 @@ struct TrailView: View {
                     }
                 }
             }
+            .pixelFieldContent()
             .frame(maxWidth: wide ? .infinity : 680, alignment: .leading)
             .padding(.horizontal, wide ? 40 : 20)
             .padding(.top, wide ? 24 : 14)

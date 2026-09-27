@@ -727,6 +727,34 @@ the load; `OLLAMA_KEEP_ALIVE=-1` on the Ollama service would avoid that (not
 changed). Rollback: restore the `.bak-qwen3` unit, `daemon-reload`, restart
 (the prompt is compiled in, so a full rollback also needs the older build).
 
+### Web matches iPad; pixel placement (2026-09-27)
+
+User asked for web to match iPad (no side nav, back controls on Trail and
+Stamps, browser Back in sync) and for the pixel field to reach the bottom
+edge behind the question bar, with the solar system on Home and the atom
+on Trail placed in empty space. Mockups in
+`docs/design/web-ipad-parity-2026-09/` carry the user's annotations
+(solar system in the empty lower-left, not behind trails and sparks;
+pixels everywhere else and under the bar; start below the credit line;
+a border on the question box; pixels under the bar on Trail too).
+
+Done: web `9ec389c` (side nav and profile chip removed; History API with
+Home as the base entry; `<main>` is the scroller with a mask above the
+bar, so the bar is see-through; `sendFieldFocus` measures the lowest
+content and posts a fill line and an empty-space rect; shader scenes fit
+that rect; 2 px `connector` outline). iOS: the same placement in
+`PixelField.metal`/`PixelField.swift` (global-coordinate measurements,
+`pixelFieldContent()` marks Home's columns and Trail's steps; the field
+runs to the screen bottom behind the bar) and the same outline.
+
+Verified: 46 HTTP/frontend tests (a new browser Back/Forward test), Rust
+checks, typecheck; headless-Chrome screenshots at 1440, 1180, 900 and
+390 px in light and dark (Home, Trail, Stamps, browser Back from Stamps).
+iOS builds and is installed on the iPhone and iPad. **Not checked by eye
+on iOS:** the Mac "Designed for iPad" run started through Xcode but its
+self-snapshot never saved, and the simulator cannot build (llama.xcframework
+has no simulator slice).
+
 ## Agreed direction, not yet implemented
 
 The user expects login, conversation history, and more functionality over time.

@@ -36,11 +36,13 @@ screens make shared state and reusable components useful.
   picture and copies the questions.
 - **Wide layouts**: at ≥1100 px Home becomes two columns (with "Trails you
   finished" and a stamps count) and the Trail gets a side rail showing every
-  step, the steps still to come, and "So far you know"; at ≥1400 px a nav
-  (Home, My trails, profile chip) is added. See DESIGN.md → Screens.
+  step, the steps still to come, and "So far you know"; wider windows keep
+  the same (iPad) layouts. Browser Back follows the screens (History API).
+  The page scrolls inside `<main>`, masked to fade out above the
+  see-through bar (`--dock-h`). See DESIGN.md → Screens.
 - **Welcome**: first visit only (`curio.welcomed.v1`), skipped when a name,
   stamp or saved trail exists.
-- **Stamps**: the collection screen (pill or nav); **celebration** burst on
+- **Stamps**: the collection screen (from the stamps pill); **celebration** burst on
   Trail complete; sparks send `prefer=` (uncollected topics) and show "New
   stamp!"; loading shows a pixel grid and facts from `/did-you-know.json`.
 - **Open trails**: up to three unfinished trails, newest first. Starting a

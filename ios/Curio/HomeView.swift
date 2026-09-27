@@ -49,6 +49,7 @@ struct HomeView: View {
                     .frame(width: 380, alignment: .leading)
                     SparksGrid(chat: chat, newTopics: stamps.uncollectedTopics, start: start, edit: edit)
                 }
+                .pixelFieldContent()
                 .padding(.horizontal, 40)
                 .padding(.top, 24)
                 .padding(.bottom, 16)
@@ -60,8 +61,8 @@ struct HomeView: View {
         .background(Curio.ground)
     }
 
-    /// Stars and a comet on phones, the solar system on iPad (an atom here
-    /// overlapped the cards).
+    /// Stars and a comet on phones, the solar system on iPad, in the empty
+    /// space below the cards.
     private var fieldScene: PixelField.Scene { sizeClass == .compact ? .starfield : .solarSystem }
 
     private var phoneBody: some View {
@@ -81,6 +82,7 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.top, 14)
             }
+            .pixelFieldContent()
             .frame(maxWidth: 720)
             .padding(.horizontal, 20)
             .padding(.top, 8)
