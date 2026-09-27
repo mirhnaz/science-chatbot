@@ -12,14 +12,19 @@ back along the bottom. The dashed arrow starts another question.
 
 ## Full flowchart (2026-09-27)
 
-[curio-flowchart.html](curio-flowchart.html) covers the whole current app
-for a 10–14-year-old presenter: one question's round trip across three
-places (screen, secure tunnel, home computer) in eight steps, the spark →
-five-step trail → stamp flow, what each part does (with everyday
-comparisons), and twelve likely teacher questions with short answers. It
-reflects the redesigned app (sparks, trails, stamps, voice, the iPad's
-backup model, Gemma 4 on Ollama) and supersedes the six-step diagram below
-where they differ. Open it in a browser; it follows light and dark mode.
+Two A4 portrait pages, light mode, for a 10–14-year-old presenter:
+
+- [curio-flowchart.pdf](curio-flowchart.pdf): print-ready, two pages.
+- [curio-flowchart.html](curio-flowchart.html): the source; on screen each
+  page scales to the window, and printing gives one sheet per page.
+
+Page 1: one question's round trip across three places (screen, secure
+tunnel, home computer) in eight steps, with the dive-deeper loop. Page 2:
+the spark → five-step trail → stamp flow, and what each part does, with
+everyday comparisons. It reflects the redesigned app (sparks, trails,
+stamps, voice, the iPad's backup model, Gemma 4 on Ollama) and supersedes
+the six-step diagram below where they differ. The PDF was printed from the
+HTML with headless Chrome (`Page.printToPDF`, CSS page size).
 
 ## Speaking notes: about two minutes
 
