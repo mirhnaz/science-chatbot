@@ -20,15 +20,31 @@
 <body data-view="home">
   <a class="skip-link" href="#question">Skip to your question</a>
 
+  <!-- Web nav (≥1400 px, WebTrail.dc.html). Stamps and Grown-ups need
+       screens that do not exist yet, so only Home and My trails show. -->
+  <nav id="nav" class="side-nav" aria-label="Main">
+    <span class="brand"><span class="brand-mark" id="nav-mark"></span><span>Curio</span></span>
+    <button id="nav-home" class="nav-item" type="button">Home</button>
+    <button id="nav-trail" class="nav-item" type="button">My trails</button>
+    <span class="nav-spacer"></span>
+    <div id="profile" class="profile" hidden></div>
+  </nav>
+
   <main id="main">
     <!-- Home (docs/design/redesign-2026-09/Main.dc.html). -->
     <section id="home" class="screen home" aria-labelledby="greeting">
       <header class="app-header">
         <span class="brand"><span class="brand-mark" id="brand-mark"></span><span>Curio</span></span>
-        <button id="settings-home" class="icon-button" type="button" aria-label="Settings"></button>
+        <span class="header-actions">
+          <span id="stamps-pill" class="pill stamps-pill" hidden></span>
+          <button id="settings-home" class="icon-button" type="button" aria-label="Settings"></button>
+        </span>
       </header>
-      <h1 id="greeting" class="greeting">What are you curious about today?</h1>
-      <button id="resume" class="resume-card" type="button" hidden></button>
+      <div class="home-side">
+        <h1 id="greeting" class="greeting">What are you curious about today?</h1>
+        <button id="resume" class="resume-card" type="button" hidden></button>
+        <section id="finished" class="finished-card" aria-labelledby="finished-heading" hidden></section>
+      </div>
       <section class="sparks" aria-labelledby="sparks-heading">
         <div class="section-head">
           <h2 id="sparks-heading">Sparks</h2>
@@ -42,6 +58,8 @@
 
     <!-- Trail (Trail.dc.html): header, step rail, and the current step. -->
     <section id="trail-screen" class="screen trail-screen" aria-labelledby="trail-name" hidden>
+      <!-- iPad and web (≥1100 px): the whole trail as a side rail. -->
+      <aside id="side-rail" class="side-rail" aria-label="Trail steps"></aside>
       <header class="app-header trail-header">
         <button id="back" class="icon-button" type="button" aria-label="Back to home"></button>
         <div class="trail-title">

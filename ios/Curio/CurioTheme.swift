@@ -51,6 +51,12 @@ enum Curio {
     }
 }
 
+extension EnvironmentValues {
+    /// At least 1100 pt wide (iPad landscape): two-column layouts from
+    /// TabletHome/TabletTrail.dc.html. Narrower widths use the phone layout.
+    @Entry var curioWide = false
+}
+
 /// A topic's tint, foreground colour, and icon. Weather, Animals, Space,
 /// Sound, Light, and Body come from the design; the other bank topics'
 /// colours are derived (marked in docs/DESIGN.md).

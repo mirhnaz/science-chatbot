@@ -479,6 +479,34 @@ trail) into the iPad's real Curio storage; it held six stamps at 08:49, so
 four came from real use. The test ones were not removed; ask before
 deleting anything.
 
+### Redesign v2 step 5: responsive layouts (2026-09-27)
+
+Web: CSS breakpoints at 700 / 1100 / 1400 px with new markup for the nav,
+Home columns, stamps pill, "Trails you finished", and a side rail rendered
+from the trail (done/current/upcoming steps, stamp, "So far you know").
+iOS: `curioWide` environment value (window ≥ 1100 pt) switches Home and
+Trail to the tablet layouts; the bottom bar moves under the main column.
+Also: phone illustration uses the 350:124 aspect ratio; the illustration
+halo is lighter in dark (`halo-opacity` token); Trail complete on iOS is
+now one scroll view (it clipped/overlapped in iPad landscape).
+Deviations are listed in DESIGN.md → Screens.
+
+Verified: `npm test` 21 Rust + 35 HTTP/frontend, typecheck, rustfmt +
+Clippy, iOS unsigned and signed builds. Web by headless Chrome at 820,
+1180 and 1440 px (light and dark). iPad landscape by device screenshots:
+wide Home (dark) and wide Trail (light and dark) match the artboards;
+Complete showed the clipping/overlap above, which was then fixed but
+**not re-checked on the device**. One capture showed another app in use on
+the iPad and was deleted; no further launches were made. The final build is
+installed on the iPad.
+
+iPad data: Curio holds 7 stamps; 2 were saved by agent test runs before the
+Debug guard, and both "Trails you finished" entries are from those runs.
+Nothing was deleted; ask the user before removing test data.
+
+Not deployed: the live service still runs the old binary. Going live needs
+`npm run build` and a service restart (new font routes).
+
 ## Agreed direction, not yet implemented
 
 The user expects login, conversation history, and more functionality over time.

@@ -34,6 +34,10 @@ screens make shared state and reusable components useful.
 - **Show a grown-up** shares the recap card as a PNG plus the trail's
   questions as text (Web Share with files); otherwise it downloads the
   picture and copies the questions.
+- **Wide layouts**: at ≥1100 px Home becomes two columns (with "Trails you
+  finished" and a stamps count) and the Trail gets a side rail showing every
+  step, the steps still to come, and "So far you know"; at ≥1400 px a nav
+  (Home, My trails, profile chip) is added. See DESIGN.md → Screens.
 - **Undo**: a new trail shows "Started a new trail · Undo" for six seconds.
 - **Stop** removes the unanswered step and puts the question back in the
   box. Errors show in the step with **Try again**.

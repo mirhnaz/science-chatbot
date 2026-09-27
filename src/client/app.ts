@@ -79,6 +79,13 @@ interface AppElements {
   undo: HTMLDivElement;
   'undo-button': HTMLButtonElement;
   status: HTMLParagraphElement;
+  'nav-mark': HTMLSpanElement;
+  'nav-home': HTMLButtonElement;
+  'nav-trail': HTMLButtonElement;
+  profile: HTMLDivElement;
+  'stamps-pill': HTMLSpanElement;
+  finished: HTMLElement;
+  'side-rail': HTMLElement;
 }
 
 function $<K extends keyof AppElements>(id: K): AppElements[K] {
@@ -418,6 +425,9 @@ function render() {
   renderHome();
   renderTrail();
   if (view === 'complete') renderComplete();
+  $('nav-home').setAttribute('aria-current', String(view === 'home'));
+  $('nav-trail').setAttribute('aria-current', String(view === 'trail'));
+  $('nav-trail').disabled = steps.length === 0;
   updateControls();
 }
 
@@ -426,6 +436,7 @@ function renderHome() {
   const hour = new Date().getHours();
   const when = hour >= 18 || hour < 5 ? 'tonight' : 'today';
   $('greeting').textContent = name ? `What are you curious about ${when}, ${name}?` : `What are you curious about ${when}?`;
+  renderCollection(name);
   const resume = $('resume');
   resume.hidden = !hasUnfinishedTrail();
   if (resume.hidden) return;
@@ -434,10 +445,104 @@ function renderHome() {
   // The design's short step label needs the tutor to name each step; until
   // then, the step's question.
   const row = element('span', 'resume-row');
-  row.append(dots, element('span', 'resume-step', `Step ${steps.length} · ${steps[steps.length - 1].question}`),
+  row.append(dots, element('span', 'resume-step', `Step ${steps.length} · ${steps[steps.length - 1].question}`));
+  resume.replaceChildren(element('span', 'resume-label', 'Continue your trail'), element('span', 'resume-question', steps[0].question), row,
     withIcon(element('span', 'resume-go', 'Keep going'), icons.chevronRight));
-  resume.replaceChildren(element('span', 'resume-label', 'Continue your trail'), element('span', 'resume-question', steps[0].question), row);
   resume.setAttribute('aria-label', `Continue your trail: ${steps[0].question}. Step ${steps.length} of ${trailLength}.`);
+}
+
+/** Wide layouts: the stamps badge, "Trails you finished", and the nav's
+ *  profile chip. Hidden until there is something to show. */
+function renderCollection(name: string) {
+  const count = stamps.length === 1 ? '1 stamp' : `${stamps.length} stamps`;
+  const pill = $('stamps-pill');
+  pill.hidden = stamps.length === 0;
+  pill.replaceChildren();
+  const badge = element('span', 'pill-disc');
+  badge.innerHTML = icons.comet;
+  pill.append(badge, element('span', undefined, count));
+
+  const card = $('finished');
+  card.hidden = finishedTrails.length === 0;
+  const head = element('div', 'finished-head');
+  const title = element('h2', undefined, 'Trails you finished');
+  title.id = 'finished-heading';
+  head.append(title, element('span', 'finished-count', String(finishedTrails.length)));
+  const rows = finishedTrails.slice(-3).reverse().map(trail => {
+    const style = category(trail.topic);
+    const row = element('p', `finished-row cat-${style.key}`);
+    const disc = element('span', 'finished-disc');
+    disc.innerHTML = style.icon;
+    row.append(disc, element('span', undefined, trail.question));
+    return row;
+  });
+  card.replaceChildren(head, ...rows);
+
+  const profile = $('profile');
+  profile.hidden = !name;
+  if (name) {
+    const initial = element('span', 'profile-initial', name.slice(0, 1).toUpperCase());
+    initial.setAttribute('aria-hidden', 'true');
+    const words = element('span', 'profile-words');
+    words.append(element('span', 'profile-name', name), element('span', 'profile-stamps', count));
+    profile.replaceChildren(initial, words);
+  }
+}
+
+/** Wide layouts: the whole trail in a side rail, with the steps still to
+ *  come and the stamp at the end, and what the child knows so far. */
+function renderSideRail() {
+  const rail = $('side-rail');
+  const topic = trailTopic() ?? null;
+  const style = category(topic);
+  const back = withIcon(button('rail-back'), icons.back, 'All sparks');
+  back.addEventListener('click', () => { stopSpeech(); go('home'); });
+
+  const identity = element('div', `rail-identity cat-${style.key}`);
+  const disc = element('span', 'identity-disc');
+  disc.innerHTML = style.icon;
+  const words = element('div', 'identity-words');
+  words.append(element('p', 'identity-name', topic ?? 'Your question'),
+    element('p', 'caption', `${topic ? `${topic} trail` : 'Trail'} · ${Math.min(steps.length, trailLength)} of ${trailLength}`));
+  identity.append(disc, words);
+
+  const list = element('ol', 'rail-list');
+  const current = steps.length;
+  for (let number = 1; number <= trailLength + 1; number++) {
+    const item = element('li', 'rail-row');
+    if (number <= current) {
+      const step = steps[number - 1];
+      const isCurrent = number === current;
+      const row = button(isCurrent ? 'rail-entry current' : 'rail-entry done');
+      row.append(stepDisc(number, isCurrent), element('span', 'rail-entry-text', step.question));
+      if (isCurrent) row.setAttribute('aria-current', 'step');
+      else {
+        row.setAttribute('aria-expanded', String(expanded.has(step.id)));
+        row.addEventListener('click', () => {
+          if (!expanded.delete(step.id)) expanded.add(step.id);
+          renderTrail(); updateControls();
+        });
+      }
+      item.append(row);
+    } else {
+      const upcoming = element('div', 'rail-entry upcoming');
+      upcoming.append(element('span', 'upcoming-disc'), element('span', 'rail-entry-text',
+        number > trailLength ? (topic ? `${topic} stamp` : 'Your stamp') : number === current + 1 ? 'Next step' : `Step ${number}`));
+      item.append(upcoming);
+    }
+    list.append(item);
+    if (number <= trailLength) list.append(element('li', number < current ? 'rail-line' : 'rail-line ahead'));
+  }
+
+  const known = steps.slice(0, -1).map(step => step.answer).filter((answer): answer is string => !!answer).slice(-3);
+  const nodes: HTMLElement[] = [back, identity, list];
+  if (known.length) {
+    const card = element('div', 'so-far');
+    card.append(element('p', 'caption', 'So far you know'));
+    for (const answer of known) card.append(withIcon(element('p', 'fact'), icons.check, firstSentence(answer)));
+    nodes.push(card);
+  }
+  rail.replaceChildren(...nodes);
 }
 
 function renderTrail() {
@@ -451,6 +556,7 @@ function renderTrail() {
   });
   $('trail').replaceChildren(...nodes);
   $('trail').className = `trail cat-${category(trailTopic()).key}`;
+  renderSideRail();
 }
 
 function stepDisc(number: number, current: boolean) {
@@ -461,8 +567,8 @@ function stepDisc(number: number, current: boolean) {
 
 /** An earlier step: number, one-line question, chevron; opens its answer. */
 function railStep(step: Step, number: number) {
-  const wrap = element('div', 'rail-item');
   const open = expanded.has(step.id);
+  const wrap = element('div', open ? 'rail-item open' : 'rail-item');
   const row = button('rail-step');
   row.setAttribute('aria-expanded', String(open));
   row.setAttribute('aria-label', `Step ${number}: ${step.question}`);
@@ -757,6 +863,17 @@ function openSettings() {
 // ---- Wiring --------------------------------------------------------------
 
 $('brand-mark').innerHTML = icons.comet;
+$('nav-mark').innerHTML = icons.comet;
+const navIcons = {
+  home: svg('<path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3z"/>'),
+  trail: svg('<path d="M4 19c4-1 3-6 7-7s3-6 7-7"/><circle cx="4" cy="19" r="2"/><circle cx="18" cy="5" r="2"/>')
+};
+$('nav-home').replaceChildren();
+withIcon($('nav-home'), navIcons.home, 'Home');
+$('nav-trail').replaceChildren();
+withIcon($('nav-trail'), navIcons.trail, 'My trails');
+$('nav-home').addEventListener('click', () => { stopSpeech(); go('home'); });
+$('nav-trail').addEventListener('click', () => { if (steps.length) { go(finished ? 'complete' : 'trail'); scrollToTop(); } });
 const heart = element('span', 'icon');
 heart.innerHTML = icons.heart;
 $('made-with-love').replaceChildren(heart, element('span', undefined, 'Made with love by Ayaan and Naz'));

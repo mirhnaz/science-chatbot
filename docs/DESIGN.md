@@ -27,6 +27,19 @@ stamps and finished trails are kept **on the device only**.
   on phones). The fifth answer shows Finish instead of the question box.
 - **Trail complete**: stamp, "Trail complete!", recap, stamps, Start a new
   spark, Show a grown-up.
+- **Responsive** (web and iOS): `<700` phone; `700–1100` phone layout with
+  32 px gutters; `≥1100` two columns — Home: 380 px column (greeting, resume
+  card with a white Keep going button, "Trails you finished") beside Sparks,
+  bar under Sparks; Trail: 340 px side rail (All sparks, identity, every step
+  with dashed upcoming steps and the stamp, "So far you know") beside the
+  step (heading 34/40, illustration 360×260 beside the answer 20/32, three
+  Dive deeper chips). `≥1400` (web): 232 px nav, 300 px rail, step centred
+  at 760 px with a 760×280 illustration above the answer.
+- Deviations: Sparks stay 2×2 at every width (the bank gives four; the
+  tablet's 3×2 needs six and a Body topic); the stamps pill is a count, not a
+  link; the web nav shows Home and My trails only (Stamps and Grown-ups need
+  screens); no Complete layout was designed for wide screens, so it stays one
+  centred column.
 - Placeholders until new features exist: category illustration (not per
   step), the step's question (not a short label), the topic (not a trail
   name), first sentences (not generated facts), no microphone.
@@ -180,6 +193,7 @@ its iPad/web artboards (dark derived); ᵈ are derived here.
 | `danger-tint` · `DangerTint` ᵈ | `#FDECEA` | `#3A1F24` | Error background |
 | `ground-veil` (CSS only) | ground at 92 % | ground at 92 % | Blurred bars over scrolling content |
 | `scrim` (CSS only) | ink at 40 % | black at 55 % | Behind dialogs |
+| `halo-opacity` (CSS; iOS in code) | 0.5 | 0.12 | Glow behind the illustration disc |
 
 ### Categories
 

@@ -66,6 +66,8 @@ struct CompleteView: View {
     let close: () -> Void
     let newSpark: () -> Void
     @State private var shareImage: Image?
+    /// Visible height, so the actions sit at the bottom when everything fits.
+    @State private var visibleHeight = 0.0
     @Environment(\.displayScale) private var displayScale
 
     private var topicName: String { chat.topic ?? "Your question" }
@@ -74,21 +76,23 @@ struct CompleteView: View {
     var body: some View {
         let style = CategoryStyle.of(chat.topic)
         let facts = recapFacts(chat.steps)
-        VStack(spacing: 0) {
-            HStack {
-                CircleIconButton(label: "Close", symbol: "xmark", action: close)
-                Spacer()
-                Text("\(topicName) · \(chat.steps.count) steps")
-                    .textCase(.uppercase)
-                    .font(Curio.body(12, .heavy, relativeTo: .caption))
-                    .tracking(0.72)
-                    .foregroundStyle(Curio.label)
-                Spacer()
-                Color.clear.frame(width: 44, height: 44)
-            }
-            .padding(.top, 8)
+        // One scroll view for everything: on a short screen (iPad landscape)
+        // it scrolls from the top; when it fits, the actions sit at the bottom.
+        ScrollView {
+            VStack(spacing: 0) {
+                HStack {
+                    CircleIconButton(label: "Close", symbol: "xmark", action: close)
+                    Spacer()
+                    Text("\(topicName) · \(chat.steps.count) steps")
+                        .textCase(.uppercase)
+                        .font(Curio.body(12, .heavy, relativeTo: .caption))
+                        .tracking(0.72)
+                        .foregroundStyle(Curio.label)
+                    Spacer()
+                    Color.clear.frame(width: 44, height: 44)
+                }
+                .padding(.top, 8)
 
-            ScrollView {
                 VStack(spacing: 0) {
                     Image(systemName: style.symbol)
                         .font(.system(size: 64, weight: .regular))
@@ -116,43 +120,45 @@ struct CompleteView: View {
                     StampsRow(stamps: stamps.stamps, current: chat.trailID)
                         .padding(.top, 22)
                 }
-                .padding(.bottom, 16)
-            }
-            .scrollBounceBehavior(.basedOnSize)
-            // Opens at the stamp, even when the screen is too short for all.
-            .defaultScrollAnchor(.top)
-            .scrollIndicators(.hidden)
 
-            VStack(spacing: 10) {
-                Button(action: newSpark) {
-                    Text("Start a new spark")
-                        .font(Curio.body(17, .heavy, relativeTo: .headline))
-                        .foregroundStyle(Curio.onAccent)
-                        .frame(maxWidth: .infinity, minHeight: 52)
-                        .background(Curio.accentFill, in: .capsule)
-                        .contentShape(.capsule)
-                }
-                .buttonStyle(.plain)
-                if let shareImage {
-                    // The recap picture, plus the trail's questions as text.
-                    ShareLink(item: shareImage, message: Text(questionsText),
-                              preview: SharePreview("What I found out about \(topicName)", image: shareImage)) {
-                        Label("Show a grown-up", systemImage: "square.and.arrow.up")
-                            .font(Curio.body(16, .heavy, relativeTo: .headline))
-                            .foregroundStyle(Curio.accent)
+                Spacer(minLength: 24)
+                VStack(spacing: 10) {
+                    Button(action: newSpark) {
+                        Text("Start a new spark")
+                            .font(Curio.body(17, .heavy, relativeTo: .headline))
+                            .foregroundStyle(Curio.onAccent)
                             .frame(maxWidth: .infinity, minHeight: 52)
-                            .background(Curio.surface, in: .capsule)
-                            .overlay(Capsule().strokeBorder(Curio.border, lineWidth: Curio.borderWidth))
+                            .background(Curio.accentFill, in: .capsule)
                             .contentShape(.capsule)
                     }
                     .buttonStyle(.plain)
+                    if let shareImage {
+                        // The recap picture, plus the trail's questions as text.
+                        ShareLink(item: shareImage, message: Text(questionsText),
+                        preview: SharePreview("What I found out about \(topicName)", image: shareImage)) {
+                            Label("Show a grown-up", systemImage: "square.and.arrow.up")
+                                .font(Curio.body(16, .heavy, relativeTo: .headline))
+                                .foregroundStyle(Curio.accent)
+                                .frame(maxWidth: .infinity, minHeight: 52)
+                                .background(Curio.surface, in: .capsule)
+                                .overlay(Capsule().strokeBorder(Curio.border, lineWidth: Curio.borderWidth))
+                                .contentShape(.capsule)
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
+                .padding(.bottom, 16)
             }
-            .padding(.bottom, 16)
+            .frame(maxWidth: 560)
+            .padding(.horizontal, 20)
+            .frame(maxWidth: .infinity, minHeight: visibleHeight)
         }
-        .frame(maxWidth: 560)
-        .padding(.horizontal, 20)
-        .frame(maxWidth: .infinity)
+        .scrollBounceBehavior(.basedOnSize)
+        .scrollIndicators(.hidden)
+        // The scroll view's own size, not its content: cannot loop.
+        .onGeometryChange(for: Double.self) { proxy in
+            proxy.size.height - proxy.safeAreaInsets.top - proxy.safeAreaInsets.bottom
+        } action: { visibleHeight = max($0, 0) }
         .background(Curio.ground)
         .task { renderShareImage(facts: facts) }
     }

@@ -17,6 +17,8 @@ struct ContentView: View {
     @State private var speakingStep: UUID?
     @State private var showSettings = false
     @State private var screen = Screen.home
+    /// At least 1100 pt wide: the two-column iPad layouts.
+    @State private var wide = false
     @State private var stamps = StampStore(persists: !ProcessInfo.processInfo.arguments.contains("-autoAsk"))
     @FocusState private var composing: Bool
 
@@ -44,19 +46,25 @@ struct ContentView: View {
             Group {
                 switch screen {
                 case .home:
-                    HomeView(chat: chat, resume: { go(.trail) }, start: startTrail, edit: edit,
+                    HomeView(chat: chat, stamps: stamps, resume: { go(.trail) }, start: startTrail, edit: edit,
                              openSettings: { showSettings = true })
-                        .safeAreaBar(edge: .bottom) { bar(placeholder: "Ask anything…", send: askFromHome) }
+                        .safeAreaBar(edge: .bottom) {
+                            // Wide: under the Sparks column (40 + 380 + 32 pt in).
+                            bar(placeholder: "Ask anything…", leading: wide ? 452 : nil, send: askFromHome)
+                        }
                         .toolbar(.hidden, for: .navigationBar)
                         .transition(.opacity)
                 case .trail:
                     TrailView(chat: chat, speakingStep: speakingStep, speak: toggleSpeech,
                               dive: { text in continueTrail { chat.ask(text, using: engines) } },
                               editFollowUp: edit, retry: { continueTrail { chat.retry(using: engines) } },
-                              finish: finishTrail)
+                              finish: finishTrail, back: { go(.home) })
                         .safeAreaBar(edge: .top) {
-                            TrailHeader(title: chat.topic ?? "Your question", detail: trailDetail,
-                                        back: { go(.home) }, settings: { showSettings = true })
+                            // Wide layouts show the trail in the side rail instead.
+                            if !wide {
+                                TrailHeader(title: chat.topic ?? "Your question", detail: trailDetail,
+                                            back: { go(.home) }, settings: { showSettings = true })
+                            }
                         }
                         // A safe-area *bar*: the system keeps the trail clear
                         // of the question box and fades it as it scrolls
@@ -65,7 +73,8 @@ struct ContentView: View {
                         // last step offers Finish instead.
                         .safeAreaBar(edge: .bottom) {
                             if !chat.isComplete {
-                                bar(placeholder: "Ask more about \(chat.topic?.lowercased() ?? "this")…") {
+                                bar(placeholder: "Ask more about \(chat.topic?.lowercased() ?? "this")…",
+                                    leading: wide ? 380 : nil) {
                                     continueTrail { chat.ask(using: engines) }
                                 }
                             }
@@ -79,6 +88,8 @@ struct ContentView: View {
                 }
             }
             .background(Curio.ground)
+            .environment(\.curioWide, wide)
+            .onGeometryChange(for: Bool.self) { $0.size.width >= 1100 } action: { wide = $0 }
             .overlay(alignment: .top) {
                 if chat.undoSteps != nil {
                     UndoBanner(undo: { chat.undo() }, expire: { chat.clearUndo() })
@@ -123,12 +134,16 @@ struct ContentView: View {
         #endif
     }
 
-    /// The bottom bar, at the readable width on iPad.
-    private func bar(placeholder: String, send: @escaping () -> Void) -> some View {
-        BottomBar(chat: chat, focused: $composing, placeholder: placeholder, send: send)
-            .frame(maxWidth: 720)
-            .padding(.horizontal, 20)
-            .padding(.bottom, 8)
+    /// The bottom bar: centred at the readable width, or, on wide layouts,
+    /// under the main column from `leading` to 40 pt from the edge.
+    @ViewBuilder
+    private func bar(placeholder: String, leading: CGFloat? = nil, send: @escaping () -> Void) -> some View {
+        let box = BottomBar(chat: chat, focused: $composing, placeholder: placeholder, send: send)
+        if let leading {
+            box.padding(.leading, leading).padding(.trailing, 40).padding(.bottom, 12)
+        } else {
+            box.frame(maxWidth: 720).padding(.horizontal, 20).padding(.bottom, 8)
+        }
     }
 
     /// "Trail · Step 3", or what is happening while it matters.

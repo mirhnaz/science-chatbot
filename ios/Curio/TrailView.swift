@@ -1,9 +1,9 @@
 import SwiftUI
 
-/// Trail (docs/design/redesign-2026-09/Trail.dc.html): earlier steps as a
-/// numbered rail, then the current step with an illustration, the answer, and
-/// two "Dive deeper" choices directly under it. The bottom bar and header are
-/// added by ContentView.
+/// Trail (docs/design/redesign-2026-09/Trail.dc.html; TabletTrail when wide):
+/// earlier steps as a numbered rail, then the current step with an
+/// illustration, the answer, and "Dive deeper" choices directly under it.
+/// ContentView adds the bottom bar and, on phones, the header.
 struct TrailView: View {
     let chat: ChatModel
     let speakingStep: UUID?
@@ -12,12 +12,32 @@ struct TrailView: View {
     let editFollowUp: (String) -> Void
     let retry: () -> Void
     let finish: () -> Void
+    let back: () -> Void
     /// Earlier steps the child opened again from the rail.
     @State private var expanded: Set<UUID> = []
     @State private var position = ScrollPosition(idType: UUID.self)
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.curioWide) private var wide
 
     var body: some View {
+        if wide {
+            HStack(spacing: 0) {
+                SideRail(chat: chat, expanded: expanded, toggle: toggle, back: back)
+                    .frame(width: 340)
+                steps
+            }
+        } else {
+            steps
+        }
+    }
+
+    private func toggle(_ id: UUID) {
+        withAnimation(.smooth) {
+            if expanded.remove(id) == nil { expanded.insert(id) }
+        }
+    }
+
+    private var steps: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(Array(chat.steps.enumerated()), id: \.element.id) { index, step in
@@ -26,23 +46,26 @@ struct TrailView: View {
                                     speaking: speakingStep == step.id, speak: { speak(step) },
                                     complete: chat.isComplete, dive: dive, editFollowUp: editFollowUp,
                                     retry: retry, finish: finish)
-                    } else {
+                    } else if !wide || expanded.contains(step.id) {
+                        // Wide layouts list the steps in the side rail and
+                        // show only the answers the child re-opened here.
                         RailStep(step: step, number: index + 1, open: expanded.contains(step.id),
                                  speaking: speakingStep == step.id, speak: { speak(step) }) {
-                            withAnimation(.smooth) {
-                                if expanded.remove(step.id) == nil { expanded.insert(step.id) }
-                            }
+                            toggle(step.id)
                         }
-                        Capsule()
-                            .fill(Curio.connector)
-                            .frame(width: 2, height: 10)
-                            .padding(.leading, 12)
+                        .padding(.bottom, wide ? 16 : 0)
+                        if !wide {
+                            Capsule()
+                                .fill(Curio.connector)
+                                .frame(width: 2, height: 10)
+                                .padding(.leading, 12)
+                        }
                     }
                 }
             }
-            .frame(maxWidth: 680, alignment: .leading)
-            .padding(.horizontal, 20)
-            .padding(.top, 14)
+            .frame(maxWidth: wide ? .infinity : 680, alignment: .leading)
+            .padding(.horizontal, wide ? 40 : 20)
+            .padding(.top, wide ? 24 : 14)
             .padding(.bottom, 16)
             .frame(maxWidth: .infinity)
         }
@@ -174,6 +197,7 @@ struct RailStep: View {
 /// Read aloud: 44 pt, accent icon; the waves pulse while reading.
 struct SpeakButton: View {
     let speaking: Bool
+    var size = 44.0
     let action: () -> Void
 
     var body: some View {
@@ -182,7 +206,7 @@ struct SpeakButton: View {
                 .font(.system(size: 18, weight: .semibold))
                 .symbolEffect(.variableColor.iterative, isActive: speaking)
                 .foregroundStyle(Curio.accent)
-                .frame(width: 44, height: 44)
+                .frame(width: size, height: size)
                 .background(Curio.surface, in: .circle)
                 .overlay(Circle().strokeBorder(Curio.border, lineWidth: Curio.borderWidth))
                 .contentShape(.circle)
@@ -205,21 +229,24 @@ struct CurrentStep: View {
     let editFollowUp: (String) -> Void
     let retry: () -> Void
     let finish: () -> Void
+    @Environment(\.curioWide) private var wide
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .top, spacing: 12) {
-                StepNumber(number: number, current: true)
-                    .padding(.top, 3)
+        VStack(alignment: .leading, spacing: wide ? 22 : 14) {
+            HStack(alignment: .top, spacing: wide ? 16 : 12) {
+                if !wide {
+                    StepNumber(number: number, current: true)
+                        .padding(.top, 3)
+                }
                 Text(step.question)
-                    .font(Curio.display(24, .semibold, relativeTo: .title))
+                    .font(Curio.display(wide ? 34 : 24, .semibold, relativeTo: .title))
                     .lineSpacing(3)
                     .foregroundStyle(Curio.accentHeading)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityAddTraits(.isHeader)
                 if step.reply != nil {
-                    SpeakButton(speaking: speaking, action: speak)
-                        .padding(.top, -6)
+                    SpeakButton(speaking: speaking, size: wide ? 48 : 44, action: speak)
+                        .padding(.top, wide ? 0 : -6)
                 }
             }
 
@@ -252,20 +279,37 @@ struct CurrentStep: View {
                 .background(Curio.surface, in: .rect(cornerRadius: Curio.cardRadius))
                 .overlay(RoundedRectangle(cornerRadius: Curio.cardRadius).strokeBorder(Curio.border, lineWidth: Curio.borderWidth))
             } else if let reply = step.reply {
-                CategoryIllustration(topic: topic)
-                Text(reply.answer)
-                    .font(Curio.body(17, .semibold))
-                    .lineSpacing(9)  // 17 pt text on a 26 pt line
-                    .foregroundStyle(Curio.ink)
-                    .textSelection(.enabled)
+                if wide {
+                    // iPad: the picture beside the answer, three choices.
+                    HStack(alignment: .top, spacing: 28) {
+                        CategoryIllustration(topic: topic)
+                            .frame(width: 360, height: 260)
+                        answer(reply.answer)
+                    }
+                } else {
+                    CategoryIllustration(topic: topic)
+                    answer(reply.answer)
+                }
                 if complete {
                     FinishButton(action: finish)
+                        .frame(maxWidth: wide ? 360 : .infinity)
                 } else {
-                    DiveDeeper(questions: Array(reply.followUps.prefix(2)), ask: dive, edit: editFollowUp)
+                    DiveDeeper(questions: Array(reply.followUps.prefix(wide ? 3 : 2)), ask: dive, edit: editFollowUp)
+                        .padding(.top, wide ? 4 : 0)
                 }
             }
         }
         .padding(.top, 2)
+    }
+
+    /// 17/26 on phones, 20/32 when wide.
+    private func answer(_ text: String) -> some View {
+        Text(text)
+            .font(Curio.body(wide ? 20 : 17, .semibold))
+            .lineSpacing(wide ? 12 : 9)
+            .foregroundStyle(Curio.ink)
+            .textSelection(.enabled)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -273,6 +317,8 @@ struct CurrentStep: View {
 /// generated per topic; until that exists, each category has its own scene.
 struct CategoryIllustration: View {
     let topic: String?
+    @Environment(\.curioWide) private var wide
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         let style = CategoryStyle.of(topic)
@@ -288,16 +334,15 @@ struct CategoryIllustration: View {
                     context.fill(Path(ellipseIn: rect), with: .color(Curio.sparkle.opacity(0.9)))
                 }
             }
-            Circle().fill(Curio.sparkle.opacity(0.35)).frame(width: 92, height: 92)
+            Circle().fill(Curio.sparkle.opacity(colorScheme == .dark ? 0.12 : 0.5)).frame(width: 92, height: 92)
             Image(systemName: style.symbol)
                 .font(.system(size: 38, weight: .medium))
                 .foregroundStyle(style.foreground)
                 .frame(width: 64, height: 64)
                 .background(Curio.iconDisc, in: .circle)
         }
-        .frame(maxWidth: .infinity)
-        .frame(height: 124)
-        .background(style.fill, in: .rect(cornerRadius: 18))
+        .frame(maxWidth: .infinity, minHeight: 124, maxHeight: wide ? .infinity : 124)
+        .background(style.fill, in: .rect(cornerRadius: wide ? 22 : 18))
         .accessibilityHidden(true)
     }
 }
@@ -307,36 +352,195 @@ struct DiveDeeper: View {
     let questions: [String]
     let ask: (String) -> Void
     let edit: (String) -> Void
+    @Environment(\.curioWide) private var wide
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: wide ? 10 : 8) {
             Text("Dive deeper")
-                .font(Curio.display(15, .semibold, relativeTo: .subheadline))
+                .font(Curio.display(wide ? 17 : 15, .semibold, relativeTo: .subheadline))
                 .foregroundStyle(Curio.label)
                 .accessibilityAddTraits(.isHeader)
-            ForEach(questions, id: \.self) { question in
-                Button { ask(question) } label: {
-                    HStack(spacing: 10) {
-                        Text(question)
-                            .multilineTextAlignment(.leading)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        Image(systemName: "chevron.right").fontWeight(.bold)
-                    }
-                    .font(Curio.body(15, .bold, relativeTo: .subheadline))
-                    .foregroundStyle(Curio.accent)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .frame(minHeight: 48)
-                    .background(Curio.surface, in: .rect(cornerRadius: Curio.chipRadius))
-                    .overlay(RoundedRectangle(cornerRadius: Curio.chipRadius).strokeBorder(Curio.border, lineWidth: Curio.borderWidth))
-                    .contentShape(.rect(cornerRadius: Curio.chipRadius))
+            if wide {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 3), spacing: 12) {
+                    ForEach(questions, id: \.self, content: chip)
                 }
-                .buttonStyle(.plain)
-                .hoverEffect(.highlight)
-                .contextMenu {
-                    Button("Edit before asking", systemImage: "pencil") { edit(question) }
+            } else {
+                ForEach(questions, id: \.self, content: chip)
+            }
+        }
+    }
+
+    private func chip(_ question: String) -> some View {
+        Button { ask(question) } label: {
+            HStack(spacing: 10) {
+                Text(question)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Image(systemName: "chevron.right").fontWeight(.bold)
+            }
+            .font(Curio.body(15, .bold, relativeTo: .subheadline))
+            .foregroundStyle(Curio.accent)
+            .padding(.horizontal, wide ? 16 : 14)
+            .padding(.vertical, wide ? 12 : 10)
+            .frame(maxHeight: .infinity)
+            .frame(minHeight: wide ? 64 : 48)
+            .background(Curio.surface, in: .rect(cornerRadius: wide ? 16 : Curio.chipRadius))
+            .overlay(RoundedRectangle(cornerRadius: wide ? 16 : Curio.chipRadius).strokeBorder(Curio.border, lineWidth: Curio.borderWidth))
+            .contentShape(.rect(cornerRadius: wide ? 16 : Curio.chipRadius))
+        }
+        .buttonStyle(.plain)
+        .hoverEffect(.highlight)
+        .contextMenu {
+            Button("Edit before asking", systemImage: "pencil") { edit(question) }
+        }
+    }
+}
+
+/// iPad side rail (TabletTrail.dc.html): All sparks, the trail's identity,
+/// every step (done, current, still to come) ending with its stamp, and
+/// what the child knows so far.
+struct SideRail: View {
+    let chat: ChatModel
+    let expanded: Set<UUID>
+    let toggle: (UUID) -> Void
+    let back: () -> Void
+
+    var body: some View {
+        let style = CategoryStyle.of(chat.topic)
+        let current = chat.steps.count
+        VStack(alignment: .leading, spacing: 18) {
+            Button(action: back) {
+                Label("All sparks", systemImage: "chevron.left")
+                    .font(Curio.body(15, .heavy, relativeTo: .subheadline))
+                    .foregroundStyle(Curio.muted)
+                    .frame(minHeight: 44)
+            }
+            .buttonStyle(.plain)
+
+            HStack(spacing: 12) {
+                Image(systemName: style.symbol)
+                    .font(.system(size: 22, weight: .medium))
+                    .foregroundStyle(style.foreground)
+                    .frame(width: 48, height: 48)
+                    .background(style.fill, in: .circle)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(chat.topic ?? "Your question")
+                        .font(Curio.display(22, .semibold, relativeTo: .title2))
+                        .foregroundStyle(Curio.ink)
+                    Text("\(chat.topic.map { "\($0) trail" } ?? "Trail") · \(min(current, ChatModel.trailLength)) of \(ChatModel.trailLength)")
+                        .textCase(.uppercase)
+                        .font(Curio.body(12, .heavy, relativeTo: .caption))
+                        .tracking(0.72)
+                        .foregroundStyle(Curio.label)
                 }
             }
+            .accessibilityElement(children: .combine)
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(1...(ChatModel.trailLength + 1), id: \.self) { number in
+                        row(number, current: current)
+                        if number <= ChatModel.trailLength {
+                            Capsule()
+                                .fill(number < current ? Curio.connector : Curio.upcomingConnector)
+                                .frame(width: 2, height: 14)
+                                .padding(.leading, 13)
+                        }
+                    }
+                }
+            }
+            .scrollBounceBehavior(.basedOnSize)
+
+            let known = chat.steps.dropLast().compactMap(\.reply?.answer).suffix(3)
+            if !known.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("So far you know")
+                        .textCase(.uppercase)
+                        .font(Curio.body(12, .heavy, relativeTo: .caption))
+                        .tracking(0.72)
+                        .foregroundStyle(Curio.label)
+                    ForEach(Array(known.enumerated()), id: \.offset) { _, answer in
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundStyle(Curio.success)
+                                .accessibilityHidden(true)
+                            Text(firstSentence(answer))
+                                .font(Curio.body(14, .bold, relativeTo: .footnote))
+                                .foregroundStyle(Curio.ink)
+                        }
+                    }
+                }
+                .padding(.vertical, 14)
+                .padding(.horizontal, 16)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Curio.ground, in: .rect(cornerRadius: 16))
+                .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(Curio.border, lineWidth: Curio.borderWidth))
+            }
+        }
+        .padding(.top, 24)
+        .padding(.bottom, 24)
+        .padding(.leading, 32)
+        .padding(.trailing, 24)
+        .frame(maxHeight: .infinity, alignment: .top)
+        .background(Curio.surface)
+        .overlay(alignment: .trailing) {
+            Rectangle().fill(Curio.border).frame(width: Curio.borderWidth)
+        }
+    }
+
+    @ViewBuilder
+    private func row(_ number: Int, current: Int) -> some View {
+        if number <= current, number <= chat.steps.count {
+            let step = chat.steps[number - 1]
+            if number == current {
+                HStack(alignment: .top, spacing: 12) {
+                    StepNumber(number: number, current: true)
+                    Text(step.question)
+                        .font(Curio.body(15, .heavy, relativeTo: .subheadline))
+                        .foregroundStyle(Curio.ink)
+                        .padding(.top, 4)
+                }
+                .padding(.vertical, 10)
+                .padding(.horizontal, 12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Curio.accentTint, in: .rect(cornerRadius: 14))
+                .padding(.leading, -12)
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Step \(number), current: \(step.question)")
+            } else {
+                Button { toggle(step.id) } label: {
+                    HStack(alignment: .top, spacing: 12) {
+                        StepNumber(number: number, current: false)
+                        Text(step.question)
+                            .font(Curio.body(15, .bold, relativeTo: .subheadline))
+                            .foregroundStyle(Curio.muted)
+                            .multilineTextAlignment(.leading)
+                            .padding(.top, 4)
+                    }
+                    .padding(.vertical, 8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Step \(number): \(step.question)")
+                .accessibilityHint(expanded.contains(step.id) ? "Hides this answer" : "Shows this answer again")
+            }
+        } else {
+            let label = number > ChatModel.trailLength
+                ? (chat.topic.map { "\($0) stamp" } ?? "Your stamp")
+                : (number == current + 1 ? "Next step" : "Step \(number)")
+            HStack(spacing: 12) {
+                Circle()
+                    .strokeBorder(Curio.locked, style: StrokeStyle(lineWidth: 2, dash: [4, 3]))
+                    .frame(width: 28, height: 28)
+                Text(label)
+                    .font(Curio.body(15, .bold, relativeTo: .subheadline))
+                    .foregroundStyle(Curio.upcoming)
+            }
+            .padding(.vertical, 8)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("\(label), not reached yet")
         }
     }
 }
