@@ -24,8 +24,9 @@ home computer.”
 3. **Add tutor instructions.** “We give the AI instructions to explain science
    kindly, use an everyday example, and suggest safe ideas for children. These
    instructions guide its answer.”
-4. **AI writes a reply.** “The AI is called Qwen. A program called Ollama runs it
-   on our home computer. It uses what it learned during training to create an
+4. **AI writes a reply.** “The AI is an existing open model; right now we use Gemma,
+   made by Google. A program called Ollama runs it on our home computer, and we
+   can switch to a different model without changing the app. It uses what it learned during training to create an
    answer and three follow-up questions. Our app does not search the web for
    each answer.”
 5. **Check the reply.** “Our app checks that an answer and three different
@@ -42,8 +43,8 @@ this version.”
 
 ## Questions the teacher might ask
 
-- **Did you train the AI?** No. Qwen is an existing model developed by Alibaba
-  Cloud. Ayaan and Naz Mir created this app and its tutor instructions.
+- **Did you train the AI?** No. We use an existing open model, currently Gemma
+  by Google. Ayaan and Naz Mir created this app and its tutor instructions.
 - **Does the AI run on the phone?** No. The phone shows the website; the home
   computer runs the app and AI tutor.
 - **Is the AI always correct or safe?** No. Instructions guide it, but they do

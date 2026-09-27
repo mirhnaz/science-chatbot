@@ -32,7 +32,7 @@ async function fixture(t: TestContext, handler: http.RequestListener, options: A
   t.after(() => close(upstream));
   const child = spawn(process.env.RUST_SERVER_BIN || 'backend/target/debug/curio-server', [], {
     env: { ...process.env, HOST: '127.0.0.1', PORT: '0', ASSET_ROOT: options.root || process.cwd(),
-      OLLAMA_BASE_URL: options.upstream || base, OLLAMA_MODEL: options.model || 'qwen3:8b',
+      OLLAMA_BASE_URL: options.upstream || base, OLLAMA_MODEL: options.model || 'gemma4:12b',
       PUBLIC_ORIGIN: options.publicOrigin || '', OLLAMA_TIMEOUT_MS: String(options.timeoutMs ?? 120000) },
     stdio: ['ignore', 'pipe', 'pipe']
   });
@@ -78,7 +78,7 @@ test('compiled server serves browser assets from the deployment layout', async t
   assert.deepEqual(await health.json(), { status: 'ok' });
 });
 
-test('question becomes a bounded Qwen request and only final content returns', async t => {
+test('question becomes a bounded Ollama request and only final content returns', async t => {
   let payload: {
     format: { properties: { followUps: { minItems: number; maxItems: number } } };
     model: string;
@@ -104,7 +104,7 @@ test('question becomes a bounded Qwen request and only final content returns', a
   assert.ok(payload);
   assert.equal(payload.format.properties.followUps.minItems, 3);
   assert.equal(payload.format.properties.followUps.maxItems, 3);
-  assert.equal(payload.model, 'qwen3:8b');
+  assert.equal(payload.model, 'gemma4:12b');
   assert.equal(payload.stream, false); assert.equal(payload.think, false);
   assert.equal(payload.messages[0].role, 'system');
   const prompt = await readFile('backend/src/tutor.txt', 'utf8');

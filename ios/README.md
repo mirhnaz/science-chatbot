@@ -95,8 +95,8 @@ xcrun devicectl device install app --device <device-id> \
 ## Put the model on the iPad
 
 Recommended: `Qwen3-4B-Instruct-2507-Q4_K_M.gguf` (about 2.5 GB), a smaller
-non-thinking member of the same Qwen3 family as the server's `qwen3:8b`.
-Answers are a little simpler than the 8B model's. Choose one method:
+non-thinking Qwen3 model for offline answers (the server uses `gemma4:12b`).
+Answers are a little simpler than the server's. Choose one method:
 
 1. **Download in the app**: Settings → Advanced → *Download recommended model* (needs
    internet once).

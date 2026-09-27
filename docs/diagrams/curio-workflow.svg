@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1200" viewBox="0 0 1920 1200" role="img" aria-labelledby="title description">
 <title id="title">How Curio works</title>
-<desc id="description">Six numbered steps: ask a science question in a browser; the Rust app on our home computer checks it; the app adds tutor instructions; Qwen, running through Ollama on our home computer, creates a reply; the app checks the reply format; the browser displays the answer and three follow-up questions. An encrypted internet link connects the browser and computer. A dashed arrow shows that a follow-up starts a new question. Additional features include read aloud, cancellation and friendly error messages. AI can make mistakes.</desc>
+<desc id="description">Six numbered steps: ask a science question in a browser; the Rust app on our home computer checks it; the app adds tutor instructions; an open AI model, running through Ollama on our home computer, creates a reply; the app checks the reply format; the browser displays the answer and three follow-up questions. An encrypted internet link connects the browser and computer. A dashed arrow shows that a follow-up starts a new question. Additional features include read aloud, cancellation and friendly error messages. AI can make mistakes.</desc>
 <defs>
 <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0L8 4L0 8Z" fill="#173453"/></marker>
 <marker id="repeat" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0L8 4L0 8Z" fill="#118579"/></marker>
@@ -53,7 +53,7 @@
 <text x="1471" y="676" font-size="25" font-weight="700" fill="#173453" text-anchor="start">AI writes a reply</text>
 <circle cx="1805" cy="639" r="22" fill="#173453" stroke="white" stroke-width="4"/>
 <text x="1805" y="647" font-size="22" font-weight="700" fill="white" text-anchor="middle">4</text>
-<text x="1392" y="741" font-size="20" font-weight="400" fill="#53677E" text-anchor="start">Ollama runs the Qwen AI on our computer.</text>
+<text x="1392" y="741" font-size="20" font-weight="400" fill="#53677E" text-anchor="start">Ollama runs the AI model on our computer.</text>
 <text x="1392" y="771" font-size="20" font-weight="400" fill="#53677E" text-anchor="start">It writes an answer and suggests</text>
 <text x="1392" y="801" font-size="20" font-weight="400" fill="#53677E" text-anchor="start">three new questions to explore.</text>
 <rect x="730" y="624" width="464" height="212" rx="14" fill="white" stroke="#DCE5ED" stroke-width="2"/>
