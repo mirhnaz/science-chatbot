@@ -429,6 +429,17 @@ test('starter suggestions rotate across four topics without calling Ollama', asy
   assert.equal((await fetch(f.url + '/api/suggestions?exclude=' + 'x'.repeat(3001))).status, 400);
 });
 
+test('preferred topics fill up to half the sparks; oversized lists are refused', async t => {
+  const f = await fixture(t, (_, res) => answer(res));
+  for (let i = 0; i < 20; i++) {
+    const data = await (await fetch(f.url + '/api/suggestions?prefer=' + encodeURIComponent('Body,Forces & motion,Light'))).json() as { suggestions: { topic: string }[] };
+    assert.equal(data.suggestions.length, 4);
+    assert.ok(data.suggestions.filter(q => ['Body', 'Forces & motion', 'Light'].includes(q.topic)).length >= 2);
+  }
+  assert.equal((await fetch(f.url + '/api/suggestions?prefer=' + Array(21).fill('Space').join(','))).status, 400);
+  assert.equal((await fetch(f.url + '/api/suggestions?prefer=' + 'x'.repeat(41))).status, 400);
+});
+
 test('wide layouts can ask for six sparks from six topics; other counts are refused', async t => {
   const f = await fixture(t, (_, res) => answer(res));
   const six = await (await fetch(f.url + '/api/suggestions?count=6')).json() as { suggestions: { topic: string }[] };

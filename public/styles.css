@@ -256,6 +256,11 @@ main { position: relative; z-index: 1; }
   background: var(--cat-fill); color: var(--ink); text-align: left;
 }
 .spark-card:disabled { opacity: .7; }
+.spark-card { position: relative; }
+.new-stamp {
+  position: absolute; top: 12px; right: 12px; padding: 3px 9px; border-radius: 999px;
+  background: var(--accent-fill); color: var(--on-accent); font-size: 11px; font-weight: 800; letter-spacing: .02em;
+}
 /* Six sparks load on wide layouts; if the window narrows, show four. */
 .spark-grid .spark-card:nth-child(n+5) { display: none; }
 .icon-disc { width: 40px; height: 40px; padding: 9px; border-radius: 50%; background: var(--icon-disc); color: var(--cat-ink); display: grid; place-items: center; }

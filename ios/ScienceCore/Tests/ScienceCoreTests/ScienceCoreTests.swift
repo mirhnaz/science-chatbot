@@ -105,6 +105,11 @@ final class SuggestionTests: XCTestCase {
         let bank = try bank()
         XCTAssertEqual(bank.all.count, 66)
         XCTAssertEqual(Set(bank.all.map(\.topic)).count, 11)
+        for _ in 0..<50 {
+            let picked = bank.select(excluding: [], count: 4, preferring: ["Body", "Plants", "Light"])
+            XCTAssertGreaterThanOrEqual(picked.filter { ["Body", "Plants", "Light"].contains($0.topic) }.count, 2)
+            XCTAssertEqual(Set(picked.map(\.topic)).count, 4)
+        }
         let six = bank.select(excluding: [], count: 6)
         XCTAssertEqual(six.count, 6)
         XCTAssertEqual(Set(six.map(\.topic)).count, 6)

@@ -406,3 +406,22 @@ test('Stamps shows every kind, earned or not, and the latest stamps', async () =
   b.get('stamps-back').listeners.click();
   assert.equal(b.body.attributes['data-view'], 'home');
 });
+
+test('sparks prefer uncollected topics and mark them "New stamp!" once a stamp exists', async () => {
+  const none = await browser();
+  assert.doesNotMatch(none.requests[0].url, /prefer=/, 'no stamps yet: no preference');
+  const earned = JSON.stringify([{ id: 't1', topic: 'Topic 0', earned: '2026-09-20T10:00:00.000Z' }]);
+  const b = await browser(undefined, false, { 'curio.stamps.v1': earned });
+  const prefer = new URL(b.requests[0].url, 'http://localhost').searchParams.get('prefer')!.split(',');
+  assert.equal(prefer.length, 11, 'all 11 bank topics are still uncollected');
+  assert.ok(prefer.includes('Forces & motion'));
+  b.requests[0].complete({ suggestions: [
+    { id: 'space-1', topic: 'Space', icon: '🚀', question: 'Why do stars twinkle?' },
+    { id: 'topic-0', topic: 'Topic 0', icon: '🌱', question: 'Why do plants grow?' },
+    { id: 'body-1', topic: 'Body', icon: '🫀', question: 'Why do we yawn?' },
+    { id: 'sound-1', topic: 'Sound', icon: '🎵', question: 'What is an echo?' }
+  ] }); await flush();
+  const labels = b.get('spark-grid').children.map(card => card.attributes['aria-label']);
+  assert.deepEqual(labels, ['Space, new stamp: Why do stars twinkle?', 'Topic 0: Why do plants grow?',
+    'Body, new stamp: Why do we yawn?', 'Sound, new stamp: What is an echo?']);
+});

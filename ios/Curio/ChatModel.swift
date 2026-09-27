@@ -46,6 +46,11 @@ final class ChatModel {
     var sparkCount = 4 {
         didSet { if sparkCount != oldValue { surprise() } }
     }
+    /// Topics whose stamp the child has not collected yet: up to half the
+    /// sparks come from them (a change reshuffles).
+    var uncollectedTopics: Set<String> = [] {
+        didSet { if uncollectedTopics != oldValue { surprise() } }
+    }
     private(set) var suggestions: [Suggestion] = []
     /// Earlier unfinished trails, newest first: set aside when a new trail
     /// started, and offered again on Home (ScienceCore's OpenTrailShelf).
@@ -98,7 +103,8 @@ final class ChatModel {
     }
 
     func surprise() {
-        suggestions = BundledText.suggestionBank.select(excluding: recent.ids, count: sparkCount)
+        suggestions = BundledText.suggestionBank.select(excluding: recent.ids, count: sparkCount,
+                                                        preferring: uncollectedTopics)
         recent.record(suggestions)
     }
 

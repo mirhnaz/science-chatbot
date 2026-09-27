@@ -103,7 +103,10 @@ fn asset(path: &str) -> Option<(&'static str, &'static str)> {
         "/" => ("public/index.html", "text/html; charset=utf-8"),
         "/theme.js" => ("build/client/theme.js", "text/javascript; charset=utf-8"),
         "/app.js" => ("build/client/app.js", "text/javascript; charset=utf-8"),
-        "/field-worker.js" => ("build/client/field-worker.js", "text/javascript; charset=utf-8"),
+        "/field-worker.js" => (
+            "build/client/field-worker.js",
+            "text/javascript; charset=utf-8",
+        ),
         "/styles.css" => ("public/styles.css", "text/css; charset=utf-8"),
         "/favicon.ico" => ("public/favicon.ico", "image/vnd.microsoft.icon"),
         "/favicon-32.png" => ("public/favicon-32.png", "image/png"),
@@ -162,9 +165,23 @@ async fn dispatch(state: &AppState, request: Request) -> Response {
                 _ => return error(400, "Ask for 4 or 6 suggestions."),
             },
         };
+        // `prefer`: topics whose stamps the child has not collected yet.
+        let preferring: Vec<_> = url
+            .query_pairs()
+            .filter(|(key, _)| key == "prefer")
+            .map(|(_, value)| value.into_owned())
+            .collect();
+        let preferred: Vec<_> = preferring
+            .iter()
+            .flat_map(|value| value.split(','))
+            .filter(|topic| !topic.is_empty())
+            .collect();
+        if preferred.len() > 20 || preferred.iter().any(|topic| topic.len() > 40) {
+            return error(400, "Too many preferred topics.");
+        }
         return json_response(
             200,
-            json!({"suggestions": crate::suggestions::select(&recent, count)}),
+            json!({"suggestions": crate::suggestions::select(&recent, count, &preferred)}),
         );
     }
     if request.method() == Method::GET {

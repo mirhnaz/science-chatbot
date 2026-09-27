@@ -64,6 +64,7 @@ struct ContentView: View {
         .environment(\.curioWide, wide)
         .onGeometryChange(for: Bool.self) { $0.size.width >= 1100 } action: { wide = $0 }
         .onChange(of: wide, initial: true) { _, wide in chat.sparkCount = wide ? 6 : 4 }
+        .onChange(of: stamps.stamps.count, initial: true) { chat.uncollectedTopics = stamps.uncollectedTopics }
         .onChange(of: chat.isLoading) { _, loading in if loading { stopSpeech() } }
         .onChange(of: speech.isSpeaking) { _, speaking in if !speaking { speakingStep = nil } }
         .onChange(of: chat.steps.isEmpty) { _, empty in if empty { go(.home) } }

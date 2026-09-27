@@ -22,18 +22,24 @@ public struct SuggestionBank: Sendable {
         all = try JSONDecoder().decode([Suggestion].self, from: json)
     }
 
-    public func select(excluding recent: [String], count: Int = 4) -> [Suggestion] {
+    /// Up to half come from `preferred` topics (stamps the child has not
+    /// collected yet); the rest are random, and the order is shuffled.
+    public func select(excluding recent: [String], count: Int = 4, preferring preferred: Set<String> = []) -> [Suggestion] {
         let excluded = Set(recent)
         // Shuffle first, then move recently shown questions to the back.
         let ordered = all.shuffled().enumerated().sorted { a, b in
             let (ea, eb) = (excluded.contains(a.element.id), excluded.contains(b.element.id))
             return ea == eb ? a.offset < b.offset : !ea
-        }
+        }.map(\.element)
         var topics = Set<String>()
-        return ordered.map(\.element)
-            .filter { topics.insert($0.topic).inserted }
-            .prefix(count)
-            .map { $0 }
+        var picked: [Suggestion] = []
+        for question in ordered where picked.count < count / 2 && preferred.contains(question.topic) {
+            if topics.insert(question.topic).inserted { picked.append(question) }
+        }
+        for question in ordered where picked.count < count {
+            if topics.insert(question.topic).inserted { picked.append(question) }
+        }
+        return picked.shuffled()
     }
 }
 

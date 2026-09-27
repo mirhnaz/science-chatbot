@@ -365,7 +365,8 @@ async function refreshSparks() {
   try {
     const exclude = encodeURIComponent(recentSparks.join(','));
     const count = sparkCount();
-    const response = await fetch(`/api/suggestions?exclude=${exclude}&count=${count}`, { signal: request.signal });
+    const prefer = encodeURIComponent([...uncollectedTopics()].join(','));
+    const response = await fetch(`/api/suggestions?exclude=${exclude}&count=${count}${prefer ? `&prefer=${prefer}` : ''}`, { signal: request.signal });
     if (!response.ok) throw new Error('Sparks unavailable');
     const data: unknown = await response.json();
     const items = data && typeof data === 'object' ? (data as Record<string, unknown>).suggestions : undefined;
@@ -399,8 +400,18 @@ function editFirst(target: HTMLElement, text: string) {
   });
 }
 
-/** A tinted card: icon disc, topic label, and the question. */
+/** Topics whose stamp the child has not collected yet, once they have at
+ *  least one stamp (before that, every topic would be "new"). */
+function uncollectedTopics(): Set<string> {
+  if (!stamps.length) return new Set();
+  const collected = new Set(stamps.map(stamp => stamp.topic));
+  return new Set(stampKinds.map(kind => kind.topic).filter((topic): topic is string => topic !== null && !collected.has(topic)));
+}
+
+/** A tinted card: icon disc, topic label, and the question; "New stamp!" on
+ *  topics not collected yet. */
 function renderSparks() {
+  const fresh = uncollectedTopics();
   const cards = sparks.map(spark => {
     const style = category(spark.topic);
     const card = button(`spark-card cat-${style.key}`);
@@ -409,7 +420,9 @@ function renderSparks() {
     const words = element('span', 'spark-words');
     words.append(element('span', 'spark-topic', spark.topic), element('span', 'spark-question', spark.question));
     card.append(disc, words);
-    card.setAttribute('aria-label', `${spark.topic}: ${spark.question}`);
+    const isNew = fresh.has(spark.topic);
+    if (isNew) card.append(element('span', 'new-stamp', 'New stamp!'));
+    card.setAttribute('aria-label', `${spark.topic}${isNew ? ', new stamp' : ''}: ${spark.question}`);
     card.addEventListener('click', () => startTrail(spark));
     editFirst(card, spark.question);
     return card;

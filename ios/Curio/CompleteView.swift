@@ -37,6 +37,14 @@ final class StampStore {
         self.persists = persists
     }
 
+    /// Topics whose stamp is not collected yet, once there is at least one
+    /// stamp (before that, every topic would be "new").
+    var uncollectedTopics: Set<String> {
+        guard !stamps.isEmpty else { return [] }
+        let collected = Set(stamps.compactMap(\.topic))
+        return Set(StampsView.kinds.compactMap { $0 }).subtracting(collected)
+    }
+
     /// Adds the trail's stamp and records it as finished, once per trail.
     func award(trail: UUID, topic: String?, question: String) {
         if !stamps.contains(where: { $0.id == trail }) {
