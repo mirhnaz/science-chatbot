@@ -793,6 +793,17 @@ quieter. Now the input uses voice processing (`setVoiceProcessingEnabled`,
 Verified: web screenshots at 1180/1440 with a long Home column; tests.
 iOS installed on iPhone and iPad, not checked by eye here.
 
+### Model check: "answers seem shorter" (2026-09-27, evening)
+
+Live service: `OLLAMA_MODEL=gemma4:12b` (from the user's `cf88c76`; Ollama
+had it loaded). Three live questions gave 115, 135 and 127 words in about
+2.5 s, so the server's answers are not short. The iOS app points at the
+same server; in Automatic mode it falls back to the on-device Qwen3 4B
+(with the Gemma-tuned prompt) when the server is unavailable, e.g. during
+today's restarts. Likely cause of the short answers, not confirmed: the
+user will retry with the engine set to mir-ai-pc. Possible follow-ups:
+show which engine answered, or retry the server before falling back.
+
 ## Agreed direction, not yet implemented
 
 The user expects login, conversation history, and more functionality over time.
