@@ -12,6 +12,7 @@ struct HomeView: View {
     let start: (Suggestion) -> Void
     let edit: (String) -> Void
     let openSettings: () -> Void
+    let openStamps: () -> Void
     @AppStorage("childName") private var name = ""
     @Environment(\.curioWide) private var wide
     @Environment(\.horizontalSizeClass) private var sizeClass
@@ -101,7 +102,7 @@ struct HomeView: View {
                 .foregroundStyle(Curio.ink)
             Spacer()
             if !stamps.stamps.isEmpty {
-                StampsBadge(count: stamps.stamps.count)
+                StampsBadge(count: stamps.stamps.count, open: openStamps)
             }
             CircleIconButton(label: "Settings", symbol: "gearshape", action: openSettings)
         }
@@ -109,14 +110,20 @@ struct HomeView: View {
     }
 }
 
-/// "3 stamps", on every layout: a count only for now. (The design links it
-/// to a Stamps screen, which does not exist yet.)
+/// "3 stamps", on every layout: opens the Stamps screen.
 struct StampsBadge: View {
     let count: Int
+    let open: () -> Void
 
     var body: some View {
+        Button(action: open) { label }
+            .buttonStyle(.plain)
+            .accessibilityHint("Shows your stamp collection")
+    }
+
+    private var label: some View {
         HStack(spacing: 8) {
-            Image(systemName: "moon.stars")
+            Image(systemName: "sparkles")
                 .font(.system(size: 11, weight: .bold))
                 .foregroundStyle(Curio.accent)
                 .frame(width: 22, height: 22)

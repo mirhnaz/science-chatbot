@@ -106,7 +106,7 @@ struct CompleteView: View {
                 .padding(.top, 8)
 
                 VStack(spacing: 0) {
-                    Image(systemName: style.symbol)
+                    Image(systemName: stampSymbol(chat.topic))
                         .font(.system(size: 64, weight: .regular))
                         .foregroundStyle(style.foreground)
                         .frame(width: 156, height: 156)
@@ -276,7 +276,7 @@ struct StampsRow: View {
                 ForEach(stamps.suffix(Self.shown)) { stamp in
                     let style = CategoryStyle.of(stamp.topic)
                     let new = stamp.id == current
-                    Image(systemName: style.symbol)
+                    Image(systemName: stampSymbol(stamp.topic))
                         .font(.system(size: 22, weight: .medium))
                         .foregroundStyle(new ? Curio.onAccent : style.foreground)
                         .frame(width: 56, height: 56)

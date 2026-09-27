@@ -15,6 +15,7 @@
 		A1C0510E000000000000000F /* DebugCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0510E0000000000000010 /* DebugCapture.swift */; };
 		A1C0510E0000000000000011 /* PixelField.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0510E0000000000000012 /* PixelField.swift */; };
 		A1C0510E0000000000000013 /* PixelField.metal in Sources */ = {isa = PBXBuildFile; fileRef = A1C0510E0000000000000014 /* PixelField.metal */; };
+		A1C0510E0000000000000015 /* StampsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1C0510E0000000000000016 /* StampsView.swift */; };
 		14ECCAFD67004EC54F1A55B8 /* ChatModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C1FAE2985C7B6DEDAC0CAC7 /* ChatModel.swift */; };
 		17DA2F7BD9365218E0111EC0 /* KokoroFramework in Frameworks */ = {isa = PBXBuildFile; productRef = AD173C740F0663329D1DF01B /* KokoroFramework */; };
 		2AB4726B43025D37406DD75C /* TutorEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 747BC80080FBC496ADAC6E59 /* TutorEngine.swift */; };
@@ -47,6 +48,7 @@
 		A1C0510E0000000000000010 /* DebugCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugCapture.swift; sourceTree = "<group>"; };
 		A1C0510E0000000000000012 /* PixelField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelField.swift; sourceTree = "<group>"; };
 		A1C0510E0000000000000014 /* PixelField.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = PixelField.metal; sourceTree = "<group>"; };
+		A1C0510E0000000000000016 /* StampsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StampsView.swift; sourceTree = "<group>"; };
 		5A9672358DBE787F24899222 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		5DC7B15AA78E520137D7E6C4 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
 		69CBFB52AA72DBA38604AA78 /* Curio.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Curio.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -119,6 +121,7 @@
 				A1C0510E0000000000000006 /* Fredoka.ttf */,
 				9C1FAE2985C7B6DEDAC0CAC7 /* ChatModel.swift */,
 				5A9672358DBE787F24899222 /* ContentView.swift */,
+				A1C0510E0000000000000016 /* StampsView.swift */,
 				A1C0510E0000000000000014 /* PixelField.metal */,
 				A1C0510E0000000000000012 /* PixelField.swift */,
 				A1C0510E0000000000000010 /* DebugCapture.swift */,
@@ -271,6 +274,7 @@
 				C7742B5D5D64CC9ABFD1D70A /* App.swift in Sources */,
 				14ECCAFD67004EC54F1A55B8 /* ChatModel.swift in Sources */,
 				3667258F494F8DDBB90402E9 /* ContentView.swift in Sources */,
+				A1C0510E0000000000000015 /* StampsView.swift in Sources */,
 				A1C0510E0000000000000013 /* PixelField.metal in Sources */,
 				A1C0510E0000000000000011 /* PixelField.swift in Sources */,
 				A1C0510E000000000000000F /* DebugCapture.swift in Sources */,

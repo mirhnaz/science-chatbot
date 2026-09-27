@@ -7,7 +7,7 @@ import SwiftUI
 struct ContentView: View {
     /// Home is the root; Trail and Trail complete are pushed on top, so the
     /// system back swipe returns Home.
-    enum Screen: Hashable { case home, trail, complete }
+    enum Screen: Hashable { case home, trail, complete, stamps }
 
     @Environment(ModelStore.self) private var models
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -55,6 +55,9 @@ struct ContentView: View {
                     case .home: home
                     case .trail: trail
                     case .complete: complete
+                    case .stamps:
+                        StampsView(stamps: stamps, back: { go(.home) })
+                            .toolbar(.hidden, for: .navigationBar)
                     }
                 }
         }
@@ -107,7 +110,7 @@ struct ContentView: View {
 
     private var home: some View {
         HomeView(chat: chat, stamps: stamps, resume: resume, start: startTrail, edit: edit,
-                 openSettings: { showSettings = true })
+                 openSettings: { showSettings = true }, openStamps: { go(.stamps) })
             .safeAreaBar(edge: .bottom) {
                 // Wide: under the Sparks column (40 + 380 + 32 pt in).
                 bar(placeholder: "Ask anything…", leading: wide ? 452 : nil, send: askFromHome)
