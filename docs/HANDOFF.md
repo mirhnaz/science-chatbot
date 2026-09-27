@@ -583,6 +583,24 @@ now in `tutor.txt` (schema and grammar unchanged). Pre-existing quirk, not
 changed: "Who created Qwen?" gets the app-creator line instead of the
 Alibaba Cloud answer, with the old prompt too.
 
+### Tutor style brief (2026-09-27)
+
+User brief: do not fixate on length (up to ~100 words is fine); teach in a
+simple, exciting way. The prompt's style paragraph now asks for three parts
+(a surprising fact or vivid comparison, how it works in everyday words, and
+an everyday example when one fits), accuracy over fun, comparisons that
+match the science ("a baby growing up is not evolution"), science words
+explained, about 60–100 words. Safety, topic, and creator rules unchanged.
+
+How it was chosen (local qwen3:8b, the server's exact request, 8 questions
+× 2): variants were read side by side, not only measured. Lessons for this
+8B model: any "one short sentence" wording near the answer collapses the
+answer to one sentence; naming a word ("Imagine") in a "don't" rule makes
+every answer start with it; forcing an everyday example into every answer
+produces odd ones. Final: mean 67 words (40–99), reading grade ~7, varied
+openings; creator line, political redirect, and unsafe request unchanged.
+Known limit: occasional loose analogies remain (model accuracy ceiling).
+
 ## Agreed direction, not yet implemented
 
 The user expects login, conversation history, and more functionality over time.
