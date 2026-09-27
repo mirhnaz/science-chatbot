@@ -441,6 +441,18 @@ headless Chrome against the dev server (127.0.0.1:11437, mock tutor). The
 live service still runs the old binary: the font routes and new CSS need a
 release build and restart to go live (not done).
 
+### Redesign v2 step 3: trail overlap fix (2026-09-27)
+
+Web: removed the dock's New-spark carousel and "Ask your own" (markup,
+`app.ts`, CSS); the dock now holds only the question box, and the trail's
+bottom padding dropped from 220 to 130 px. Client tests were updated (spark
+cards and "New sparks" replace the chips and dice; the Ask-your-own test
+became "a new spark replaces the trail, and Undo brings it back"). iOS
+already had this fix (`29c62cf`). Verified: `npm test` 21 + 32 passed,
+typecheck; 390 px light screenshot shows Dive deeper clear of the dock.
+Interim gap until step 4: the web page has no way back to Sparks during a
+trail (Back/Home arrives with the redesigned Trail header).
+
 ## Agreed direction, not yet implemented
 
 The user expects login, conversation history, and more functionality over time.

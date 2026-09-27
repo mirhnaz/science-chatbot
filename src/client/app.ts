@@ -56,13 +56,9 @@ interface AppElements {
   'fresh-compose': HTMLDivElement;
   'dock-compose': HTMLDivElement;
   trail: HTMLElement;
-  'new-spark': HTMLDivElement;
   'spark-grid': HTMLDivElement;
-  'spark-chips': HTMLDivElement;
   'sparks-status': HTMLParagraphElement;
   'new-sparks': HTMLButtonElement;
-  dice: HTMLButtonElement;
-  'ask-own': HTMLButtonElement;
   undo: HTMLDivElement;
   'undo-button': HTMLButtonElement;
   title: HTMLHeadingElement;
@@ -174,15 +170,6 @@ function renderSparks() {
     return card;
   });
   $('spark-grid').replaceChildren(...cards);
-  const chips = sparks.slice(0, 3).map(spark => {
-    const chip = element('button', 'pill glass spark-chip', `${spark.icon} ${spark.question}`);
-    chip.type = 'button';
-    chip.setAttribute('aria-label', spark.question);
-    chip.addEventListener('click', () => startTrail(spark));
-    editFirst(chip, spark.question);
-    return chip;
-  });
-  $('spark-chips').replaceChildren(...chips);
   updateControls();
 }
 
@@ -192,15 +179,6 @@ function startTrail(spark: Spark) {
   if (controller) return;
   sparks = sparks.filter(item => item.id !== spark.id);
   void ask(spark.question, { newTrail: true, topic: `${spark.icon} ${spark.topic}` });
-}
-
-/** "Ask your own": a new, empty trail with the question box in the centre. */
-function askOwn() {
-  if (controller) return;
-  replaceTrail();
-  show(() => render());
-  $('question').value = '';
-  updateControls();
 }
 
 function replaceTrail() {
@@ -304,7 +282,6 @@ function render() {
   document.body.setAttribute('data-dock', centred ? 'off' : 'on');
   $('fresh').hidden = !fresh;
   $('trail').hidden = fresh;
-  $('new-spark').hidden = fresh;
   const target = centred ? 'fresh' : 'dock';
   if (composeIn !== target) {
     $(centred ? 'fresh-compose' : 'dock-compose').append($('question-form'));
@@ -418,9 +395,7 @@ function updateControls() {
   $('ask').hidden = busy;
   $('cancel').hidden = !busy;
   $('new-sparks').disabled = busy || sparksLoading;
-  $('dice').disabled = busy || sparksLoading;
-  $('ask-own').disabled = busy;
-  document.querySelectorAll<HTMLButtonElement>('.spark-card, .spark-chip, .follow-up').forEach(button => { button.disabled = busy; });
+  document.querySelectorAll<HTMLButtonElement>('.spark-card, .follow-up').forEach(button => { button.disabled = busy; });
   $('subtitle').textContent = busy ? 'Thinking…' : steps.length > 1 ? `${steps.length} steps` : '';
   document.getElementById('main')?.setAttribute('aria-busy', String(busy));
 }
@@ -471,8 +446,6 @@ $('question').addEventListener('input', () => {
 });
 $('cancel').addEventListener('click', () => controller?.abort('cancel'));
 $('new-sparks').addEventListener('click', () => { void refreshSparks(); });
-$('dice').addEventListener('click', () => { void refreshSparks(); });
-$('ask-own').addEventListener('click', askOwn);
 $('undo-button').addEventListener('click', undo);
 synthesis?.addEventListener('voiceschanged', renderTrail);
 window.addEventListener('pagehide', () => { controller?.abort('cancel'); stopSpeech(); });

@@ -6,8 +6,8 @@ state needs no React, and plain files keep the Rust asset allowlist and CSP
 unchanged. React + TypeScript + Vite remains the agreed direction when
 account/history screens make shared state and reusable components useful.
 
-- `public/index.html`: toolbar, fresh screen (hero, Sparks), trail, glass
-  dock (New spark chips), the one question box, and the Undo banner.
+- `public/index.html`: toolbar, fresh screen (hero, Sparks), trail, dock
+  (the question box), and the Undo banner.
 - `public/styles.css`: colour tokens (light/dark, purple accent), glass, and
   responsive rules.
 - `src/client/app.ts`: sparks, the trail (steps, folding, Dive deeper), asking,
@@ -24,9 +24,11 @@ account/history screens make shared state and reusable components useful.
   to their question, a two-line preview, and the chosen follow-up (↳), and can
   be reopened. The latest step is at least a screen tall and is scrolled to just
   below the toolbar, so its answer fills in in view.
-- **Dock**: "New spark" chips (✎ Ask your own, 🎲, three sparks) start a new
-  trail; typing in the box continues the current one. Enter asks; Shift+Enter
-  adds a line. The dock and toolbar blur content scrolling beneath them.
+- **Dock**: only the question box; typing continues the current trail. Enter
+  asks; Shift+Enter adds a line. The dock and toolbar blur content scrolling
+  beneath them. The "New spark" chips and "Ask your own" were removed
+  (2026-09-27) because they overlapped Dive deeper; Home's Back/Sparks
+  replace them in the redesign.
 - **Undo**: a new trail shows "Started a new trail · Undo" for six seconds.
 - **Stop** removes the unanswered step and puts the question back in the box.
   Errors show in the step with **Try again**.

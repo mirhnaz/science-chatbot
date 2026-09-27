@@ -88,18 +88,16 @@ test('a spark asks at once and starts a trail; the box moves to the dock', async
   b.requests[0].complete({ suggestions: sparks() }); await flush();
   const cards = b.get('spark-grid').children;
   assert.equal(cards.length, 4);
-  assert.equal(b.get('spark-chips').children.length, 3);
   cards[0].listeners.click();
   assert.equal(b.requests.length, 2, 'a spark asks immediately');
   assert.equal(JSON.parse(b.requests[1].options.body!).question, sparks()[0].question);
   assert.equal(b.body.attributes['data-view'], 'trail');
   assert.equal(b.get('trail').hidden, false);
-  assert.equal(b.get('new-spark').hidden, false);
   assert.deepEqual(b.get('dock-compose').children, [b.get('question-form')], 'the question box moved to the dock');
   assert.equal(b.get('title').textContent, sparks()[0].question);
   assert.equal(b.get('subtitle').textContent, 'Thinking…');
   assert.ok(byClass(b.trail(), 'loading').length === 1);
-  assert.ok(b.get('spark-chips').children.every(chip => chip.disabled), 'sparks wait for the answer');
+  assert.ok(b.get('spark-grid').children.every(card => card.disabled), 'sparks wait for the answer');
   assert.equal(b.get('cancel').hidden, false);
   assert.match(text(b.trail()), /🌱 Topic 0/, 'the trail shows its spark topic');
   b.requests[1].complete(reply()); await flush();
@@ -163,16 +161,15 @@ test('errors offer Try again, which asks the same question', async () => {
   assert.equal(byClass(b.trail(), 'error').length, 0);
 });
 
-test('Ask your own starts an empty trail, and Undo brings the old one back', async () => {
+test('a new spark replaces the trail, and Undo brings the old one back', async () => {
   const b = await browser();
   b.requests[0].complete({ suggestions: sparks() }); await flush();
   const first = vm.runInContext('ask("What is gravity?")', b.context);
   b.requests[1].complete(reply()); await first;
-  b.get('ask-own').listeners.click();
-  assert.equal(b.body.attributes['data-view'], 'fresh');
-  assert.deepEqual(b.get('fresh-compose').children, [b.get('question-form')]);
+  b.context.pending = sparks()[1];
+  vm.runInContext('startTrail(pending)', b.context);
   assert.equal(b.get('undo').hidden, false);
-  assert.equal(b.get('question').focused, false, 'no keyboard: the sparks stay visible');
+  assert.doesNotMatch(text(b.trail()), /Gravity pulls objects together/);
   b.get('undo-button').listeners.click();
   assert.equal(b.body.attributes['data-view'], 'trail');
   assert.match(text(b.trail()), /Gravity pulls objects together/);
@@ -212,7 +209,7 @@ test('spark storage stays bounded and works when storage is blocked or corrupt',
     const b = await browser(stored, blocked);
     b.requests[0].complete({ suggestions: sparks() }); await flush();
     assert.equal(b.get('spark-grid').children.length, 4);
-    b.get('dice').listeners.click();
+    b.get('new-sparks').listeners.click();
     const excluded = new URL(b.requests[1].url, 'http://localhost').searchParams.get('exclude')!.split(',');
     assert.ok(excluded.length <= 40);
     assert.ok(excluded.includes('topic-0'));
@@ -243,12 +240,12 @@ test('sparks arriving during an answer stay disabled until it finishes', async (
   const b = await browser();
   const answering = vm.runInContext('ask("Why is the sky blue?")', b.context);
   b.requests[0].complete({ suggestions: sparks() }); await flush();
-  const chip = b.get('spark-chips').children[0];
-  assert.equal(chip.disabled, true);
-  chip.listeners.click(); b.get('dice').listeners.click();
+  const card = b.get('spark-grid').children[0];
+  assert.equal(card.disabled, true);
+  card.listeners.click(); b.get('new-sparks').listeners.click();
   assert.equal(b.requests.length, 2, 'no new trail or refresh while answering');
   b.requests[1].complete(reply('Blue light scatters.', ['One?', 'Two?', 'Three?']));
   await answering; await flush();
-  assert.equal(b.get('spark-chips').children[0].disabled, false);
-  assert.equal(b.get('dice').disabled, false);
+  assert.equal(b.get('spark-grid').children[0].disabled, false);
+  assert.equal(b.get('new-sparks').disabled, false);
 });
