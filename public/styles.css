@@ -503,10 +503,9 @@ body[data-dock="true"] main {
   .current-head > .step-disc { display: none; }
   .current-question { font-size: 34px; line-height: 40px; }
   .current-head .speak { width: 48px; height: 48px; margin-top: 0; }
-  /* The picture fills the left half, as tall as the answer beside it. */
-  .step-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; margin-top: 22px; align-items: stretch; }
-  .step-body .illustration { display: flex; align-items: center; min-height: 260px; aspect-ratio: auto; margin: 0; border-radius: 22px; }
-  .step-body .illustration > svg { height: 260px; }
+  /* The picture as a full-width banner, the answer below it. */
+  .step-body { display: flex; flex-direction: column; gap: 22px; margin-top: 22px; }
+  .step-body .illustration { width: 100%; height: 200px; aspect-ratio: auto; margin: 0; border-radius: 22px; }
   .step-body .answer { margin: 0; font-size: 18px; line-height: 29px; }
   .dive-label { margin-top: 26px; font-size: 17px; }
   .dive-chips { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 10px; }

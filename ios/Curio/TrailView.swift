@@ -278,16 +278,11 @@ struct CurrentStep: View {
                 .overlay(RoundedRectangle(cornerRadius: Curio.cardRadius).strokeBorder(Curio.border, lineWidth: Curio.borderWidth))
             } else if let reply = step.reply {
                 if wide {
-                    // iPad: the picture fills the left half, as tall as the
-                    // answer beside it; three choices.
-                    HStack(alignment: .top, spacing: 28) {
-                        CategoryIllustration(topic: topic)
-                            .frame(maxWidth: .infinity, minHeight: 260, maxHeight: .infinity)
-                        answer(reply.answer)
-                            .frame(maxWidth: .infinity, alignment: .topLeading)
-                    }
-                    // Both halves take the taller one's height.
-                    .fixedSize(horizontal: false, vertical: true)
+                    // iPad: the picture as a full-width banner, the answer
+                    // below it; three choices.
+                    CategoryIllustration(topic: topic)
+                        .frame(height: 200)
+                    answer(reply.answer)
                 } else {
                     CategoryIllustration(topic: topic)
                     answer(reply.answer)

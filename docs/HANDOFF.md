@@ -776,6 +776,9 @@ tall as the answer, answer 18/28 (was 20/32), web and iOS. (3) Voice: the
 2.5 s pause timer started at the tap, so a slow start or slow first
 partial ended listening; now 8 s for the first words, then 3 s pauses,
 and if nothing was heard an alert says so with the system's reason.
+Follow-up (same day): the user preferred horizontal splits on the iPad
+Trail, so the picture is now a full-width 200 pt banner above the answer
+(web ≥1100 and iPad), replacing the two halves.
 Verified: web screenshots at 1180/1440 with a long Home column; tests.
 iOS installed on iPhone and iPad, not checked by eye here.
 
