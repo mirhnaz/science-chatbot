@@ -11,7 +11,12 @@ struct CurioApp: App {
             ContentView()
                 .environment(models)
                 .environment(naturalVoice)
-                .onAppear(perform: applyTheme)
+                .onAppear {
+                    applyTheme()
+                    #if DEBUG
+                    DebugCapture.start()
+                    #endif
+                }
                 .onChange(of: theme, applyTheme)
         }
     }
