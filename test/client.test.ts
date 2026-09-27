@@ -382,3 +382,27 @@ test('a tapped spark leaves the grid, and a finished trail is not offered again'
   b.get('spark-grid').children[0].listeners.click();
   assert.equal(b.get('earlier-trails').children.length, 0, 'the finished trail is not set aside');
 });
+
+test('Stamps shows every kind, earned or not, and the latest stamps', async () => {
+  const earned = JSON.stringify([
+    { id: 't1', topic: 'Space', earned: '2026-09-20T10:00:00.000Z' },
+    { id: 't2', topic: 'Space', earned: '2026-09-21T10:00:00.000Z' },
+    { id: 't3', topic: null, earned: '2026-09-22T10:00:00.000Z' },
+    { id: 't4', topic: 'Topic 9', earned: '2026-09-23T10:00:00.000Z' }
+  ]);
+  const b = await browser(undefined, false, { 'curio.stamps.v1': earned });
+  assert.equal(b.get('stamps-pill').hidden, false);
+  b.get('stamps-pill').listeners.click();
+  assert.equal(b.body.attributes['data-view'], 'stamps');
+  assert.equal(b.get('dock').hidden, true, 'no question box on Stamps');
+  assert.equal(b.get('stamps-summary').textContent, '4 stamps · 2 of 12 kinds');
+  const kinds = b.get('stamp-kinds').children.map(kind => kind.attributes['aria-label']);
+  assert.equal(kinds.length, 12);
+  assert.equal(kinds[0], 'Space: 2 stamps');
+  assert.equal(kinds[11], 'Curious Mind: 2 stamps', 'own questions and unknown topics count as Curious Mind');
+  assert.equal(kinds[1], 'Animals: not earned yet');
+  assert.equal(b.get('stamp-list').children.length, 4);
+  assert.match(text(b.get('stamp-list').children[0]), /Topic 9 stamp/, 'newest first');
+  b.get('stamps-back').listeners.click();
+  assert.equal(b.body.attributes['data-view'], 'home');
+});

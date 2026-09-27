@@ -20,12 +20,12 @@
 <body data-view="home">
   <a class="skip-link" href="#question">Skip to your question</a>
 
-  <!-- Web nav (≥1400 px, WebTrail.dc.html). Stamps and Grown-ups need
-       screens that do not exist yet, so only Home and My trails show. -->
+  <!-- Web nav (≥1400 px, WebTrail.dc.html). "My trails" waits for saved
+       history and "Grown-ups" for the parent summary, so Home and Stamps show. -->
   <nav id="nav" class="side-nav" aria-label="Main">
     <span class="brand"><span class="brand-mark" id="nav-mark"></span><span>Curio</span></span>
     <button id="nav-home" class="nav-item" type="button">Home</button>
-    <button id="nav-trail" class="nav-item" type="button">My trails</button>
+    <button id="nav-stamps" class="nav-item" type="button">Stamps</button>
     <span class="nav-spacer"></span>
     <div id="profile" class="profile" hidden></div>
   </nav>
@@ -36,7 +36,7 @@
       <header class="app-header">
         <span class="brand"><span class="brand-mark" id="brand-mark"></span><span>Curio</span></span>
         <span class="header-actions">
-          <span id="stamps-pill" class="pill stamps-pill" hidden></span>
+          <button id="stamps-pill" class="pill stamps-pill" type="button" hidden></button>
           <button id="settings-home" class="icon-button" type="button" aria-label="Settings"></button>
         </span>
       </header>
@@ -74,6 +74,22 @@
 
     <!-- Trail complete (Complete.dc.html). -->
     <section id="complete" class="screen complete" aria-labelledby="complete-heading" hidden></section>
+
+    <!-- Stamps: every kind of stamp (11 topics and Curious Mind), then the latest. -->
+    <section id="stamps-screen" class="screen stamps-screen" aria-labelledby="stamps-heading" hidden>
+      <header class="app-header">
+        <button id="stamps-back" class="icon-button" type="button" aria-label="Back to home"></button>
+        <div class="trail-title">
+          <h1 id="stamps-heading">Your stamps</h1>
+          <p id="stamps-summary"></p>
+        </div>
+        <span class="header-spacer"></span>
+      </header>
+      <p id="stamps-empty" class="stamps-empty" hidden>Finish a trail to earn your first stamp!</p>
+      <ul id="stamp-kinds" class="stamp-kinds" aria-label="Stamp collection"></ul>
+      <h2 id="latest-heading" class="stamps-subhead">Latest stamps</h2>
+      <ol id="stamp-list" class="stamp-list" aria-labelledby="latest-heading"></ol>
+    </section>
   </main>
 
   <!-- Bottom bar: the question box (hidden on Trail complete). -->

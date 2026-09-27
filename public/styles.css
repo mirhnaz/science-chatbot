@@ -203,7 +203,7 @@ h1, h2, h3, p { margin: 0; }
 /* Pixel field: a science scene in the bottom half of Home and Trail
    (field-worker.ts), fixed behind the content. It never takes pointer events. */
 .pixel-field { position: fixed; left: 0; right: 0; bottom: 0; width: 100%; height: 50vh; z-index: 0; pointer-events: none; }
-body[data-view="complete"] .pixel-field { display: none; }
+body[data-view="complete"] .pixel-field, body[data-view="stamps"] .pixel-field { display: none; }
 main { position: relative; z-index: 1; }
 
 /* Screens: one column (phone); wider layouts in the breakpoints below. */
@@ -366,6 +366,27 @@ main { position: relative; z-index: 1; }
 .stamp.new { background: var(--accent-fill); color: var(--on-accent); }
 .stamp.locked { background: transparent; border: 2px dashed var(--locked); }
 .complete-actions { display: flex; flex-direction: column; gap: 10px; margin-top: auto; padding-top: 24px; }
+
+/* Stamps */
+.stamps-empty { margin-top: 24px; text-align: center; font-size: 16px; color: var(--muted); }
+.stamp-kinds { list-style: none; margin: 20px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px 12px; }
+.stamp-kind { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+.stamp-kind-disc { width: 72px; height: 72px; padding: 20px; border-radius: 50%; background: var(--cat-fill); color: var(--cat-ink); display: grid; place-items: center; }
+.stamp-kind-disc svg { width: 100%; height: 100%; }
+.stamp-kind.missing .stamp-kind-disc { background: transparent; border: 2px dashed var(--locked); color: var(--upcoming); }
+.stamp-kind-name { font-size: 13px; font-weight: 800; line-height: 16px; color: var(--ink); }
+.stamp-kind-count { font-size: 12px; font-weight: 700; color: var(--label); }
+.stamp-kind:not(.missing) .stamp-kind-count { color: var(--cat-ink); }
+.stamps-subhead { margin-top: 28px; font-family: var(--font-display); font-size: 17px; font-weight: 600; }
+.stamp-list { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.stamp-row { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 14px; border-radius: var(--radius-chip); background: var(--surface); border: var(--border-width) solid var(--border); }
+.stamp-row-disc { flex-shrink: 0; width: 34px; height: 34px; padding: 8px; border-radius: 50%; background: var(--cat-fill); color: var(--cat-ink); display: grid; place-items: center; }
+.stamp-row-disc svg { width: 100%; height: 100%; }
+.stamp-row-name { flex: 1; font-size: 15px; font-weight: 700; }
+.stamp-row-date { font-size: 13px; font-weight: 700; color: var(--label); }
+.screen.stamps-screen { max-width: 720px; }
+@media (min-width: 700px) { .stamp-kinds { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (min-width: 1100px) { .stamp-kinds { grid-template-columns: repeat(6, minmax(0, 1fr)); } .screen.stamps-screen { max-width: 960px; } }
 
 /* Settings */
 .settings { width: min(92vw, 420px); padding: 20px; border-radius: var(--radius-card); border: var(--border-width) solid var(--border); background: var(--surface); color: var(--ink); }

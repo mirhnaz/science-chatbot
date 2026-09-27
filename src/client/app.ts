@@ -88,9 +88,16 @@ interface AppElements {
   status: HTMLParagraphElement;
   'nav-mark': HTMLSpanElement;
   'nav-home': HTMLButtonElement;
-  'nav-trail': HTMLButtonElement;
+  'nav-stamps': HTMLButtonElement;
+  'stamps-screen': HTMLElement;
+  'stamps-back': HTMLButtonElement;
+  'stamps-summary': HTMLParagraphElement;
+  'stamps-empty': HTMLParagraphElement;
+  'stamp-kinds': HTMLUListElement;
+  'stamp-list': HTMLOListElement;
+  'latest-heading': HTMLHeadingElement;
   profile: HTMLDivElement;
-  'stamps-pill': HTMLSpanElement;
+  'stamps-pill': HTMLButtonElement;
   finished: HTMLElement;
   'side-rail': HTMLElement;
 }
@@ -214,7 +221,7 @@ function childName(): string {
 
 /** Steps in a full trail; after the last answer the trail can be finished. */
 const trailLength = 5;
-type View = 'home' | 'trail' | 'complete';
+type View = 'home' | 'trail' | 'complete' | 'stamps';
 let view: View = 'home';
 let steps: Step[] = [];
 let trailId = newTrailId();
@@ -527,17 +534,18 @@ function render() {
   $('home').hidden = view !== 'home';
   $('trail-screen').hidden = view !== 'trail';
   $('complete').hidden = view !== 'complete';
+  $('stamps-screen').hidden = view !== 'stamps';
   // The last step offers Finish instead of the question box.
-  $('dock').hidden = view === 'complete' || (view === 'trail' && isComplete() && !controller);
+  $('dock').hidden = view === 'complete' || view === 'stamps' || (view === 'trail' && isComplete() && !controller);
   const name = trailName();
   $('question').placeholder = view === 'trail' ? `Ask more about ${name ? name.toLowerCase() : 'this'}…` : 'Ask anything…';
   persistTrails();
   renderHome();
   renderTrail();
   if (view === 'complete') renderComplete();
+  if (view === 'stamps') renderStamps();
   $('nav-home').setAttribute('aria-current', String(view === 'home'));
-  $('nav-trail').setAttribute('aria-current', String(view === 'trail'));
-  $('nav-trail').disabled = steps.length === 0;
+  $('nav-stamps').setAttribute('aria-current', String(view === 'stamps'));
   updateField();
   updateControls();
 }
@@ -590,6 +598,7 @@ function renderCollection(name: string) {
   const badge = element('span', 'pill-disc');
   badge.innerHTML = icons.comet;
   pill.append(badge, element('span', undefined, count));
+  pill.setAttribute('aria-label', `${count}: see your stamps`);
 
   const card = $('finished');
   card.hidden = finishedTrails.length === 0;
@@ -791,6 +800,58 @@ function illustration(topic?: string) {
   return figure;
 }
 
+// ---- Stamps --------------------------------------------------------------
+
+/** A stamp's icon: its topic's, or sparkles for Curious Mind (own questions). */
+const curiousIcon = svg('<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>');
+const stampIcon = (topic: string | null) => topic === null ? curiousIcon : category(topic).icon;
+
+/** Every kind of stamp: the bank's topics, then Curious Mind (trails that
+ *  began with the child's own question). */
+const stampKinds: { topic: string | null; name: string }[] = [
+  ...['Space', 'Animals', 'Plants', 'Weather', 'Light', 'Sound', 'Electricity', 'Earth', 'Matter', 'Forces & motion', 'Body']
+    .map(topic => ({ topic, name: topic })),
+  { topic: null, name: 'Curious Mind' }
+];
+
+/** The collection: each kind earned (with how many) or still to find, then
+ *  the latest stamps with their dates. */
+function renderStamps() {
+  const counts = new Map<string | null, number>();
+  for (const stamp of stamps) {
+    const known = stamp.topic !== null && stampKinds.some(kind => kind.topic === stamp.topic);
+    const key = known ? stamp.topic : null;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  const kinds = stampKinds.filter(kind => counts.has(kind.topic)).length;
+  $('stamps-summary').textContent = `${stamps.length === 1 ? '1 stamp' : `${stamps.length} stamps`} · ${kinds} of ${stampKinds.length} kinds`;
+  $('stamps-empty').hidden = stamps.length > 0;
+
+  $('stamp-kinds').replaceChildren(...stampKinds.map(kind => {
+    const count = counts.get(kind.topic) ?? 0;
+    const style = category(kind.topic);
+    const item = element('li', `stamp-kind cat-${style.key}${count ? '' : ' missing'}`);
+    const disc = element('span', 'stamp-kind-disc');
+    disc.innerHTML = stampIcon(kind.topic);
+    item.append(disc, element('span', 'stamp-kind-name', kind.name), element('span', 'stamp-kind-count', count ? `×${count}` : 'Not yet'));
+    item.setAttribute('aria-label', count ? `${kind.name}: ${count === 1 ? '1 stamp' : `${count} stamps`}` : `${kind.name}: not earned yet`);
+    return item;
+  }));
+
+  const latest = stamps.slice(-10).reverse();
+  $('latest-heading').hidden = latest.length === 0;
+  const format = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' });
+  $('stamp-list').replaceChildren(...latest.map(stamp => {
+    const style = category(stamp.topic);
+    const row = element('li', `stamp-row cat-${style.key}`);
+    const disc = element('span', 'stamp-row-disc');
+    disc.innerHTML = stampIcon(stampKinds.some(kind => kind.topic === stamp.topic) ? stamp.topic : null);
+    const date = Number.isNaN(Date.parse(stamp.earned)) ? '' : format.format(new Date(stamp.earned));
+    row.append(disc, element('span', 'stamp-row-name', `${stamp.topic ?? 'Curious Mind'} stamp`), element('span', 'stamp-row-date', date));
+    return row;
+  }));
+}
+
 // ---- Trail complete ------------------------------------------------------
 
 /** Three things from the trail: the tutor's facts (or first sentences) from
@@ -835,7 +896,7 @@ function renderComplete() {
   for (const stamp of stamps.slice(-4)) {
     const own = category(stamp.topic);
     const disc = element('span', `stamp cat-${own.key}${stamp.id === trailId ? ' new' : ''}`);
-    disc.innerHTML = own.icon;
+    disc.innerHTML = stampIcon(stamp.topic);
     disc.setAttribute('role', 'img');
     disc.setAttribute('aria-label', `${stamp.topic ?? 'Curious Mind'} stamp, ${stamp.id === trailId ? 'just earned' : 'earned'}`);
     row.append(disc);
@@ -1042,7 +1103,7 @@ function updateField() {
   const width = window.innerWidth;
   const scene = width < 700 ? 0 : view === 'home' || width >= 1400 ? 2 : 1;
   fieldWorker.postMessage({ type: 'scene', scene, intensity: view === 'trail' ? 0.45 : 1 });
-  fieldWorker.postMessage({ type: 'run', running: view !== 'complete' && document.visibilityState === 'visible' });
+  fieldWorker.postMessage({ type: 'run', running: (view === 'home' || view === 'trail') && document.visibilityState === 'visible' });
   // After this render's layout: where the empty gap is now.
   requestAnimationFrame(sendFieldFocus);
 }
@@ -1079,14 +1140,18 @@ $('brand-mark').innerHTML = icons.comet;
 $('nav-mark').innerHTML = icons.comet;
 const navIcons = {
   home: svg('<path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3z"/>'),
-  trail: svg('<path d="M4 19c4-1 3-6 7-7s3-6 7-7"/><circle cx="4" cy="19" r="2"/><circle cx="18" cy="5" r="2"/>')
+  stamps: svg('<circle cx="12" cy="12" r="8"/><path d="M12 8l1.2 2.6 2.8.3-2.1 1.9.6 2.8L12 14.2 9.5 15.6l.6-2.8L8 10.9l2.8-.3z"/>')
 };
 $('nav-home').replaceChildren();
 withIcon($('nav-home'), navIcons.home, 'Home');
-$('nav-trail').replaceChildren();
-withIcon($('nav-trail'), navIcons.trail, 'My trails');
+$('nav-stamps').replaceChildren();
+withIcon($('nav-stamps'), navIcons.stamps, 'Stamps');
 $('nav-home').addEventListener('click', () => { stopSpeech(); go('home'); });
-$('nav-trail').addEventListener('click', () => { if (steps.length) { go(finished ? 'complete' : 'trail'); scrollToTop(); } });
+const openStamps = () => { stopSpeech(); go('stamps'); scrollToTop(); };
+$('nav-stamps').addEventListener('click', openStamps);
+$('stamps-pill').addEventListener('click', openStamps);
+$('stamps-back').innerHTML = icons.back;
+$('stamps-back').addEventListener('click', () => go('home'));
 const heart = element('span', 'icon');
 heart.innerHTML = icons.heart;
 $('made-with-love').replaceChildren(heart, element('span', undefined, 'Made with love by Ayaan and Naz'));
