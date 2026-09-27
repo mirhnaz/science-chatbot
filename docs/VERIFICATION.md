@@ -57,6 +57,27 @@ Coverage includes:
   three follow-ups in 2,916 ms. Funnel still points directly to port 11436.
   The temporary development server on 11437 was stopped afterward.
 
+## Tutor prompt and model evals
+
+`npm test` uses a mock Ollama, so it cannot judge answer quality. After
+changing `backend/src/tutor.txt`, the reply schema or the model, run
+`scripts/eval-prompt.py`. It sends the server's exact request for 12 science
+questions plus the creator line, political redirect, an unsafe request and a
+model question, then reports words, reading grade, reply time (Ollama's own,
+without network), repeated openings, garbled endings and exact replies. It
+writes every answer to `build/prompt-eval/<label>.md`; read those side by
+side, since the numbers only show where to look.
+
+```sh
+scripts/eval-prompt.py --runs 2                          # local Ollama, gemma4:12b
+scripts/eval-prompt.py --prompt /path/variant.txt --label variant-a
+ssh -N -L 11440:127.0.0.1:11434 <ai-pc> &                # use the PC's GPU
+scripts/eval-prompt.py --ollama http://127.0.0.1:11440 --runs 3
+```
+
+Timing only means something on the machine that serves children (the AI
+PC's RTX 5080); see the handoff for the 2026-09-27 baselines.
+
 ## Host checks during migration
 
 Verified with Rust 1.98.1 on the Linux host:
