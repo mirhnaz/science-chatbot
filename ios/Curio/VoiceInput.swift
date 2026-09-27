@@ -105,11 +105,17 @@ final class VoiceInput {
             }
 
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.record, mode: .measurement, options: .duckOthers)
+            // Default mode keeps the microphone's automatic gain: iPad mics
+            // are much quieter than the iPhone's without it (.measurement
+            // left the iPad hearing almost nothing).
+            try session.setCategory(.record, mode: .default, options: .duckOthers)
             try session.setActive(true, options: .notifyOthersOnDeactivation)
             // The microphone's format, converted to the one the model wants.
             let micFormat = engine.inputNode.outputFormat(forBus: 0)
             guard let converter = AVAudioConverter(from: micFormat, to: format) else { throw VoiceError.noFormat }
+            // iPads record from several microphones: mix them into the one
+            // channel the model takes, rather than keeping only the first.
+            converter.downmix = true
             engine.inputNode.installTap(onBus: 0, bufferSize: 4096, format: micFormat) { buffer, _ in
                 if let converted = Self.convert(buffer, with: converter, to: format) {
                     input.yield(AnalyzerInput(buffer: converted))
