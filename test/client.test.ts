@@ -36,7 +36,17 @@ function* walk(root: Element): Generator<Element> {
 const byClass = (root: Element, name: string) => [...walk(root)].filter(e => e.className.split(' ').includes(name));
 const text = (root: Element): string => root.textContent + root.children.map(text).join('');
 
-async function browser(stored?: string, storageBlocked = false, local: Record<string, string> = { 'curio.welcomed.v1': '1' }) {
+/** Browser history with the entries a real one would keep. */
+class History {
+  entries: unknown[] = [null]; index = 0; onpop: ((event: { state: unknown }) => void) | null = null;
+  get state() { return this.entries[this.index]; }
+  pushState(state: unknown) { this.entries = [...this.entries.slice(0, this.index + 1), state]; this.index++; }
+  replaceState(state: unknown) { this.entries[this.index] = state; }
+  back() { if (this.index > 0) { this.index--; this.onpop?.({ state: this.state }); } }
+  forward() { if (this.index < this.entries.length - 1) { this.index++; this.onpop?.({ state: this.state }); } }
+}
+
+async function browser(stored?: string, storageBlocked = false, local: Record<string, string> = { 'curio.welcomed.v1': '1' }, history?: History) {
   const elements = new Map<string, Element>();
   const get = (id: string): Element => {
     let element = elements.get(id);
@@ -63,7 +73,11 @@ async function browser(stored?: string, storageBlocked = false, local: Record<st
         return [...elements.values()].flatMap(root => [...walk(root)]).filter(e => names.some(n => e.className.split(' ').includes(n)));
       }
     },
-    window: { addEventListener() {}, matchMedia: () => ({ matches: false }) },
+    window: {
+      addEventListener(type: string, handler: (event: { state: unknown }) => void) { if (type === 'popstate' && history) history.onpop = handler; },
+      matchMedia: () => ({ matches: false })
+    },
+    ...(history ? { history } : {}),
     sessionStorage: {
       getItem() { if (storageBlocked) throw new Error('Storage blocked'); return saved ?? null; },
       setItem(_key: string, value: string) { if (storageBlocked) throw new Error('Storage blocked'); saved = value; }
@@ -411,6 +425,35 @@ test('Stamps shows every kind, earned or not, and the latest stamps', async () =
   assert.match(text(b.get('stamp-list').children[0]), /Topic 9 stamp/, 'newest first');
   b.get('stamps-back').listeners.click();
   assert.equal(b.body.attributes['data-view'], 'home');
+});
+
+test('browser Back and Forward follow the screens, and the app\'s back returns to the Home entry', async () => {
+  const history = new History();
+  const earned = JSON.stringify([{ id: 't1', topic: 'Space', earned: '2026-09-20T10:00:00.000Z' }]);
+  const b = await browser(undefined, false, { 'curio.welcomed.v1': '1', 'curio.stamps.v1': earned }, history);
+  b.requests[0].complete({ suggestions: sparks() }); await flush();
+  b.get('stamps-pill').listeners.click();
+  assert.equal(b.body.attributes['data-view'], 'stamps');
+  assert.equal(history.entries.length, 2, 'Stamps is one entry on top of Home');
+  history.back();
+  assert.equal(b.body.attributes['data-view'], 'home', 'browser Back returns Home');
+  history.forward();
+  assert.equal(b.body.attributes['data-view'], 'stamps', 'and Forward goes to Stamps again');
+  b.get('stamps-back').listeners.click();
+  assert.equal(b.body.attributes['data-view'], 'home');
+  assert.equal(history.index, 0, 'the app\'s back steps back to the Home entry');
+
+  b.get('spark-grid').children[0].listeners.click();
+  await answerLatest(b);
+  assert.equal(b.body.attributes['data-view'], 'trail');
+  assert.equal(history.index, 1);
+  history.back();
+  assert.equal(b.body.attributes['data-view'], 'home');
+  history.forward();
+  assert.equal(b.body.attributes['data-view'], 'trail', 'Forward reopens the trail');
+  b.get('back').listeners.click();
+  assert.equal(b.body.attributes['data-view'], 'home');
+  assert.equal(history.index, 0);
 });
 
 test('sparks prefer uncollected topics and mark them "New stamp!" once a stamp exists', async () => {

@@ -228,7 +228,6 @@ its iPad/web artboards (dark derived); ᵈ are derived here.
 | `sparkle` · `Sparkle` | `#FFFFFF` | `#F3F0FF` | Stars and dust in illustrations |
 | `danger` · `Danger` ᵈ | `#B3261E` | `#FF9A93` | Error text |
 | `danger-tint` · `DangerTint` ᵈ | `#FDECEA` | `#3A1F24` | Error background |
-| `ground-veil` (CSS only) | ground at 92 % | ground at 92 % | Blurred bars over scrolling content |
 | `scrim` (CSS only) | ink at 40 % | black at 55 % | Behind dialogs |
 | `halo-opacity` (CSS; iOS in code) | 0.5 | 0.12 | Glow behind the illustration disc |
 | `field-dim` · `FieldDim` | `#EFE8F3` | `#221F3B` | Pixel field, faintest level |

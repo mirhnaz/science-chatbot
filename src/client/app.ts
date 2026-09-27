@@ -86,9 +86,6 @@ interface AppElements {
   'settings-done': HTMLButtonElement;
   'earlier-trails': HTMLDivElement;
   status: HTMLParagraphElement;
-  'nav-mark': HTMLSpanElement;
-  'nav-home': HTMLButtonElement;
-  'nav-stamps': HTMLButtonElement;
   welcome: HTMLElement;
   'welcome-mark': HTMLSpanElement;
   'welcome-name': HTMLInputElement;
@@ -103,7 +100,6 @@ interface AppElements {
   'stamp-kinds': HTMLUListElement;
   'stamp-list': HTMLOListElement;
   'latest-heading': HTMLHeadingElement;
-  profile: HTMLDivElement;
   'stamps-pill': HTMLButtonElement;
   finished: HTMLElement;
   'side-rail': HTMLElement;
@@ -570,11 +566,40 @@ function finishTrail() {
 
 // ---- Rendering -----------------------------------------------------------
 
-/** Switches screens, as a View Transition where the browser supports it. */
-function go(next: View) {
+/** Switches screens, as a View Transition where the browser supports it.
+ *  Each screen away from Home is one browser history entry, so the browser's
+ *  Back and the app's back controls both return Home. */
+function go(next: View, fromHistory = false) {
+  if (!fromHistory && next !== view) syncHistory(next);
   const update = () => { view = next; render(); };
   if (next !== view && typeof document.startViewTransition === 'function' && !reduceMotion()) document.startViewTransition(update);
   else update();
+}
+
+/** Home is the base entry. Leaving Home adds an entry for the new screen;
+ *  moving between Trail, Trail complete and Stamps replaces it; returning
+ *  Home steps back to the base entry (popstate then finds Home showing). */
+function syncHistory(next: View) {
+  if (typeof history === 'undefined' || typeof history.pushState !== 'function') return;
+  const shown = (history.state as { view?: View } | null)?.view;
+  if (next === 'home' || next === 'welcome') {
+    if (shown && shown !== 'home' && shown !== 'welcome') history.back();
+    return;
+  }
+  if (shown && shown !== 'home' && shown !== 'welcome') history.replaceState({ view: next }, '');
+  else history.pushState({ view: next }, '');
+}
+
+/** The browser's Back or Forward: show that entry's screen, if it still can be. */
+function onHistory(event: PopStateEvent) {
+  const wanted = (event.state as { view?: View } | null)?.view ?? 'home';
+  const next = wanted === 'trail' && !steps.length ? 'home'
+    : wanted === 'complete' && !finished ? 'home'
+    : wanted === 'welcome' ? 'home' : wanted;
+  if (next === view) return;
+  stopSpeech();
+  go(next, true);
+  if (next !== 'home') scrollToTop();
 }
 
 function render() {
@@ -586,6 +611,7 @@ function render() {
   $('stamps-screen').hidden = view !== 'stamps';
   // The last step offers Finish instead of the question box.
   $('dock').hidden = view === 'welcome' || view === 'complete' || view === 'stamps' || (view === 'trail' && isComplete() && !controller);
+  document.body.setAttribute('data-dock', String(!$('dock').hidden));
   const name = trailName();
   $('question').placeholder = view === 'trail' ? `Ask more about ${name ? name.toLowerCase() : 'this'}…` : 'Ask anything…';
   persistTrails();
@@ -593,8 +619,6 @@ function render() {
   renderTrail();
   if (view === 'complete') renderComplete();
   if (view === 'stamps') renderStamps();
-  $('nav-home').setAttribute('aria-current', String(view === 'home'));
-  $('nav-stamps').setAttribute('aria-current', String(view === 'stamps'));
   updateField();
   updateControls();
 }
@@ -604,7 +628,7 @@ function renderHome() {
   const hour = new Date().getHours();
   const when = hour >= 18 || hour < 5 ? 'tonight' : 'today';
   $('greeting').textContent = name ? `What are you curious about ${when}, ${name}?` : `What are you curious about ${when}?`;
-  renderCollection(name);
+  renderCollection();
   // Up to three unfinished trails: the newest as the big card, earlier
   // ones as small rows under it.
   const [newest, ...earlier] = openTrails();
@@ -638,8 +662,8 @@ function renderHome() {
 let resumeId: string | null = null;
 
 /** The stamps badge (every width), and on wide layouts "Trails you
- *  finished" and the nav's profile chip. Hidden until there is something to show. */
-function renderCollection(name: string) {
+ *  finished". Hidden until there is something to show. */
+function renderCollection() {
   const count = stamps.length === 1 ? '1 stamp' : `${stamps.length} stamps`;
   const pill = $('stamps-pill');
   pill.hidden = stamps.length === 0;
@@ -664,16 +688,6 @@ function renderCollection(name: string) {
     return row;
   });
   card.replaceChildren(head, ...rows);
-
-  const profile = $('profile');
-  profile.hidden = !name;
-  if (name) {
-    const initial = element('span', 'profile-initial', name.slice(0, 1).toUpperCase());
-    initial.setAttribute('aria-hidden', 'true');
-    const words = element('span', 'profile-words');
-    words.append(element('span', 'profile-name', name), element('span', 'profile-stamps', count));
-    profile.replaceChildren(initial, words);
-  }
 }
 
 /** Wide layouts: the whole trail in a side rail, with the steps still to
@@ -1059,10 +1073,13 @@ async function recapImage(topic: string, facts: string[]): Promise<Blob | null> 
   return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
 }
 
+/** The page scrolls inside <main> (so the bar can be see-through; see
+ *  styles.css → Bottom bar). */
 function scrollToTop() {
-  if (typeof window.scrollTo !== 'function') return;
+  const main = $('main');
+  if (typeof main.scrollTo !== 'function') return;
   const frame = window.requestAnimationFrame ?? ((callback: () => void) => setTimeout(callback, 16));
-  frame(() => window.scrollTo({ top: 0, behavior: reduceMotion() ? 'auto' : 'smooth' }));
+  frame(() => main.scrollTo({ top: 0, behavior: reduceMotion() ? 'auto' : 'smooth' }));
 }
 
 function updateControls() {
@@ -1140,24 +1157,48 @@ function startPixelField() {
   };
   window.addEventListener('pointermove', event => pointer(event, false), { passive: true });
   window.addEventListener('pointerdown', event => pointer(event, true), { passive: true });
+  // Scrolling moves the content, so the empty space moves too.
+  let placing = false;
+  $('main').addEventListener('scroll', () => {
+    if (placing) return;
+    placing = true;
+    requestAnimationFrame(() => { placing = false; sendFieldFocus(); });
+  }, { passive: true });
   document.addEventListener('visibilitychange', updateField);
   updateField();
 }
 
-/** Where the scene sits: centred in the band (the bottom half of the
- *  window) above the question bar, whatever content is on top of it. */
+/** Where the pixels go, in the canvas's coordinates (the bottom half of
+ *  the window, down to its bottom edge behind the see-through bar).
+ *  From 700 px: background pixels fill the space below the screen's content
+ *  (`fill`), and the scene sits in the empty part of it above the bar, never
+ *  behind text or cards: the solar system on the left of Home, the atom
+ *  centred under the Trail step. Phones keep the scene centred in the band,
+ *  with the content scrolling over it. */
 function sendFieldFocus() {
   if (!fieldWorker || !fieldCanvas) return;
   const box = fieldCanvas.getBoundingClientRect();
   const dock = $('dock');
   const floor = (dock.hidden ? window.innerHeight : dock.getBoundingClientRect().top) - box.top;
-  const top = box.height * 0.1, bottom = floor - 12;
-  const column = (view === 'trail' ? $('trail') : $('home')).getBoundingClientRect();
-  fieldWorker.postMessage({ type: 'focus', x: (column.left + column.right) / 2 - box.left, y: (top + bottom) / 2, r: Math.max(0, (bottom - top) / 2) });
+  const post = (fill: number, x0: number, y0: number, x1: number, y1: number) =>
+    fieldWorker!.postMessage({ type: 'focus', fill, rect: [x0, y0, x1, Math.max(y0, y1)] });
+  if (box.width < 700 || view === 'welcome' || view === 'complete') { post(0, 0, box.height * 0.1, box.width, floor - 12); return; }
+  const screen = view === 'trail' ? $('trail') : $('home');
+  // The lowest visible content (the Trail's step and choices; Home's
+  // columns and the credit line).
+  let bottom = -Infinity;
+  for (const child of Array.from(screen.children)) {
+    const rect = child.getBoundingClientRect();
+    if (rect.height > 0) bottom = Math.max(bottom, rect.bottom);
+  }
+  const fill = Math.max(1, Math.min(bottom - box.top + 16, floor - 16));
+  const column = screen.getBoundingClientRect();
+  if (view === 'trail') post(fill, column.left - box.left, fill + 8, column.right - box.left, floor - 12);
+  else post(fill, 0, fill + 8, box.width * 0.7, floor - 12);
 }
 
-/** Scene by width and screen: stars on phones; the solar system on Home and
- *  on wide Trail; an atom on Trail at tablet widths. Quieter on Trail, and
+/** Scene by width and screen: stars on phones (and the welcome); from 700 px
+ *  the solar system on Home and an atom on Trail. Quieter on Trail, and
  *  paused when hidden or finished. */
 function updateField() {
   if (!fieldWorker || !fieldCanvas) return;
@@ -1174,7 +1215,7 @@ function updateField() {
     fieldWorker.postMessage({ type: 'run', running: performance.now() < celebrateUntil && document.visibilityState === 'visible' });
     return;
   }
-  const scene = width < 700 || view === 'welcome' ? 0 : view === 'home' || width >= 1400 ? 2 : 1;
+  const scene = width < 700 || view === 'welcome' ? 0 : view === 'home' ? 2 : 1;
   fieldWorker.postMessage({ type: 'scene', scene, intensity: view === 'trail' ? 0.45 : 1 });
   fieldWorker.postMessage({ type: 'run', running: view !== 'stamps' && document.visibilityState === 'visible' });
   // After this render's layout: where the empty gap is now.
@@ -1218,19 +1259,7 @@ function openSettings() {
 // ---- Wiring --------------------------------------------------------------
 
 $('brand-mark').innerHTML = icons.comet;
-$('nav-mark').innerHTML = icons.comet;
-const navIcons = {
-  home: svg('<path d="M12 3l9 8h-3v9h-5v-6h-2v6H6v-9H3z"/>'),
-  stamps: svg('<circle cx="12" cy="12" r="8"/><path d="M12 8l1.2 2.6 2.8.3-2.1 1.9.6 2.8L12 14.2 9.5 15.6l.6-2.8L8 10.9l2.8-.3z"/>')
-};
-$('nav-home').replaceChildren();
-withIcon($('nav-home'), navIcons.home, 'Home');
-$('nav-stamps').replaceChildren();
-withIcon($('nav-stamps'), navIcons.stamps, 'Stamps');
-$('nav-home').addEventListener('click', () => { stopSpeech(); go('home'); });
-const openStamps = () => { stopSpeech(); go('stamps'); scrollToTop(); };
-$('nav-stamps').addEventListener('click', openStamps);
-$('stamps-pill').addEventListener('click', openStamps);
+$('stamps-pill').addEventListener('click', () => { stopSpeech(); go('stamps'); scrollToTop(); });
 $('stamps-back').innerHTML = icons.back;
 $('stamps-back').addEventListener('click', () => go('home'));
 const heart = element('span', 'icon');
@@ -1273,6 +1302,7 @@ $('settings-done').addEventListener('click', () => {
 wideQuery.addEventListener?.('change', () => { void refreshSparks(); });
 synthesis?.addEventListener('voiceschanged', renderTrail);
 window.addEventListener('pagehide', () => { controller?.abort('cancel'); stopSpeech(); });
+window.addEventListener('popstate', onHistory);
 
 // First launch: the welcome, unless this browser already has a name, a
 // stamp, or a saved trail (someone who used Curio before it existed).
@@ -1282,6 +1312,12 @@ try {
     else localStorage.setItem(welcomedKey, '1');
   }
 } catch { /* Blocked storage: skip the welcome. */ }
+// A reload keeps the screen its browser history entry was showing.
+if (view === 'home' && typeof history !== 'undefined' && history.state) {
+  const shown = (history.state as { view?: View }).view;
+  if (shown === 'stamps' || (shown === 'trail' && steps.length)) view = shown;
+  else history.replaceState(null, '');
+}
 $('welcome-mark').innerHTML = icons.comet;
 withIcon($('welcome-sparks'), svg('<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/>'));
 withIcon($('welcome-trails'), svg('<path d="M4 19c4-1 3-6 7-7s3-6 7-7"/><circle cx="4" cy="19" r="2"/><circle cx="18" cy="5" r="2"/>'));
@@ -1293,6 +1329,11 @@ $('welcome-go').addEventListener('click', () => {
   go('home');
 });
 
+// The content fades out just above the see-through bar (styles.css →
+// Bottom bar), so it needs the bar's height.
+if (typeof ResizeObserver === 'function') {
+  new ResizeObserver(() => document.documentElement.style.setProperty('--dock-h', `${$('dock').offsetHeight}px`)).observe($('dock'));
+}
 render();
 void refreshSparks();
 void loadFacts();

@@ -12,15 +12,18 @@
     | { type: 'colors'; colors: Colors }
     | { type: 'pointer'; x: number; y: number; tap: boolean }
     | { type: 'run'; running: boolean }
-    | { type: 'focus'; x: number; y: number; r: number };
+    | { type: 'focus'; fill: number; rect: [number, number, number, number] };
 
   const vertex = 'attribute vec2 p; void main() { gl_Position = vec4(p, 0.0, 1.0); }';
   // One cell = 8 CSS px; each cell is a square "pixel" with a small gap.
-  // Scenes: 0 starfield + comet (phones), 1 atom (tablets), 2 solar system (wide),
+  // Scenes: 0 starfield + comet (phones), 1 atom (Trail), 2 solar system (Home),
   // 3 the stamp celebration burst (from the tap point).
+  // uRect is the empty space the scene must fit in (left, top, right,
+  // bottom); uFill the line background pixels start below (0: a gradient
+  // over the whole canvas, as on phones).
   const fragment = `
 precision mediump float;
-uniform vec2 uSize; uniform float uDpr, uTime, uScene, uIntensity; uniform vec3 uPointer, uTap, uFocus;
+uniform vec2 uSize; uniform float uDpr, uTime, uScene, uIntensity, uFill; uniform vec3 uPointer, uTap; uniform vec4 uRect;
 uniform vec3 uDim, uMid, uLit, uCrest, uP1, uP2, uP3, uP4;
 float hash(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
 vec2 rot(vec2 p, float a) { float c = cos(a), s = sin(a); return vec2(c * p.x - s * p.y, s * p.x + c * p.y); }
@@ -48,12 +51,14 @@ void main() {
     gl_FragColor = vec4(bc * uIntensity, uIntensity);
     return;
   }
-  float d = smoothstep(0.45, 1.0, y01); d *= d;
+  // Below the fill line: 0 at the line, 1 at the bottom edge.
+  float yy = uFill > 0.5 ? (center.y - uFill) / max(uSize.y - uFill, 1.0) : y01;
+  float d = uFill > 0.5 ? smoothstep(0.0, 0.3, yy) * mix(0.2, 1.0, yy * yy) : pow(smoothstep(0.45, 1.0, y01), 2.0);
   float v = h1 < d * 0.9 ? 0.18 + 0.22 * (0.5 + 0.5 * sin(t * 0.8 + h2 * 6.2832)) : 0.0;
-  if (h2 > (uScene < 0.5 ? 0.985 : 0.992)) v = max(v, (0.35 + 0.35 * sin(t * 2.3 + h1 * 40.0)) * smoothstep(0.05, 0.4, y01));
-  float s = 0.0, ci = 0.0, r = uFocus.z;
-  vec2 f = uFocus.xy;
-  if (r < 3.0 * C) {
+  if (h2 > (uScene < 0.5 ? 0.985 : 0.992)) v = max(v, (0.35 + 0.35 * sin(t * 2.3 + h1 * 40.0)) * smoothstep(uFill > 0.5 ? 0.0 : 0.05, uFill > 0.5 ? 0.15 : 0.4, yy));
+  float s = 0.0, ci = 0.0, r = (uRect.w - uRect.y) * 0.5;
+  vec2 f = vec2(uRect.x + uRect.z, uRect.y + uRect.w) * 0.5;
+  if (r < 5.0 * C) {
   } else if (uScene < 0.5) {
     float ph = fract(t / 7.0);
     vec2 head = vec2(mix(-0.1, 1.1, ph) * uSize.x, f.y + (ph - 0.5) * r * 1.2);
@@ -62,7 +67,7 @@ void main() {
     if (along > 0.0 && along < len && perp < C * (0.6 + 1.4 * along / len)) s = 0.85 * (1.0 - along / len);
     s = max(s, exp(-dot(rel, rel) / (2.8 * C * C)));
   } else if (uScene < 1.5) {
-    float a = min(r * 1.05, uSize.x * 0.3);
+    float a = min(r * 1.05, (uRect.z - uRect.x) * 0.3);
     vec2 ab = vec2(a, a * 0.34);
     if (length(center - f) < C * 2.2 * (1.0 + 0.08 * sin(t * 2.0))) { s = 1.0; ci = 3.0; }
     for (int i = 0; i < 3; i++) {
@@ -72,12 +77,15 @@ void main() {
       if (length(center - f - rot(vec2(ab.x * cos(w), ab.y * sin(w)), ang)) < 1.4 * C) { s = 1.0; ci = 1.0; }
     }
   } else {
-    vec2 c = vec2(uSize.x * 0.08 + 5.0 * C, f.y + r * 0.4);  // low, clear of text above
-    float dn = length(center - c);
-    if (dn < 4.5 * C) { s = 1.0; ci = 3.0; } else if (dn < 6.5 * C) s = 0.5;
+    // The sun near the left of the space; orbits out to its right edge and
+    // within its height (the left halves run off the canvas).
+    float sun = min(4.5 * C, r - 2.0 * C);
+    vec2 c = vec2(uRect.x + (uRect.z - uRect.x) * 0.06 + sun + 2.0 * C, f.y);
+    float dn = length(center - c), reach = uRect.z - c.x - 2.0 * C;
+    if (dn < sun) { s = 1.0; ci = 3.0; } else if (dn < sun + 2.0 * C) s = 0.5;
     for (int i = 0; i < 4; i++) {
-      float fi = float(i), a = uSize.x * (0.15 + 0.15 * fi);
-      vec2 ab = vec2(a, min(a * 0.22, r * 0.9));
+      float fi = float(i), a = reach * (0.34 + 0.22 * fi);
+      vec2 ab = vec2(a, min(a * 0.22, r - 2.0 * C));
       if (ringDist(center - c, ab) < 0.5 * C) s = max(s, 0.4);
       float w = t * (0.5 / (1.0 + 0.6 * fi)) + fi * 1.7;
       if (length(center - c - vec2(ab.x * cos(w), ab.y * sin(w))) < C * (1.3 + 0.35 * fi)) { s = 1.0; ci = fi + 1.0; }
@@ -91,7 +99,7 @@ void main() {
   if (level < 0.05) { gl_FragColor = vec4(0.0); return; }
   vec3 col = level < 0.3 ? uDim : level < 0.55 ? uMid : level < 0.8 ? uLit : uCrest;
   if (ci > 0.5 && s >= max(v, fx)) col = ci < 1.5 ? uP1 : ci < 2.5 ? uP2 : ci < 3.5 ? uP3 : uP4;
-  float alpha = uIntensity * smoothstep(0.0, 0.3, y01);
+  float alpha = uIntensity * (uFill > 0.5 ? smoothstep(-0.02, 0.1, yy) : smoothstep(0.0, 0.3, y01));
   gl_FragColor = vec4(col * alpha, alpha);
 }`;
 
@@ -104,7 +112,8 @@ void main() {
   let colors: Colors | null = null;
   let pointer = { x: -9999, y: -9999, at: -99999 };
   let tap = { x: -9999, y: -9999, at: -99999 };
-  let focus = { x: 0, y: 0, r: 0 };
+  let fill = 0;
+  let rect: [number, number, number, number] = [0, 0, 0, 0];
   let running = false;
   let reduceMotion = false;
   let scheduled = false;
@@ -134,7 +143,7 @@ void main() {
     const location = gl.getAttribLocation(program, 'p');
     gl.enableVertexAttribArray(location);
     gl.vertexAttribPointer(location, 2, gl.FLOAT, false, 0, 0);
-    for (const name of ['uSize', 'uDpr', 'uTime', 'uScene', 'uIntensity', 'uPointer', 'uTap', 'uFocus', 'uDim', 'uMid', 'uLit', 'uCrest', 'uP1', 'uP2', 'uP3', 'uP4']) {
+    for (const name of ['uSize', 'uDpr', 'uTime', 'uScene', 'uIntensity', 'uFill', 'uPointer', 'uTap', 'uRect', 'uDim', 'uMid', 'uLit', 'uCrest', 'uP1', 'uP2', 'uP3', 'uP4']) {
       uniforms[name] = gl.getUniformLocation(program, name);
     }
   }
@@ -153,7 +162,8 @@ void main() {
     gl.uniform1f(uniforms.uIntensity, intensity);
     gl.uniform3f(uniforms.uPointer, pointer.x, pointer.y, reduceMotion ? 99 : (now - pointer.at) / 1000);
     gl.uniform3f(uniforms.uTap, tap.x, tap.y, reduceMotion ? 99 : (now - tap.at) / 1000);
-    gl.uniform3f(uniforms.uFocus, focus.x, focus.y, focus.r);
+    gl.uniform1f(uniforms.uFill, fill);
+    gl.uniform4f(uniforms.uRect, ...rect);
     const set = (name: string, [r, g, b]: RGB) => gl!.uniform3f(uniforms[name], r, g, b);
     set('uDim', colors.dim); set('uMid', colors.mid); set('uLit', colors.lit); set('uCrest', colors.crest);
     colors.planets.forEach((planet, i) => set(`uP${i + 1}`, planet));
@@ -186,7 +196,7 @@ void main() {
         if (data.tap) tap = { ...pointer };
         break;
       case 'run': running = data.running; break;
-      case 'focus': focus = { x: data.x, y: data.y, r: data.r }; break;
+      case 'focus': fill = data.fill; rect = data.rect; break;
     }
     // Draw at once for changes while paused (size, theme), and keep going if running.
     last = 0;
