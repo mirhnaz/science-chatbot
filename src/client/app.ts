@@ -879,7 +879,8 @@ function renderComplete() {
   close.addEventListener('click', () => go('home'));
   header.append(close, element('p', 'caption', `${name ?? 'Your question'} · ${steps.length} steps`), element('span', 'header-spacer'));
 
-  const hero = element('div', `stamp-hero cat-${style.key}`);
+  // The stamp lands only the first time this trail's Complete is shown.
+  const hero = element('div', `stamp-hero cat-${style.key}${celebrated !== trailId ? ' landing' : ''}`);
   hero.innerHTML = style.icon;
   hero.setAttribute('role', 'img');
   hero.setAttribute('aria-label', stampName);
@@ -1051,6 +1052,9 @@ function toggleSpeech(step: Step) {
 // sends small messages. Browsers without workers or OffscreenCanvas skip it.
 let fieldWorker: Worker | null = null;
 let fieldCanvas: HTMLCanvasElement | null = null;
+/** The trail whose stamp was last celebrated, and until when the burst runs. */
+let celebrated: string | null = null;
+let celebrateUntil = 0;
 
 function startPixelField() {
   if (typeof Worker !== 'function' || typeof OffscreenCanvas !== 'function') return;
@@ -1101,11 +1105,31 @@ function sendFieldFocus() {
 function updateField() {
   if (!fieldWorker || !fieldCanvas) return;
   const width = window.innerWidth;
+  if (view === 'complete') {
+    // The stamp celebration: a burst from the stamp, once per trail, then still.
+    if (celebrated !== trailId) {
+      celebrated = trailId;
+      celebrateUntil = performance.now() + 3500;
+      requestAnimationFrame(sendBurst);
+      setTimeout(updateField, 3600);
+    }
+    fieldWorker.postMessage({ type: 'scene', scene: 3, intensity: 1 });
+    fieldWorker.postMessage({ type: 'run', running: performance.now() < celebrateUntil && document.visibilityState === 'visible' });
+    return;
+  }
   const scene = width < 700 ? 0 : view === 'home' || width >= 1400 ? 2 : 1;
   fieldWorker.postMessage({ type: 'scene', scene, intensity: view === 'trail' ? 0.45 : 1 });
   fieldWorker.postMessage({ type: 'run', running: (view === 'home' || view === 'trail') && document.visibilityState === 'visible' });
   // After this render's layout: where the empty gap is now.
   requestAnimationFrame(sendFieldFocus);
+}
+
+/** Starts the celebration burst at the stamp's centre. */
+function sendBurst() {
+  const hero = document.querySelector('#complete .stamp-hero');
+  if (!fieldWorker || !fieldCanvas || !hero) return;
+  const box = fieldCanvas.getBoundingClientRect(), stamp = hero.getBoundingClientRect();
+  fieldWorker.postMessage({ type: 'pointer', x: (stamp.left + stamp.right) / 2 - box.left, y: (stamp.top + stamp.bottom) / 2 - box.top, tap: true });
 }
 
 function sendFieldColors() {

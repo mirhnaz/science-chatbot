@@ -8,7 +8,8 @@ import SwiftUI
 /// and shows a still frame with Reduce Motion.
 struct PixelField: View {
     enum Scene: Float {
-        case starfield = 0, atom = 1, solarSystem = 2
+        /// `burst` is the stamp celebration: rings and sparkles from `tap`.
+        case starfield = 0, atom = 1, solarSystem = 2, burst = 3
     }
 
     let scene: Scene
