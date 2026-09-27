@@ -1,0 +1,24 @@
+/* Mockup only (2026-09-27): the proposed web changes, injected into the real
+   page for the screenshots in this folder. Not loaded by the app. */
+
+/* 1. Web matches iPad: no sidebar at ≥1400 px; the iPad two-column layouts. */
+@media (min-width: 1400px) {
+  body { padding-left: 0; }
+  .side-nav { display: none !important; }
+  .pixel-field { left: 0; width: 100%; }
+  .home > .app-header .brand { visibility: visible; }
+  body[data-view="home"] .dock { left: calc(40px + 380px + 32px); }
+  .trail-screen { grid-template-columns: 340px minmax(0, 1fr); }
+  .side-rail { padding: 24px 24px 24px 32px; background: var(--surface); }
+  .rail-back { display: flex; }
+  .trail { padding: 24px 40px 120px; }
+  .trail > * { max-width: none; }
+  .step-body { flex-direction: row; gap: 28px; }
+  .step-body .illustration { width: 360px; height: 260px; }
+  body[data-view="trail"] .dock { left: calc(340px + 40px); right: 40px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
+  body[data-view="trail"] .dock > * { max-width: none; }
+}
+
+/* 2. Pixels reach the bottom edge on Home: no solid strip behind the bar. */
+body[data-view="home"] .dock { background: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
+body[data-view="home"] .dock::before { display: none; }
