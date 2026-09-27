@@ -84,8 +84,7 @@ interface AppElements {
   settings: HTMLDialogElement;
   'child-name': HTMLInputElement;
   'settings-done': HTMLButtonElement;
-  undo: HTMLDivElement;
-  'undo-button': HTMLButtonElement;
+  'earlier-trails': HTMLDivElement;
   status: HTMLParagraphElement;
   'nav-mark': HTMLSpanElement;
   'nav-home': HTMLButtonElement;
@@ -182,8 +181,11 @@ function save(key: string, value: unknown) {
 const nameKey = 'curio.name.v1';
 const stampsKey = 'curio.stamps.v1';
 const trailsKey = 'curio.trails.v1';
-/** The unfinished trail, so Home can offer it after a reload (7 days). */
-const currentTrailKey = 'curio.trail.v1';
+/** Unfinished trails (up to three, newest first), kept 7 days so Home can
+ *  offer them after a reload. `curio.trail.v1` held one before 2026-09-27. */
+const openTrailsKey = 'curio.open-trails.v1';
+const oldTrailKey = 'curio.trail.v1';
+const openTrailLimit = 3;
 const trailKeepMs = 7 * 24 * 60 * 60 * 1000;
 const record = (item: unknown): item is Record<string, unknown> => !!item && typeof item === 'object';
 const isStamps = (value: unknown): value is Stamp[] => Array.isArray(value) && value.every(item =>
@@ -218,42 +220,94 @@ let steps: Step[] = [];
 let trailId = newTrailId();
 /** The child tapped Finish; until then Home offers to continue the trail. */
 let finished = false;
-let undoState: { steps: Step[]; trailId: string; finished: boolean } | null = null;
-let undoTimer: ReturnType<typeof setTimeout> | undefined;
+/** A trail as saved: its answered steps (without page IDs). */
+interface SavedTrail { id: string; savedAt: string; steps: Omit<Step, 'id'>[] }
+/** Earlier unfinished trails, newest first, set aside when a new one began. */
+let shelf: SavedTrail[] = [];
 let expanded = new Set<number>();
 let nextStepId = 1;
 let controller: AbortController | null = null;
 let stamps = load(stampsKey, isStamps, []);
 let finishedTrails = load(trailsKey, isTrails, []);
-restoreTrail();
+restoreTrails();
 
-/** Brings back an unfinished trail saved in this browser within 7 days. */
-function restoreTrail() {
-  const saved = load(currentTrailKey, (value): value is { id: string; savedAt: string; steps: unknown[] } =>
-    record(value) && typeof value.id === 'string' && typeof value.savedAt === 'string' && Array.isArray(value.steps), null);
-  if (!saved) return;
-  const age = Date.now() - Date.parse(saved.savedAt);
-  if (!(age >= 0 && age <= trailKeepMs) || !saved.steps.length || !saved.steps.every(isSavedStep)) {
-    save(currentTrailKey, null);
-    return;
-  }
-  steps = (saved.steps as Step[]).slice(0, trailLength).map(step => ({
+function isSavedTrail(value: unknown): value is SavedTrail {
+  if (!record(value) || typeof value.id !== 'string' || typeof value.savedAt !== 'string' || !Array.isArray(value.steps)) return false;
+  const age = Date.now() - Date.parse(value.savedAt);
+  return age >= 0 && age <= trailKeepMs && value.steps.length > 0 && value.steps.every(isSavedStep);
+}
+
+/** Brings back unfinished trails saved in this browser within 7 days: the
+ *  newest becomes the current trail, the others wait on Home. */
+function restoreTrails() {
+  let saved = load(openTrailsKey, (value): value is unknown[] => Array.isArray(value), []);
+  const old = load(oldTrailKey, (value): value is unknown => value !== null, null);
+  if (!saved.length && old) saved = [old];
+  if (old !== null) save(oldTrailKey, null);
+  const fresh = saved.filter(isSavedTrail).slice(0, openTrailLimit);
+  if (!fresh.length) return;
+  loadTrail(fresh[0]);
+  shelf = fresh.slice(1);
+}
+
+/** Makes a saved trail the current one (checking its fields again). */
+function loadTrail(saved: SavedTrail) {
+  steps = saved.steps.slice(0, trailLength).map(step => ({
     id: nextStepId++, question: step.question, topic: step.topic, answer: step.answer,
     followUps: step.followUps!.slice(0, 3), chosen: step.chosen,
     label: shortText(step.label, 40), trailName: shortText(step.trailName, 30), fact: shortText(step.fact, 160)
   }));
   trailId = saved.id;
+  finished = false;
+  expanded = new Set();
 }
 
-/** Saves the unfinished trail's answered steps (or forgets a finished one). */
-function persistTrail() {
+/** The current trail's answered steps, or null if it has none. */
+function snapshot(): SavedTrail | null {
   const answeredSteps = steps.filter(step => step.answer !== undefined);
-  if (finished || !answeredSteps.length) { save(currentTrailKey, null); return; }
-  save(currentTrailKey, {
+  if (!answeredSteps.length) return null;
+  return {
     id: trailId, savedAt: new Date().toISOString(),
     steps: answeredSteps.map(({ question, topic, answer, followUps, chosen, label, trailName, fact }) =>
       ({ question, topic, answer, followUps, chosen, label, trailName, fact }))
-  });
+  };
+}
+
+/** Saves the current trail (if unfinished) and the earlier ones. */
+function persistTrails() {
+  const current = finished ? null : snapshot();
+  const open = [...(current ? [current] : []), ...shelf].slice(0, openTrailLimit);
+  save(openTrailsKey, open.length ? open : null);
+}
+
+/** Sets the current trail aside (newest first) if it is unfinished. */
+function shelveCurrent() {
+  const current = finished ? null : snapshot();
+  if (current) shelf = [current, ...shelf.filter(trail => trail.id !== current.id)].slice(0, openTrailLimit - 1);
+}
+
+/** Opens an earlier trail; the current one (if unfinished) is set aside. */
+function reopen(id: string) {
+  const saved = shelf.find(trail => trail.id === id);
+  if (!saved || controller) return;
+  stopSpeech();
+  shelf = shelf.filter(trail => trail.id !== id);
+  shelveCurrent();
+  loadTrail(saved);
+  go('trail');
+  scrollToTop();
+}
+
+/** Home's unfinished trails, newest first. */
+function openTrails() {
+  const current = hasUnfinishedTrail() ? snapshot() : null;
+  return [...(current ? [current] : []), ...shelf].slice(0, openTrailLimit).map(trail => ({
+    id: trail.id,
+    topic: trail.steps[0].topic,
+    question: trail.steps[0].question,
+    latest: trail.steps[trail.steps.length - 1].label ?? trail.steps[trail.steps.length - 1].question,
+    answered: trail.steps.length
+  }));
 }
 
 function newTrailId() {
@@ -367,30 +421,14 @@ function startTrail(spark: Spark) {
   void ask(spark.question, { newTrail: true, topic: spark.topic });
 }
 
+/** Starting another trail keeps this one, if unfinished, for Home. */
 function replaceTrail() {
   stopSpeech();
-  // A finished trail is already saved (stamp, finished list): nothing to undo.
-  undoState = !finished && steps.some(step => step.answer) ? { steps, trailId, finished } : null;
+  shelveCurrent();
   steps = [];
   trailId = newTrailId();
   finished = false;
   expanded = new Set();
-  showUndo();
-}
-
-function showUndo() {
-  clearTimeout(undoTimer);
-  $('undo').hidden = !undoState;
-  if (undoState) undoTimer = setTimeout(() => { undoState = null; $('undo').hidden = true; }, 6000);
-}
-
-function undo() {
-  if (!undoState) return;
-  controller?.abort('undo');
-  ({ steps, trailId, finished } = undoState);
-  undoState = null;
-  showUndo();
-  go(finished ? 'home' : 'trail');
 }
 
 async function ask(question: unknown, options: { newTrail?: boolean; topic?: string } = {}) {
@@ -426,7 +464,7 @@ async function ask(question: unknown, options: { newTrail?: boolean; topic?: str
     return { question: asked, answer: step.answer, followUps: step.followUps };
   } catch (error) {
     const reason: unknown = current.signal.reason;
-    if (current.signal.aborted && (reason === 'undo' || reason === 'replace')) {
+    if (current.signal.aborted && reason === 'replace') {
       return { error: 'Question cancelled.' };
     }
     if (current.signal.aborted && reason !== 'timeout') {
@@ -493,7 +531,7 @@ function render() {
   $('dock').hidden = view === 'complete' || (view === 'trail' && isComplete() && !controller);
   const name = trailName();
   $('question').placeholder = view === 'trail' ? `Ask more about ${name ? name.toLowerCase() : 'this'}…` : 'Ask anything…';
-  persistTrail();
+  persistTrails();
   renderHome();
   renderTrail();
   if (view === 'complete') renderComplete();
@@ -509,21 +547,40 @@ function renderHome() {
   const when = hour >= 18 || hour < 5 ? 'tonight' : 'today';
   $('greeting').textContent = name ? `What are you curious about ${when}, ${name}?` : `What are you curious about ${when}?`;
   renderCollection(name);
+  // Up to three unfinished trails: the newest as the big card, earlier
+  // ones as small rows under it.
+  const [newest, ...earlier] = openTrails();
   const resume = $('resume');
-  resume.hidden = !hasUnfinishedTrail();
-  if (resume.hidden) return;
+  resume.hidden = !newest;
+  resumeId = newest?.id ?? null;
+  const rows = earlier.map(trail => {
+    const style = category(trail.topic);
+    const row = button(`earlier-trail cat-${style.key}`);
+    const disc = element('span', 'earlier-disc');
+    disc.innerHTML = style.icon;
+    const words = element('span', 'earlier-words');
+    words.append(element('span', 'earlier-question', trail.question), element('span', 'earlier-step', `Step ${trail.answered} of ${trailLength}`));
+    row.append(disc, words);
+    withIcon(row, icons.chevronRight);
+    row.setAttribute('aria-label', `Earlier trail: ${trail.question}. Step ${trail.answered} of ${trailLength}.`);
+    row.addEventListener('click', () => reopen(trail.id));
+    return row;
+  });
+  $('earlier-trails').replaceChildren(...rows);
+  if (!newest) return;
   const dots = element('span', 'dots');
-  for (let i = 0; i < trailLength; i++) dots.append(element('span', i < answered() ? 'dot done' : 'dot'));
+  for (let i = 0; i < trailLength; i++) dots.append(element('span', i < newest.answered ? 'dot done' : 'dot'));
   const row = element('span', 'resume-row');
-  const latest = steps[steps.length - 1];
-  row.append(dots, element('span', 'resume-step', `Step ${steps.length} · ${latest.label ?? latest.question}`));
-  resume.replaceChildren(element('span', 'resume-label', 'Continue your trail'), element('span', 'resume-question', steps[0].question), row,
+  row.append(dots, element('span', 'resume-step', `Step ${newest.answered} · ${newest.latest}`));
+  resume.replaceChildren(element('span', 'resume-label', 'Continue your trail'), element('span', 'resume-question', newest.question), row,
     withIcon(element('span', 'resume-go', 'Keep going'), icons.chevronRight));
-  resume.setAttribute('aria-label', `Continue your trail: ${steps[0].question}. Step ${steps.length} of ${trailLength}.`);
+  resume.setAttribute('aria-label', `Continue your trail: ${newest.question}. Step ${newest.answered} of ${trailLength}.`);
 }
+/** The trail the big "Continue your trail" card opens. */
+let resumeId: string | null = null;
 
-/** Wide layouts: the stamps badge, "Trails you finished", and the nav's
- *  profile chip. Hidden until there is something to show. */
+/** The stamps badge (every width), and on wide layouts "Trails you
+ *  finished" and the nav's profile chip. Hidden until there is something to show. */
 function renderCollection(name: string) {
   const count = stamps.length === 1 ? '1 stamp' : `${stamps.length} stamps`;
   const pill = $('stamps-pill');
@@ -895,7 +952,7 @@ function updateControls() {
   $('cancel').hidden = !busy;
   $('new-sparks').disabled = busy || sparksLoading;
   $('resume').disabled = busy;
-  document.querySelectorAll<HTMLButtonElement>('.spark-card, .follow-up').forEach(item => { item.disabled = busy; });
+  document.querySelectorAll<HTMLButtonElement>('.spark-card, .follow-up, .earlier-trail').forEach(item => { item.disabled = busy; });
   $('trail-detail').textContent = busy ? 'Thinking…' : `Trail · Step ${steps.length}`;
   $('main').setAttribute('aria-busy', String(busy));
 }
@@ -972,7 +1029,10 @@ $('question').addEventListener('input', () => {
 });
 $('cancel').addEventListener('click', () => controller?.abort('cancel'));
 $('new-sparks').addEventListener('click', () => { void refreshSparks(); });
-$('resume').addEventListener('click', () => { go('trail'); scrollToTop(); });
+$('resume').addEventListener('click', () => {
+  if (resumeId && (resumeId !== trailId || !hasUnfinishedTrail())) { reopen(resumeId); return; }
+  go('trail'); scrollToTop();
+});
 $('back').addEventListener('click', () => { stopSpeech(); go('home'); });
 $('settings-home').addEventListener('click', openSettings);
 $('settings-trail').addEventListener('click', openSettings);
@@ -980,7 +1040,6 @@ $('settings-done').addEventListener('click', () => {
   save(nameKey, $('child-name').value.trim().slice(0, 40));
   renderHome();
 });
-$('undo-button').addEventListener('click', undo);
 wideQuery.addEventListener?.('change', () => { void refreshSparks(); });
 synthesis?.addEventListener('voiceschanged', renderTrail);
 window.addEventListener('pagehide', () => { controller?.abort('cancel'); stopSpeech(); });

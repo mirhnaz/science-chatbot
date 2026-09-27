@@ -5,7 +5,9 @@ import SwiftUI
 /// of up to `ChatModel.trailLength` steps. Leaving a trail keeps it, and Home
 /// offers to continue it. Each screen draws its own header on the warm ground.
 struct ContentView: View {
-    enum Screen { case home, trail, complete }
+    /// Home is the root; Trail and Trail complete are pushed on top, so the
+    /// system back swipe returns Home.
+    enum Screen: Hashable { case home, trail, complete }
 
     @Environment(ModelStore.self) private var models
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -18,7 +20,7 @@ struct ContentView: View {
     @State private var voice = VoiceInput()
     @State private var speakingStep: UUID?
     @State private var showSettings = false
-    @State private var screen = Screen.home
+    @State private var path: [Screen] = []
     /// At least 1100 pt wide: the two-column iPad layouts.
     @State private var wide = false
     @State private var stamps = StampStore(persists: !ProcessInfo.processInfo.arguments.contains("-autoAsk"))
@@ -43,65 +45,22 @@ struct ContentView: View {
         }
     }
 
+    private var screen: Screen { path.last ?? .home }
+
     var body: some View {
-        NavigationStack {
-            Group {
-                switch screen {
-                case .home:
-                    HomeView(chat: chat, stamps: stamps, resume: { go(.trail) }, start: startTrail, edit: edit,
-                             openSettings: { showSettings = true })
-                        .safeAreaBar(edge: .bottom) {
-                            // Wide: under the Sparks column (40 + 380 + 32 pt in).
-                            bar(placeholder: "Ask anything…", leading: wide ? 452 : nil, send: askFromHome)
-                        }
-                        .toolbar(.hidden, for: .navigationBar)
-                        .transition(.opacity)
-                case .trail:
-                    TrailView(chat: chat, speakingStep: speakingStep, speak: toggleSpeech,
-                              dive: { text in continueTrail { chat.ask(text, using: engines) } },
-                              editFollowUp: edit, retry: { continueTrail { chat.retry(using: engines) } },
-                              finish: finishTrail, back: { go(.home) })
-                        .safeAreaBar(edge: .top) {
-                            // Wide layouts show the trail in the side rail instead.
-                            if !wide {
-                                TrailHeader(title: chat.trailName ?? "Your question", detail: trailDetail,
-                                            back: { go(.home) }, settings: { showSettings = true })
-                            }
-                        }
-                        // A safe-area *bar*: the system keeps the trail clear
-                        // of the question box and fades it as it scrolls
-                        // beneath. (Measuring the bar by hand caused a layout
-                        // loop; a plain inset let text clash with it.) The
-                        // last step offers Finish instead.
-                        .safeAreaBar(edge: .bottom) {
-                            if !chat.isComplete {
-                                bar(placeholder: "Ask more about \(chat.trailName?.lowercased() ?? "this")…",
-                                    leading: wide ? 380 : nil) {
-                                    continueTrail { chat.ask(using: engines) }
-                                }
-                            }
-                        }
-                        .toolbar(.hidden, for: .navigationBar)
-                        .transition(.opacity)
-                case .complete:
-                    CompleteView(chat: chat, stamps: stamps, close: { go(.home) }, newSpark: { go(.home) })
-                        .toolbar(.hidden, for: .navigationBar)
-                        .transition(.opacity)
+        NavigationStack(path: $path) {
+            home
+                .navigationDestination(for: Screen.self) { destination in
+                    switch destination {
+                    case .home: home
+                    case .trail: trail
+                    case .complete: complete
+                    }
                 }
-            }
-            .background(Curio.ground)
-            .environment(\.curioWide, wide)
-            .onGeometryChange(for: Bool.self) { $0.size.width >= 1100 } action: { wide = $0 }
-            .onChange(of: wide, initial: true) { _, wide in chat.sparkCount = wide ? 6 : 4 }
-            .overlay(alignment: .top) {
-                if chat.undoSteps != nil {
-                    UndoBanner(undo: { chat.undo() }, expire: { chat.clearUndo() })
-                        .padding(.top, 8)
-                        .transition(.move(edge: .top).combined(with: .opacity))
-                }
-            }
-            .animation(.snappy, value: chat.undoSteps != nil)
         }
+        .environment(\.curioWide, wide)
+        .onGeometryChange(for: Bool.self) { $0.size.width >= 1100 } action: { wide = $0 }
+        .onChange(of: wide, initial: true) { _, wide in chat.sparkCount = wide ? 6 : 4 }
         .onChange(of: chat.isLoading) { _, loading in if loading { stopSpeech() } }
         .onChange(of: speech.isSpeaking) { _, speaking in if !speaking { speakingStep = nil } }
         .onChange(of: chat.steps.isEmpty) { _, empty in if empty { go(.home) } }
@@ -146,6 +105,49 @@ struct ContentView: View {
         #endif
     }
 
+    private var home: some View {
+        HomeView(chat: chat, stamps: stamps, resume: resume, start: startTrail, edit: edit,
+                 openSettings: { showSettings = true })
+            .safeAreaBar(edge: .bottom) {
+                // Wide: under the Sparks column (40 + 380 + 32 pt in).
+                bar(placeholder: "Ask anything…", leading: wide ? 452 : nil, send: askFromHome)
+            }
+            .toolbar(.hidden, for: .navigationBar)
+    }
+
+    private var trail: some View {
+        TrailView(chat: chat, speakingStep: speakingStep, speak: toggleSpeech,
+                  dive: { text in continueTrail { chat.ask(text, using: engines) } },
+                  editFollowUp: edit, retry: { continueTrail { chat.retry(using: engines) } },
+                  finish: finishTrail, back: { go(.home) })
+            .safeAreaBar(edge: .top) {
+                // Wide layouts show the trail in the side rail instead.
+                if !wide {
+                    TrailHeader(title: chat.trailName ?? "Your question", detail: trailDetail,
+                                back: { go(.home) }, settings: { showSettings = true })
+                }
+            }
+            // A safe-area *bar*: the system keeps the trail clear of the
+            // question box and fades it as it scrolls beneath. (Measuring the
+            // bar by hand caused a layout loop; a plain inset let text clash
+            // with it.) The last step offers Finish instead.
+            .safeAreaBar(edge: .bottom) {
+                if !chat.isComplete {
+                    bar(placeholder: "Ask more about \(chat.trailName?.lowercased() ?? "this")…",
+                        leading: wide ? 380 : nil) {
+                        continueTrail { chat.ask(using: engines) }
+                    }
+                }
+            }
+            .toolbar(.hidden, for: .navigationBar)
+            .background(Curio.ground)
+    }
+
+    private var complete: some View {
+        CompleteView(chat: chat, stamps: stamps, close: { go(.home) }, newSpark: { go(.home) })
+            .toolbar(.hidden, for: .navigationBar)
+    }
+
     /// The bottom bar: centred at the readable width, or, on wide layouts,
     /// under the main column from `leading` to 40 pt from the edge.
     @ViewBuilder
@@ -166,9 +168,18 @@ struct ContentView: View {
         return "Trail · Step \(chat.steps.count)"
     }
 
+    /// Home clears the stack; Trail and Trail complete each sit directly on
+    /// Home, so going back from either returns Home.
     private func go(_ next: Screen) {
         guard next != screen else { return }
-        withAnimation(reduceMotion ? .easeInOut(duration: 0.2) : .smooth(duration: 0.35)) { screen = next }
+        path = next == .home ? [] : [next]
+    }
+
+    /// "Continue your trail" (or an earlier trail's row) on Home.
+    private func resume(_ id: UUID) {
+        stopSpeech()
+        if id != chat.trailID || !chat.hasUnfinishedTrail { chat.reopen(id) }
+        go(.trail)
     }
 
     /// Adds a step to the trail inside the same smooth animation that folds
@@ -183,7 +194,8 @@ struct ContentView: View {
         go(.trail)
     }
 
-    /// A question typed on Home starts a new trail (Undo brings back the old).
+    /// A question typed on Home starts a new trail; an unfinished one is kept
+    /// for Home.
     private func askFromHome() {
         stopSpeech()
         let typed = chat.question
@@ -237,22 +249,15 @@ struct BrandMark: View {
     }
 }
 
-/// "Started a new trail · Undo", for a few seconds after something new.
-struct UndoBanner: View {
-    let undo: () -> Void
-    let expire: () -> Void
+/// Keeps the system back swipe working on screens that hide the navigation
+/// bar (Trail and Trail complete draw their own Back and Close buttons).
+extension UINavigationController: @retroactive UIGestureRecognizerDelegate {
+    override open func viewDidLoad() {
+        super.viewDidLoad()
+        interactivePopGestureRecognizer?.delegate = self
+    }
 
-    var body: some View {
-        HStack(spacing: 14) {
-            Text("Started a new trail")
-            Button("Undo", action: undo).fontWeight(.semibold)
-        }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 10)
-        .glassEffect(.regular.interactive(), in: .capsule)
-        .task {
-            try? await Task.sleep(for: .seconds(6))
-            expire()
-        }
+    public func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        viewControllers.count > 1
     }
 }

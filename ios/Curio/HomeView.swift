@@ -7,7 +7,8 @@ import SwiftUI
 struct HomeView: View {
     let chat: ChatModel
     let stamps: StampStore
-    let resume: () -> Void
+    /// Opens an unfinished trail (the current one or an earlier one).
+    let resume: (UUID) -> Void
     let start: (Suggestion) -> Void
     let edit: (String) -> Void
     let openSettings: () -> Void
@@ -36,9 +37,7 @@ struct HomeView: View {
                             .font(Curio.display(34, .bold, relativeTo: .largeTitle))
                             .foregroundStyle(Curio.ink)
                             .accessibilityAddTraits(.isHeader)
-                        if chat.hasUnfinishedTrail {
-                            ResumeCard(chat: chat, resume: resume)
-                        }
+                        OpenTrails(trails: chat.openTrails, resume: resume)
                         if !stamps.trails.isEmpty {
                             FinishedTrailsCard(trails: stamps.trails)
                         }
@@ -70,10 +69,8 @@ struct HomeView: View {
                     .foregroundStyle(Curio.ink)
                     .accessibilityAddTraits(.isHeader)
                     .padding(.top, 18)
-                if chat.hasUnfinishedTrail {
-                    ResumeCard(chat: chat, resume: resume)
-                        .padding(.top, 18)
-                }
+                OpenTrails(trails: chat.openTrails, resume: resume)
+                    .padding(.top, 18)
                 SparksGrid(chat: chat, start: start, edit: edit)
                     .padding(.top, 22)
                 MadeWithLove()
@@ -99,7 +96,7 @@ struct HomeView: View {
                 .tracking(0.22)
                 .foregroundStyle(Curio.ink)
             Spacer()
-            if wide && !stamps.stamps.isEmpty {
+            if !stamps.stamps.isEmpty {
                 StampsBadge(count: stamps.stamps.count)
             }
             CircleIconButton(label: "Settings", symbol: "gearshape", action: openSettings)
@@ -108,8 +105,8 @@ struct HomeView: View {
     }
 }
 
-/// "3 stamps": a count only. (The design links it to a Stamps screen, which
-/// does not exist yet.)
+/// "3 stamps", on every layout: a count only for now. (The design links it
+/// to a Stamps screen, which does not exist yet.)
 struct StampsBadge: View {
     let count: Int
 
@@ -171,13 +168,71 @@ struct FinishedTrailsCard: View {
     }
 }
 
-/// "Continue your trail": shown only while a trail is unfinished.
+/// Unfinished trails (up to three, newest first): the newest as the big
+/// "Continue your trail" card, earlier ones as small rows under it.
+struct OpenTrails: View {
+    let trails: [TrailSummary]
+    let resume: (UUID) -> Void
+
+    var body: some View {
+        if let newest = trails.first {
+            VStack(alignment: .leading, spacing: 10) {
+                ResumeCard(trail: newest) { resume(newest.id) }
+                ForEach(trails.dropFirst()) { trail in
+                    EarlierTrailRow(trail: trail) { resume(trail.id) }
+                }
+            }
+        }
+    }
+}
+
+/// An earlier unfinished trail: topic icon, first question, progress.
+struct EarlierTrailRow: View {
+    let trail: TrailSummary
+    let resume: () -> Void
+
+    var body: some View {
+        let style = CategoryStyle.of(trail.topic)
+        Button(action: resume) {
+            HStack(spacing: 12) {
+                Image(systemName: style.symbol)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(style.foreground)
+                    .frame(width: 36, height: 36)
+                    .background(style.fill, in: .circle)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(trail.question)
+                        .font(Curio.body(15, .bold, relativeTo: .subheadline))
+                        .foregroundStyle(Curio.ink)
+                        .lineLimit(1)
+                    Text("Step \(trail.answered) of \(ChatModel.trailLength)")
+                        .font(Curio.body(12, .bold, relativeTo: .caption))
+                        .foregroundStyle(Curio.label)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(Curio.accent)
+            }
+            .padding(.horizontal, 14)
+            .frame(minHeight: 56)
+            .background(Curio.surface, in: .rect(cornerRadius: Curio.chipRadius))
+            .overlay(RoundedRectangle(cornerRadius: Curio.chipRadius).strokeBorder(Curio.border, lineWidth: Curio.borderWidth))
+            .contentShape(.rect(cornerRadius: Curio.chipRadius))
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Earlier trail: \(trail.question). Step \(trail.answered) of \(ChatModel.trailLength).")
+        .accessibilityHint("Opens this trail where you left off")
+        .accessibilityAddTraits(.isButton)
+    }
+}
+
+/// "Continue your trail": the newest unfinished trail.
 struct ResumeCard: View {
-    let chat: ChatModel
+    let trail: TrailSummary
     let resume: () -> Void
     @Environment(\.curioWide) private var wide
-
-    private var current: Int { chat.steps.count }
 
     var body: some View {
         Button(action: resume) {
@@ -187,13 +242,13 @@ struct ResumeCard: View {
                     .font(Curio.body(12, .heavy, relativeTo: .caption))
                     .tracking(0.96)
                     .opacity(0.85)
-                Text(chat.steps.first?.question ?? "")
+                Text(trail.question)
                     .font(Curio.display(wide ? 22 : 18, .semibold, relativeTo: .headline))
                     .multilineTextAlignment(.leading)
                 HStack(spacing: 12) {
-                    ProgressDots(done: chat.answeredSteps, total: ChatModel.trailLength)
+                    ProgressDots(done: trail.answered, total: ChatModel.trailLength)
                     // The tutor's label for the step ("The nucleus"), else its question.
-                    Text("Step \(current) · \(chat.steps.last.map { $0.reply?.label ?? $0.question } ?? "")")
+                    Text("Step \(trail.answered) · \(trail.latest)")
                         .font(Curio.body(13, .bold, relativeTo: .footnote))
                         .lineLimit(1)
                         .opacity(0.9)
@@ -220,7 +275,7 @@ struct ResumeCard: View {
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Continue your trail: \(chat.steps.first?.question ?? ""). Step \(current) of \(ChatModel.trailLength).")
+        .accessibilityLabel("Continue your trail: \(trail.question). Step \(trail.answered) of \(ChatModel.trailLength).")
         .accessibilityHint("Opens the trail where you left off")
         .accessibilityAddTraits(.isButton)
     }

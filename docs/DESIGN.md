@@ -44,8 +44,14 @@ stamps and finished trails are kept **on the device only**.
   and one fact per answer for the recap and "So far you know". When a field
   is missing, the step's question, the spark topic, or the answer's first
   sentence stands in.
-- An unfinished trail is saved on the device for 7 days (resume card);
-  finished trails are not kept for resuming.
+- Up to **three unfinished trails** are kept on the device for 7 days: the
+  newest as the "Continue your trail" card, earlier ones as small rows under
+  it (topic icon, question, "Step N of 5"). Starting a trail sets the current
+  one aside; a fourth drops the oldest; finished trails are not kept. There
+  is no Undo banner (starting a trail no longer loses one).
+- The stamps count pill shows on every layout (phone, iPad, web).
+- iOS navigation: Home is the root and Trail / Trail complete are pushed,
+  so the system edge swipe goes back to Home.
 - Microphone: iOS only, on-device recognition, fills the box (never sends by
   itself). Hidden on the web, where browser speech services may send audio
   to third parties.

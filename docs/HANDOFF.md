@@ -550,6 +550,27 @@ deployed server, which still has the old prompt until redeployed).
 To go live: pull on mir-omarchy-pc, `npm run build`, restart
 `curio-web.service` (new prompt, schema, Body topic, `count` parameter).
 
+### iPhone feedback fixes (2026-09-27)
+
+The user tested on the iPhone (Curio installed there today; free profile,
+7 days) and reported: the resumable trail vanished once another trail was
+started; only one unfinished trail was offered; no back swipe; no stamps
+count on the phone. Agreed and done:
+- Up to three unfinished trails (current + two earlier), 7 days each, on
+  web (`curio.open-trails.v1`, migrates `curio.trail.v1`) and iOS
+  (`unfinishedTrails`, migrates `unfinishedTrail`). Newest = resume card,
+  earlier = rows; a fourth drops the oldest. The Undo banner was removed.
+- iOS uses `NavigationStack(path:)`: Home root, Trail / Trail complete
+  pushed directly on Home; a `UINavigationController` extension keeps the
+  edge swipe working with the system bar hidden.
+- Stamps pill on phone layouts too (web and iOS); still a count only.
+
+Verified: 24 Rust + 40 HTTP/frontend tests (new: three open trails,
+migration), typecheck, Clippy, 10 ScienceCore tests, iOS builds; web phone
+Home screenshots (light/dark) with three trails and the pill. **Needs the
+user on the iPhone:** the back swipe, reopening an earlier trail, and the
+trails surviving a relaunch.
+
 ## Agreed direction, not yet implemented
 
 The user expects login, conversation history, and more functionality over time.

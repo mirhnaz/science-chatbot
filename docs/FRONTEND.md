@@ -38,7 +38,8 @@ screens make shared state and reusable components useful.
   finished" and a stamps count) and the Trail gets a side rail showing every
   step, the steps still to come, and "So far you know"; at ≥1400 px a nav
   (Home, My trails, profile chip) is added. See DESIGN.md → Screens.
-- **Undo**: a new trail shows "Started a new trail · Undo" for six seconds.
+- **Open trails**: up to three unfinished trails, newest first. Starting a
+  trail sets the current one aside; tapping an earlier row reopens it.
 - **Stop** removes the unanswered step and puts the question back in the
   box. Errors show in the step with **Try again**.
 - **Read aloud** is a button on each answer when the browser has a local
@@ -49,8 +50,9 @@ Every question is still sent to `/api/chat` on its own. Browser storage: recent 
 (`curio.theme.v1`), first name (`curio.name.v1`), stamps (`curio.stamps.v1`:
 trail ID, topic, date) and finished trails (`curio.trails.v1`: trail ID,
 topic, first question, date; last 100), and the unfinished trail
-(`curio.trail.v1`: its answered steps with questions, answers and the
-tutor's extras; forgotten after 7 days or when finished). Wide windows ask
+(`curio.open-trails.v1`: up to three, each with its answered steps,
+questions, answers and the tutor's extras; forgotten after 7 days or when
+finished; the older single-trail key `curio.trail.v1` is migrated once). Wide windows ask
 for six sparks (`count=6`). The page uses the reply's optional `label`,
 `trailName`, and `fact` when present. There is no microphone on the web.
 
