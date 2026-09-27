@@ -785,7 +785,11 @@ only the last word. `VoiceInput` now uses iOS 26's `SpeechAnalyzer` with a
 child speaks, finished phrases kept and only the phrase in progress
 replaced (SFSpeechRecognizer's partial results reset after pauses). Still
 on-device; Apple's model downloads once via `AssetInventory` if missing.
-Builds and is installed; **not tested by voice here** (needs the user).
+Then on the iPad it caught only the first loud words: `.measurement` mode
+had turned off automatic gain, and mixing the iPad's mic channels made it
+quieter. Now the input uses voice processing (`setVoiceProcessingEnabled`,
+`.playAndRecord`) and only the processed first channel (`b1f05f9`,
+`143914a`). **Verified by the user by voice on iPhone and iPad.**
 Verified: web screenshots at 1180/1440 with a long Home column; tests.
 iOS installed on iPhone and iPad, not checked by eye here.
 
