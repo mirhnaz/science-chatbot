@@ -424,7 +424,7 @@ struct SideRail: View {
                     .frame(width: 48, height: 48)
                     .background(style.fill, in: .circle)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(chat.topic ?? "Your question")
+                    Text(chat.trailName ?? "Your question")
                         .font(Curio.display(22, .semibold, relativeTo: .title2))
                         .foregroundStyle(Curio.ink)
                     Text("\(chat.topic.map { "\($0) trail" } ?? "Trail") · \(min(current, ChatModel.trailLength)) of \(ChatModel.trailLength)")
@@ -451,7 +451,7 @@ struct SideRail: View {
             }
             .scrollBounceBehavior(.basedOnSize)
 
-            let known = chat.steps.dropLast().compactMap(\.reply?.answer).suffix(3)
+            let known = chat.steps.dropLast().compactMap(\.reply).suffix(3).map(stepFact)
             if !known.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("So far you know")
@@ -459,13 +459,13 @@ struct SideRail: View {
                         .font(Curio.body(12, .heavy, relativeTo: .caption))
                         .tracking(0.72)
                         .foregroundStyle(Curio.label)
-                    ForEach(Array(known.enumerated()), id: \.offset) { _, answer in
+                    ForEach(Array(known.enumerated()), id: \.offset) { _, fact in
                         HStack(alignment: .top, spacing: 8) {
                             Image(systemName: "checkmark")
                                 .font(.system(size: 14, weight: .bold))
                                 .foregroundStyle(Curio.success)
                                 .accessibilityHidden(true)
-                            Text(firstSentence(answer))
+                            Text(fact)
                                 .font(Curio.body(14, .bold, relativeTo: .footnote))
                                 .foregroundStyle(Curio.ink)
                         }
@@ -528,7 +528,7 @@ struct SideRail: View {
             }
         } else {
             let label = number > ChatModel.trailLength
-                ? (chat.topic.map { "\($0) stamp" } ?? "Your stamp")
+                ? (chat.trailName.map { "\($0) stamp" } ?? "Your stamp")
                 : (number == current + 1 ? "Next step" : "Step \(number)")
             HStack(spacing: 12) {
                 Circle()

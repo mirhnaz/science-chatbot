@@ -22,7 +22,8 @@ struct TrailStep: Identifiable {
 
 /// Screen state: the current trail (one topic's chain of questions), the
 /// question box, and the starter ideas. Each question is still sent to the
-/// tutor on its own; the trail is only kept on this device for this session.
+/// tutor on its own. An unfinished trail is saved on this device for 7 days
+/// so Home can offer it again (see `SavedTrail`).
 /// `@MainActor` keeps every change on the UI thread; model work happens inside
 /// the engines and returns here when finished.
 @MainActor @Observable
@@ -30,17 +31,32 @@ final class ChatModel {
     /// Steps in a full trail; after the last answer the trail is complete.
     static let trailLength = 5
 
+    /// How long an unfinished trail is kept for "Continue your trail".
+    static let keepUnfinished: TimeInterval = 7 * 24 * 60 * 60
+    private static let savedTrailKey = "unfinishedTrail"
+
     var question = ""
-    private(set) var steps: [TrailStep] = []
+    private(set) var steps: [TrailStep] = [] {
+        didSet { persist() }
+    }
     /// Identifies the current trail, so it earns only one stamp.
     private(set) var trailID = UUID()
+    /// Four sparks on phones, six on wide layouts; changing it reshuffles.
+    var sparkCount = 4 {
+        didSet { if sparkCount != oldValue { surprise() } }
+    }
     private(set) var suggestions: [Suggestion] = []
     /// The trail replaced by "something new", kept briefly for Undo.
     private(set) var undoSteps: [TrailStep]?
     private var undoTrailID: UUID?
     private var undoFinished = false
     /// The child tapped Finish and saw Trail complete.
-    private(set) var isFinished = false
+    private(set) var isFinished = false {
+        didSet { persist() }
+    }
+    /// False for Debug test runs (`-autoAsk`), which must not replace a
+    /// child's saved trail.
+    private let persists: Bool
 
     private var recent = RecentSuggestions()
     private var task: Task<Void, Never>?
@@ -63,12 +79,17 @@ final class ChatModel {
     /// The starter topic, or nil for a question the child typed.
     var topic: String? { steps.first?.topic }
 
-    init() {
+    /// The tutor's name for the trail ("Comets"), else the starter topic.
+    var trailName: String? { steps.lazy.compactMap(\.reply?.trailName).first ?? topic }
+
+    init(persists: Bool = true) {
+        self.persists = persists
+        if persists { restore() }
         surprise()
     }
 
     func surprise() {
-        suggestions = BundledText.suggestionBank.select(excluding: recent.ids)
+        suggestions = BundledText.suggestionBank.select(excluding: recent.ids, count: sparkCount)
         recent.record(suggestions)
     }
 
@@ -131,7 +152,8 @@ final class ChatModel {
 
     private func replaceTrail() {
         task?.cancel()
-        undoSteps = steps.contains { $0.reply != nil } ? steps : nil
+        // A finished trail is already saved (stamp, finished list): no Undo.
+        undoSteps = !isFinished && steps.contains { $0.reply != nil } ? steps : nil
         undoTrailID = trailID
         undoFinished = isFinished
         trailID = UUID()
@@ -182,4 +204,67 @@ final class ChatModel {
         }
         throw TutorError.unreachable  // not reached: the last engine rethrows
     }
+
+    // MARK: Saving the unfinished trail
+
+    /// Saves the answered steps of an unfinished trail, or forgets a
+    /// finished or empty one.
+    private func persist() {
+        guard persists else { return }
+        let answered = steps.compactMap { step in
+            step.reply.map { SavedTrail.Step(question: step.question, topic: step.topic, chosen: step.chosen,
+                                             answer: $0.answer, followUps: $0.followUps, label: $0.label,
+                                             trailName: $0.trailName, fact: $0.fact) }
+        }
+        guard !isFinished, !answered.isEmpty,
+              let data = try? JSONEncoder().encode(SavedTrail(id: trailID, saved: .now, steps: answered))
+        else {
+            UserDefaults.standard.removeObject(forKey: Self.savedTrailKey)
+            return
+        }
+        UserDefaults.standard.set(data, forKey: Self.savedTrailKey)
+    }
+
+    /// Brings back a trail saved within `keepUnfinished`.
+    private func restore() {
+        guard let data = UserDefaults.standard.data(forKey: Self.savedTrailKey),
+              let saved = try? JSONDecoder().decode(SavedTrail.self, from: data),
+              Date.now.timeIntervalSince(saved.saved) < Self.keepUnfinished
+        else {
+            UserDefaults.standard.removeObject(forKey: Self.savedTrailKey)
+            return
+        }
+        // Checked again, like a fresh answer, so old or edited data cannot
+        // show anything the tutor rules would reject.
+        let restored = saved.steps.prefix(Self.trailLength).compactMap { step -> TrailStep? in
+            guard let reply = try? validateReply(answer: step.answer, followUps: step.followUps, label: step.label,
+                                                 trailName: step.trailName, fact: step.fact)
+            else { return nil }
+            var trailStep = TrailStep(question: step.question, topic: step.topic, reply: reply)
+            trailStep.chosen = step.chosen
+            return trailStep
+        }
+        guard restored.count == saved.steps.count else { return }
+        trailID = saved.id
+        steps = restored
+    }
+}
+
+/// An unfinished trail as saved in UserDefaults: questions, answers, and the
+/// tutor's extras, with the time it was saved.
+private struct SavedTrail: Codable {
+    struct Step: Codable {
+        let question: String
+        let topic: String?
+        let chosen: String?
+        let answer: String
+        let followUps: [String]
+        let label: String?
+        let trailName: String?
+        let fact: String?
+    }
+
+    let id: UUID
+    let saved: Date
+    let steps: [Step]
 }

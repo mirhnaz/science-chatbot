@@ -319,3 +319,54 @@ test('sparks arriving during an answer stay disabled until it finishes', async (
   assert.equal(b.get('spark-grid').children[0].disabled, false);
   assert.equal(b.get('new-sparks').disabled, false);
 });
+
+test('the tutor’s trail name, step label and facts are used when present', async () => {
+  const b = await browser();
+  b.requests[0].complete({ suggestions: sparks() }); await flush();
+  b.get('spark-grid').children[0].listeners.click();
+  await answerLatest(b, { ...reply('Comets are icy. They melt near the Sun.'), label: 'Comet tails', trailName: 'Comets', fact: 'Comets are dirty snowballs.' });
+  assert.equal(b.get('trail-name').textContent, 'Comets');
+  assert.equal(b.get('question').placeholder, 'Ask more about comets…');
+  b.get('back').listeners.click();
+  assert.match(text(b.get('resume')), /Step 1 · Comet tails/);
+  const saved = JSON.parse(b.local['curio.trail.v1']);
+  assert.equal(saved.steps[0].fact, 'Comets are dirty snowballs.', 'saved with the trail');
+});
+
+test('an unfinished trail comes back after a reload for 7 days, then is forgotten', async () => {
+  const step = { question: 'What is a comet?', topic: 'Space', answer: 'An icy ball.', followUps: ['A?', 'B?', 'C?'], trailName: 'Comets', label: 'Comets' };
+  const fresh = { 'curio.trail.v1': JSON.stringify({ id: 'trail-1', savedAt: new Date(Date.now() - 6 * 864e5).toISOString(), steps: [step] }) };
+  const b = await browser(undefined, false, fresh);
+  assert.equal(b.get('resume').hidden, false, 'six days old: offered again');
+  b.get('resume').listeners.click();
+  assert.equal(b.get('trail-name').textContent, 'Comets');
+  assert.match(text(b.trail()), /An icy ball/);
+
+  const stale = { 'curio.trail.v1': JSON.stringify({ id: 'trail-2', savedAt: new Date(Date.now() - 8 * 864e5).toISOString(), steps: [step] }) };
+  const old = await browser(undefined, false, stale);
+  assert.equal(old.get('resume').hidden, true, 'eight days old: forgotten');
+  assert.equal(old.local['curio.trail.v1'], 'null');
+
+  const corrupt = await browser(undefined, false, { 'curio.trail.v1': '{"id":1}' });
+  assert.equal(corrupt.get('resume').hidden, true, 'bad data is ignored');
+});
+
+test('a tapped spark leaves the grid, and a finished trail offers no Undo', async () => {
+  const b = await browser();
+  b.requests[0].complete({ suggestions: sparks() }); await flush();
+  b.get('spark-grid').children[0].listeners.click();
+  assert.equal(b.get('spark-grid').children.length, 3, 'the tapped spark is gone');
+  await answerLatest(b, reply('One. More.'));
+  assert.match(b.requests[b.requests.length - 1].url, /\/api\/suggestions\?.*count=4/, 'a fresh set loads after the answer');
+  b.requests[b.requests.length - 1].complete({ suggestions: sparks(4) }); await flush();
+  assert.equal(b.get('spark-grid').children.length, 4);
+  for (let step = 2; step <= 5; step++) {
+    byClass(b.trail(), 'follow-up')[0].listeners.click();
+    await answerLatest(b, reply(`Answer ${step}.`));
+  }
+  byClass(b.trail(), 'finish')[0].listeners.click();
+  assert.equal(b.local['curio.trail.v1'], 'null', 'a finished trail is not kept for resuming');
+  [...walk(b.get('complete'))].find(e => e.textContent === 'Start a new spark')!.listeners.click();
+  b.get('spark-grid').children[0].listeners.click();
+  assert.equal(b.get('undo').hidden, true, 'nothing to undo after a finished trail');
+});

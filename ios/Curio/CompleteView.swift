@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import ScienceCore
 import SwiftUI
 
 /// One stamp per completed trail. Only the topic and the date are kept, on
@@ -81,8 +82,8 @@ struct CompleteView: View {
     @State private var visibleHeight = 0.0
     @Environment(\.displayScale) private var displayScale
 
-    private var topicName: String { chat.topic ?? "Your question" }
-    private var stampName: String { chat.topic.map { "\($0) stamp" } ?? "Curious Mind stamp" }
+    private var topicName: String { chat.trailName ?? "Your question" }
+    private var stampName: String { chat.trailName.map { "\($0) stamp" } ?? "Curious Mind stamp" }
 
     var body: some View {
         let style = CategoryStyle.of(chat.topic)
@@ -198,16 +199,20 @@ struct CompleteView: View {
     }
 }
 
-/// Three things from the trail. The design asks for facts generated from the
-/// answers; until then, the first sentence of three answers spread across
-/// the trail (first, middle, last).
+/// Three things from the trail: the tutor's facts (or first sentences) from
+/// the first, middle, and last answers.
 func recapFacts(_ steps: [TrailStep]) -> [String] {
-    let answers = steps.compactMap(\.reply?.answer)
-    guard !answers.isEmpty else { return [] }
-    let picks = answers.count <= 3
-        ? Array(answers.indices)
-        : [0, answers.count / 2, answers.count - 1]
-    return picks.map { firstSentence(answers[$0]) }
+    let replies = steps.compactMap(\.reply)
+    guard !replies.isEmpty else { return [] }
+    let picks = replies.count <= 3
+        ? Array(replies.indices)
+        : [0, replies.count / 2, replies.count - 1]
+    return picks.map { stepFact(replies[$0]) }
+}
+
+/// What a step taught: the tutor's fact, else the answer's first sentence.
+func stepFact(_ reply: TutorReply) -> String {
+    reply.fact ?? firstSentence(reply.answer)
 }
 
 func firstSentence(_ text: String) -> String {

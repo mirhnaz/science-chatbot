@@ -11,7 +11,8 @@ struct ContentView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.horizontalSizeClass) private var sizeClass
     @AppStorage("engineMode") private var engineChoice = EngineChoice.automatic.rawValue
-    @State private var chat = ChatModel()
+    // Debug `-autoAsk` runs must not replace a child's saved trail.
+    @State private var chat = ChatModel(persists: !ProcessInfo.processInfo.arguments.contains("-autoAsk"))
     @State private var network = NetworkMonitor()
     @State private var speech = Speech()
     @State private var speakingStep: UUID?
@@ -62,7 +63,7 @@ struct ContentView: View {
                         .safeAreaBar(edge: .top) {
                             // Wide layouts show the trail in the side rail instead.
                             if !wide {
-                                TrailHeader(title: chat.topic ?? "Your question", detail: trailDetail,
+                                TrailHeader(title: chat.trailName ?? "Your question", detail: trailDetail,
                                             back: { go(.home) }, settings: { showSettings = true })
                             }
                         }
@@ -73,7 +74,7 @@ struct ContentView: View {
                         // last step offers Finish instead.
                         .safeAreaBar(edge: .bottom) {
                             if !chat.isComplete {
-                                bar(placeholder: "Ask more about \(chat.topic?.lowercased() ?? "this")…",
+                                bar(placeholder: "Ask more about \(chat.trailName?.lowercased() ?? "this")…",
                                     leading: wide ? 380 : nil) {
                                     continueTrail { chat.ask(using: engines) }
                                 }
@@ -90,6 +91,7 @@ struct ContentView: View {
             .background(Curio.ground)
             .environment(\.curioWide, wide)
             .onGeometryChange(for: Bool.self) { $0.size.width >= 1100 } action: { wide = $0 }
+            .onChange(of: wide, initial: true) { _, wide in chat.sparkCount = wide ? 6 : 4 }
             .overlay(alignment: .top) {
                 if chat.undoSteps != nil {
                     UndoBanner(undo: { chat.undo() }, expire: { chat.clearUndo() })

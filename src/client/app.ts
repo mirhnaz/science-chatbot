@@ -8,6 +8,9 @@ interface ChatResponse {
   error?: unknown;
   followUps?: unknown;
   elapsedMs?: unknown;
+  label?: unknown;
+  trailName?: unknown;
+  fact?: unknown;
 }
 
 interface Spark { id: string; topic: string; icon: string; question: string }
@@ -22,6 +25,11 @@ interface Step {
   error?: string;
   /** The next question asked from this step. */
   chosen?: string;
+  /** From the tutor: what this answer explains ("The nucleus"), the trail's
+   *  subject ("Comets"), and one fact to remember. Optional. */
+  label?: string;
+  trailName?: string;
+  fact?: string;
 }
 
 /** One stamp per finished trail: only its topic and date. */
@@ -174,12 +182,28 @@ function save(key: string, value: unknown) {
 const nameKey = 'curio.name.v1';
 const stampsKey = 'curio.stamps.v1';
 const trailsKey = 'curio.trails.v1';
+/** The unfinished trail, so Home can offer it after a reload (7 days). */
+const currentTrailKey = 'curio.trail.v1';
+const trailKeepMs = 7 * 24 * 60 * 60 * 1000;
 const record = (item: unknown): item is Record<string, unknown> => !!item && typeof item === 'object';
 const isStamps = (value: unknown): value is Stamp[] => Array.isArray(value) && value.every(item =>
   record(item) && typeof item.id === 'string' && (item.topic === null || typeof item.topic === 'string') && typeof item.earned === 'string');
 const isTrails = (value: unknown): value is FinishedTrail[] => Array.isArray(value) && value.every(item =>
   record(item) && typeof item.id === 'string' && (item.topic === null || typeof item.topic === 'string')
   && typeof item.question === 'string' && typeof item.finished === 'string');
+/** Optional text from the tutor or storage: trimmed, or undefined if blank or too long. */
+function shortText(value: unknown, limit: number): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const text = value.trim();
+  return text && text.length <= limit ? text : undefined;
+}
+function isSavedStep(value: unknown): value is Step {
+  return record(value) && typeof value.question === 'string' && !!value.question.trim() && value.question.length <= 2000
+    && typeof value.answer === 'string' && !!value.answer.trim()
+    && Array.isArray(value.followUps) && value.followUps.every(item => typeof item === 'string')
+    && (value.topic === undefined || typeof value.topic === 'string')
+    && (value.chosen === undefined || typeof value.chosen === 'string');
+}
 function childName(): string {
   try { return (localStorage.getItem(nameKey) ?? '').trim().slice(0, 40); } catch { return ''; }
 }
@@ -201,6 +225,36 @@ let nextStepId = 1;
 let controller: AbortController | null = null;
 let stamps = load(stampsKey, isStamps, []);
 let finishedTrails = load(trailsKey, isTrails, []);
+restoreTrail();
+
+/** Brings back an unfinished trail saved in this browser within 7 days. */
+function restoreTrail() {
+  const saved = load(currentTrailKey, (value): value is { id: string; savedAt: string; steps: unknown[] } =>
+    record(value) && typeof value.id === 'string' && typeof value.savedAt === 'string' && Array.isArray(value.steps), null);
+  if (!saved) return;
+  const age = Date.now() - Date.parse(saved.savedAt);
+  if (!(age >= 0 && age <= trailKeepMs) || !saved.steps.length || !saved.steps.every(isSavedStep)) {
+    save(currentTrailKey, null);
+    return;
+  }
+  steps = (saved.steps as Step[]).slice(0, trailLength).map(step => ({
+    id: nextStepId++, question: step.question, topic: step.topic, answer: step.answer,
+    followUps: step.followUps!.slice(0, 3), chosen: step.chosen,
+    label: shortText(step.label, 40), trailName: shortText(step.trailName, 30), fact: shortText(step.fact, 160)
+  }));
+  trailId = saved.id;
+}
+
+/** Saves the unfinished trail's answered steps (or forgets a finished one). */
+function persistTrail() {
+  const answeredSteps = steps.filter(step => step.answer !== undefined);
+  if (finished || !answeredSteps.length) { save(currentTrailKey, null); return; }
+  save(currentTrailKey, {
+    id: trailId, savedAt: new Date().toISOString(),
+    steps: answeredSteps.map(({ question, topic, answer, followUps, chosen, label, trailName, fact }) =>
+      ({ question, topic, answer, followUps, chosen, label, trailName, fact }))
+  });
+}
 
 function newTrailId() {
   return `trail-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -209,11 +263,18 @@ const answered = () => steps.filter(step => step.answer !== undefined).length;
 const isComplete = () => answered() >= trailLength;
 const hasUnfinishedTrail = () => steps.length > 0 && !finished;
 const trailTopic = () => steps[0]?.topic;
+/** The tutor's name for the trail ("Comets"), else the spark topic. */
+const trailName = () => steps.find(step => step.trailName)?.trailName ?? trailTopic();
+/** What a step taught: the tutor's fact, else the answer's first sentence. */
+const stepFact = (step: Step) => step.fact ?? firstSentence(step.answer ?? '');
 
 // ---- Sparks (starter questions from /api/suggestions) --------------------
 
 const recentSparksKey = 'curio.recent-suggestions.v1';
 const recentSparksLimit = 40;
+/** Wide layouts show six sparks (3×2); phones four. */
+const wideQuery = window.matchMedia('(min-width: 1100px)');
+const sparkCount = () => wideQuery.matches ? 6 : 4;
 let recentSparks: string[] = [];
 try {
   const stored: unknown = JSON.parse(sessionStorage.getItem(recentSparksKey) || '[]');
@@ -242,12 +303,15 @@ async function refreshSparks() {
   const timer = setTimeout(() => request.abort(), 8000);
   try {
     const exclude = encodeURIComponent(recentSparks.join(','));
-    const response = await fetch(`/api/suggestions?exclude=${exclude}`, { signal: request.signal });
+    const count = sparkCount();
+    const response = await fetch(`/api/suggestions?exclude=${exclude}&count=${count}`, { signal: request.signal });
     if (!response.ok) throw new Error('Sparks unavailable');
     const data: unknown = await response.json();
     const items = data && typeof data === 'object' ? (data as Record<string, unknown>).suggestions : undefined;
-    if (!Array.isArray(items) || items.length !== 4 || !items.every(isSpark)
-      || new Set(items.map(item => item.id)).size !== 4 || new Set(items.map(item => item.topic)).size !== 4) throw new Error('Invalid sparks');
+    // Four to `count`: an older server ignores `count` and sends four.
+    if (!Array.isArray(items) || items.length < 4 || items.length > count || !items.every(isSpark)
+      || new Set(items.map(item => item.id)).size !== items.length
+      || new Set(items.map(item => item.topic)).size !== items.length) throw new Error('Invalid sparks');
     sparks = items;
     recentSparks = [...new Set([...recentSparks, ...items.map(item => item.id)])].slice(-recentSparksLimit);
     try { sessionStorage.setItem(recentSparksKey, JSON.stringify(recentSparks)); } catch { /* Optional storage. */ }
@@ -297,13 +361,16 @@ function renderSparks() {
 
 function startTrail(spark: Spark) {
   if (controller) return;
+  // Take the tapped spark out of the grid; a fresh set loads after the answer.
   sparks = sparks.filter(item => item.id !== spark.id);
+  renderSparks();
   void ask(spark.question, { newTrail: true, topic: spark.topic });
 }
 
 function replaceTrail() {
   stopSpeech();
-  undoState = steps.some(step => step.answer) ? { steps, trailId, finished } : null;
+  // A finished trail is already saved (stamp, finished list): nothing to undo.
+  undoState = !finished && steps.some(step => step.answer) ? { steps, trailId, finished } : null;
   steps = [];
   trailId = newTrailId();
   finished = false;
@@ -352,6 +419,9 @@ async function ask(question: unknown, options: { newTrail?: boolean; topic?: str
     if (typeof data.answer !== 'string' || !data.answer.trim()) throw new Error('No answer came back. Please try again.');
     step.answer = data.answer;
     step.followUps = Array.isArray(data.followUps) ? data.followUps.filter((q: unknown): q is string => typeof q === 'string' && !!q.trim()).slice(0, 3) : [];
+    step.label = shortText(data.label, 40);
+    step.trailName = shortText(data.trailName, 30);
+    step.fact = shortText(data.fact, 160);
     $('status').textContent = isComplete() ? 'Your answer is ready, and your trail is ready to finish.' : 'Your answer is ready.';
     return { question: asked, answer: step.answer, followUps: step.followUps };
   } catch (error) {
@@ -376,6 +446,7 @@ async function ask(question: unknown, options: { newTrail?: boolean; topic?: str
     clearTimeout(timer);
     if (controller === current) controller = null;
     if (steps.length === 0) go('home'); else render();
+    if (sparks.length < sparkCount()) void refreshSparks();
   }
 }
 
@@ -420,8 +491,9 @@ function render() {
   $('complete').hidden = view !== 'complete';
   // The last step offers Finish instead of the question box.
   $('dock').hidden = view === 'complete' || (view === 'trail' && isComplete() && !controller);
-  const topic = trailTopic();
-  $('question').placeholder = view === 'trail' ? `Ask more about ${topic ? topic.toLowerCase() : 'this'}…` : 'Ask anything…';
+  const name = trailName();
+  $('question').placeholder = view === 'trail' ? `Ask more about ${name ? name.toLowerCase() : 'this'}…` : 'Ask anything…';
+  persistTrail();
   renderHome();
   renderTrail();
   if (view === 'complete') renderComplete();
@@ -442,10 +514,9 @@ function renderHome() {
   if (resume.hidden) return;
   const dots = element('span', 'dots');
   for (let i = 0; i < trailLength; i++) dots.append(element('span', i < answered() ? 'dot done' : 'dot'));
-  // The design's short step label needs the tutor to name each step; until
-  // then, the step's question.
   const row = element('span', 'resume-row');
-  row.append(dots, element('span', 'resume-step', `Step ${steps.length} · ${steps[steps.length - 1].question}`));
+  const latest = steps[steps.length - 1];
+  row.append(dots, element('span', 'resume-step', `Step ${steps.length} · ${latest.label ?? latest.question}`));
   resume.replaceChildren(element('span', 'resume-label', 'Continue your trail'), element('span', 'resume-question', steps[0].question), row,
     withIcon(element('span', 'resume-go', 'Keep going'), icons.chevronRight));
   resume.setAttribute('aria-label', `Continue your trail: ${steps[0].question}. Step ${steps.length} of ${trailLength}.`);
@@ -502,7 +573,7 @@ function renderSideRail() {
   const disc = element('span', 'identity-disc');
   disc.innerHTML = style.icon;
   const words = element('div', 'identity-words');
-  words.append(element('p', 'identity-name', topic ?? 'Your question'),
+  words.append(element('p', 'identity-name', trailName() ?? 'Your question'),
     element('p', 'caption', `${topic ? `${topic} trail` : 'Trail'} · ${Math.min(steps.length, trailLength)} of ${trailLength}`));
   identity.append(disc, words);
 
@@ -527,26 +598,26 @@ function renderSideRail() {
     } else {
       const upcoming = element('div', 'rail-entry upcoming');
       upcoming.append(element('span', 'upcoming-disc'), element('span', 'rail-entry-text',
-        number > trailLength ? (topic ? `${topic} stamp` : 'Your stamp') : number === current + 1 ? 'Next step' : `Step ${number}`));
+        number > trailLength ? `${trailName() ?? 'Your'} stamp` : number === current + 1 ? 'Next step' : `Step ${number}`));
       item.append(upcoming);
     }
     list.append(item);
     if (number <= trailLength) list.append(element('li', number < current ? 'rail-line' : 'rail-line ahead'));
   }
 
-  const known = steps.slice(0, -1).map(step => step.answer).filter((answer): answer is string => !!answer).slice(-3);
+  const known = steps.slice(0, -1).filter(step => step.answer).slice(-3).map(stepFact);
   const nodes: HTMLElement[] = [back, identity, list];
   if (known.length) {
     const card = element('div', 'so-far');
     card.append(element('p', 'caption', 'So far you know'));
-    for (const answer of known) card.append(withIcon(element('p', 'fact'), icons.check, firstSentence(answer)));
+    for (const fact of known) card.append(withIcon(element('p', 'fact'), icons.check, fact));
     nodes.push(card);
   }
   rail.replaceChildren(...nodes);
 }
 
 function renderTrail() {
-  $('trail-name').textContent = trailTopic() ?? 'Your question';
+  $('trail-name').textContent = trailName() ?? 'Your question';
   $('trail-detail').textContent = controller ? 'Thinking…' : `Trail · Step ${steps.length}`;
   const latestId = steps[steps.length - 1]?.id;
   const nodes: HTMLElement[] = [];
@@ -664,12 +735,12 @@ function illustration(topic?: string) {
 
 // ---- Trail complete ------------------------------------------------------
 
-/** Three things from the trail. The design asks for generated facts; until
- *  then, the first sentence of three answers spread across the trail. */
+/** Three things from the trail: the tutor's facts (or first sentences) from
+ *  the first, middle, and last answers. */
 function recapFacts(): string[] {
-  const answers = steps.map(step => step.answer).filter((answer): answer is string => !!answer);
-  const picks = answers.length <= 3 ? answers.map((_, i) => i) : [0, Math.floor(answers.length / 2), answers.length - 1];
-  return picks.map(i => firstSentence(answers[i]));
+  const answered = steps.filter(step => step.answer);
+  const picks = answered.length <= 3 ? answered.map((_, i) => i) : [0, Math.floor(answered.length / 2), answered.length - 1];
+  return picks.map(i => stepFact(answered[i]));
 }
 function firstSentence(text: string) {
   const match = /^[\s\S]+?[.!?](?=\s|$)/.exec(text.trim());
@@ -678,15 +749,16 @@ function firstSentence(text: string) {
 
 function renderComplete() {
   const topic = trailTopic() ?? null;
+  const name = trailName();
   const style = category(topic);
-  const stampName = topic ? `${topic} stamp` : 'Curious Mind stamp';
+  const stampName = name ? `${name} stamp` : 'Curious Mind stamp';
 
   const header = element('header', 'app-header');
   const close = button('icon-button');
   close.setAttribute('aria-label', 'Close');
   close.innerHTML = icons.close;
   close.addEventListener('click', () => go('home'));
-  header.append(close, element('p', 'caption', `${topic ?? 'Your question'} · ${steps.length} steps`), element('span', 'header-spacer'));
+  header.append(close, element('p', 'caption', `${name ?? 'Your question'} · ${steps.length} steps`), element('span', 'header-spacer'));
 
   const hero = element('div', `stamp-hero cat-${style.key}`);
   hero.innerHTML = style.icon;
@@ -729,7 +801,7 @@ function renderComplete() {
  *  questions as text. Shares where the browser can; otherwise saves the
  *  picture and copies the questions. */
 async function showGrownUp() {
-  const topic = trailTopic() ?? 'Your question';
+  const topic = trailName() ?? 'Your question';
   const questions = steps.map((step, i) => `${i + 1}. ${step.question}`).join('\n');
   const text = `What I explored on Curio (${topic}):\n${questions}`;
   const blob = await recapImage(topic, recapFacts());
@@ -909,6 +981,7 @@ $('settings-done').addEventListener('click', () => {
   renderHome();
 });
 $('undo-button').addEventListener('click', undo);
+wideQuery.addEventListener?.('change', () => { void refreshSparks(); });
 synthesis?.addEventListener('voiceschanged', renderTrail);
 window.addEventListener('pagehide', () => { controller?.abort('cancel'); stopSpeech(); });
 

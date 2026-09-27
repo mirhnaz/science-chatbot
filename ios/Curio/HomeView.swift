@@ -192,9 +192,8 @@ struct ResumeCard: View {
                     .multilineTextAlignment(.leading)
                 HStack(spacing: 12) {
                     ProgressDots(done: chat.answeredSteps, total: ChatModel.trailLength)
-                    // The design's short step label ("The nucleus") needs the
-                    // tutor to name each step; until then, the step's question.
-                    Text("Step \(current) · \(chat.steps.last?.question ?? "")")
+                    // The tutor's label for the step ("The nucleus"), else its question.
+                    Text("Step \(current) · \(chat.steps.last.map { $0.reply?.label ?? $0.question } ?? "")")
                         .font(Curio.body(13, .bold, relativeTo: .footnote))
                         .lineLimit(1)
                         .opacity(0.9)
@@ -255,9 +254,8 @@ struct ProgressDots: View {
     }
 }
 
-/// "Sparks" with Shuffle, then a 2×2 grid of tinted cards (larger when wide;
-/// the tablet design's 3×2 needs six sparks, and the bank gives four). The
-/// whole card asks its question.
+/// "Sparks" with Shuffle, then tinted cards: 2×2 on phones, 3×2 (six sparks)
+/// when wide. The whole card asks its question.
 struct SparksGrid: View {
     let chat: ChatModel
     let start: (Suggestion) -> Void
@@ -266,7 +264,7 @@ struct SparksGrid: View {
 
     var body: some View {
         let gap = wide ? 16.0 : 12.0
-        let columns = Array(repeating: GridItem(.flexible(), spacing: gap), count: 2)
+        let columns = Array(repeating: GridItem(.flexible(), spacing: gap), count: wide ? 3 : 2)
         VStack(alignment: .leading, spacing: wide ? 14 : 12) {
             HStack {
                 Text("Sparks")

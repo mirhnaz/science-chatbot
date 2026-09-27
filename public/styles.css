@@ -230,6 +230,8 @@ h1, h2, h3, p { margin: 0; }
   background: var(--cat-fill); color: var(--ink); text-align: left;
 }
 .spark-card:disabled { opacity: .7; }
+/* Six sparks load on wide layouts; if the window narrows, show four. */
+.spark-grid .spark-card:nth-child(n+5) { display: none; }
 .icon-disc { width: 40px; height: 40px; padding: 9px; border-radius: 50%; background: var(--icon-disc); color: var(--cat-ink); display: grid; place-items: center; }
 .icon-disc svg { width: 100%; height: 100%; }
 .spark-words { display: flex; flex-direction: column; gap: 3px; }
@@ -401,7 +403,8 @@ h1, h2, h3, p { margin: 0; }
   .home .section-head { margin-top: 24px; }
   .home .section-head h2 { font-size: 22px; }
   .home .section-head .pill { min-height: 40px; padding: 0 16px; border-radius: 20px; font-size: 15px; }
-  .spark-grid { gap: 16px; margin-top: 14px; }
+  .spark-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 14px; }
+  .spark-grid .spark-card:nth-child(n+5) { display: flex; }
   .spark-card { min-height: 186px; padding: 18px; border-radius: 22px; }
   .icon-disc { width: 48px; height: 48px; padding: 11px; }
   .spark-topic { font-size: 12px; }
