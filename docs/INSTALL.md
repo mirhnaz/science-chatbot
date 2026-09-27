@@ -114,6 +114,54 @@ sudo systemctl enable --now science-chatbot-web.service
 Once Curio has run well for a while, remove the old unit with
 `sudo rm /etc/systemd/system/science-chatbot-web.service && sudo systemctl daemon-reload`.
 
+## Run as a user service (deploy without sudo)
+
+A systemd *system* service needs `sudo` for every restart. Curio listens on
+port 11436, which needs no special privilege, so it can run as a systemd *user*
+service owned by the checkout's account. Afterwards a deploy is:
+
+```sh
+cd /home/mir/dev/science-chatbot
+git pull --ff-only
+PATH="$HOME/.cargo/bin:$PATH" npm run build
+systemctl --user restart curio-web
+curl -s http://127.0.0.1:11436/healthz
+```
+
+**One-time switch** on mir-omarchy-pc (the last time `sudo` is needed). The
+template `deploy/curio-web.user.service` uses `%h` (your home directory); the
+first command copies `PUBLIC_ORIGIN` from the running system unit, so the
+hostname never enters Git. The Funnel mapping (to 127.0.0.1:11436) is unchanged.
+
+```sh
+cd /home/mir/dev/science-chatbot && git pull --ff-only
+mkdir -p ~/.config/systemd/user
+origin=$(systemctl show curio-web.service -p Environment | tr ' ' '\n' | sed -n 's/^PUBLIC_ORIGIN=//p')
+echo "PUBLIC_ORIGIN=$origin"   # check it before continuing
+sed "s#https://curio.example.com#$origin#" deploy/curio-web.user.service > ~/.config/systemd/user/curio-web.service
+systemd-analyze --user verify ~/.config/systemd/user/curio-web.service
+
+sudo loginctl enable-linger "$USER"             # user services run at boot, without a login
+sudo systemctl disable --now curio-web.service  # a few seconds offline from here…
+systemctl --user daemon-reload
+systemctl --user enable --now curio-web.service # …to here
+systemctl --user status curio-web.service --no-pager
+curl -s http://127.0.0.1:11436/healthz
+```
+
+Then check the public page and ask a real question. Logs are in
+`journalctl --user -u curio-web -n 50 --no-pager`.
+
+**Roll back** to the system service:
+
+```sh
+systemctl --user disable --now curio-web.service
+sudo systemctl enable --now curio-web.service
+```
+
+Once the user service has run well (including after a reboot), remove the
+system unit with `sudo rm /etc/systemd/system/curio-web.service && sudo systemctl daemon-reload`.
+
 ## Recover an earlier version
 
 Keep a known-good release binary and matching frontend assets before deploying
@@ -130,7 +178,8 @@ JavaScript backend, which has now been removed from this workspace.
 ## Operations
 
 ```sh
-journalctl -u curio-web.service -n 50 --no-pager
+journalctl -u curio-web.service -n 50 --no-pager          # system service
+journalctl --user -u curio-web -n 50 --no-pager           # user service
 systemctl is-enabled curio-web.service ollama.service tailscaled.service
 tailscale serve status
 ```
