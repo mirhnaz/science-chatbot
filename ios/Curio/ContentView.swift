@@ -109,6 +109,7 @@ struct ContentView: View {
             // follow-up, so layouts can be checked without tapping.
             // `-autoHome` then returns Home to show the resume card.
             let arguments = ProcessInfo.processInfo.arguments
+            if arguments.contains("-removeFinishedTrails") { stamps.removeFinishedTrails() }
             guard arguments.contains("-autoAsk"), let idea = chat.suggestions.first else { return }
             try? await Task.sleep(for: .seconds(2))
             startTrail(idea)

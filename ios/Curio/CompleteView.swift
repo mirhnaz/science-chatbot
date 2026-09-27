@@ -48,6 +48,17 @@ final class StampStore {
         }
     }
 
+    /// Removes every finished trail and the stamps those trails earned (Debug
+    /// `-removeFinishedTrails`, for clearing test runs). Stamps earned before
+    /// finished trails were recorded have no trail entry and are kept.
+    func removeFinishedTrails() {
+        let ids = Set(trails.map(\.id))
+        stamps.removeAll { ids.contains($0.id) }
+        trails = []
+        Self.save(stamps, Self.stampsKey)
+        Self.save(trails, Self.trailsKey)
+    }
+
     private static func load<T: Decodable>(_ key: String) -> [T] {
         guard let data = UserDefaults.standard.data(forKey: key) else { return [] }
         return (try? JSONDecoder().decode([T].self, from: data)) ?? []
