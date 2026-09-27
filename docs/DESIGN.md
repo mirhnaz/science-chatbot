@@ -56,6 +56,15 @@ stamps and finished trails are kept **on the device only**.
   itself). Hidden on the web, where browser speech services may send audio
   to third parties.
 - Still a placeholder: the category illustration (not a picture per step).
+- **Pixel field** (2026-09-27, after omarchy.org's pixel hero): the empty
+  space at the end of Home and Trail shows a science scene in 8 pt square
+  pixels, densest at the bottom and fading upward: a starfield with a comet
+  on phones, an atom on tablets, the solar system on wide web (≥1400 px).
+  Planets/electrons use topic inks; the field levels are tokens. Trail runs
+  it at 55 % opacity; Trail complete has none. Hover glows, a tap ripples.
+  Performance rules: drawn by the GPU off the main thread (web: WebGL in a
+  worker on an OffscreenCanvas; iOS: a Metal colorEffect), ≤30 fps, paused
+  when hidden, a still frame with Reduce Motion.
 
 ## The curiosity column (current iPad build)
 
@@ -207,6 +216,10 @@ its iPad/web artboards (dark derived); ᵈ are derived here.
 | `ground-veil` (CSS only) | ground at 92 % | ground at 92 % | Blurred bars over scrolling content |
 | `scrim` (CSS only) | ink at 40 % | black at 55 % | Behind dialogs |
 | `halo-opacity` (CSS; iOS in code) | 0.5 | 0.12 | Glow behind the illustration disc |
+| `field-dim` · `FieldDim` | `#EFE8F3` | `#221F3B` | Pixel field, faintest level |
+| `field-mid` · `FieldMid` | `#E2D9F6` | `#2D2952` | Pixel field |
+| `field-lit` · `FieldLit` | `#C3B8F4` | `#474093` | Pixel field, orbits and comet tail |
+| `field-crest` · `FieldCrest` | `#8F85EA` | `#8A82F5` | Pixel field, brightest (comet head, hover) |
 
 ### Categories
 

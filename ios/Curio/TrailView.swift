@@ -18,6 +18,9 @@ struct TrailView: View {
     @State private var position = ScrollPosition(idType: UUID.self)
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.curioWide) private var wide
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    /// Visible height of the steps' scroll view, for the pixel field.
+    @State private var visibleHeight = 0.0
 
     var body: some View {
         if wide {
@@ -39,6 +42,7 @@ struct TrailView: View {
 
     private var steps: some View {
         ScrollView {
+          VStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(Array(chat.steps.enumerated()), id: \.element.id) { index, step in
                     if step.id == chat.steps.last?.id {
@@ -68,7 +72,13 @@ struct TrailView: View {
             .padding(.top, wide ? 24 : 14)
             .padding(.bottom, 16)
             .frame(maxWidth: .infinity)
+            // A quieter pixel field in the space under the last step.
+            PixelField(scene: sizeClass == .compact ? .starfield : .atom, intensity: 0.55)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+          }
+          .frame(minHeight: visibleHeight)
         }
+        .measureVisibleHeight { visibleHeight = $0 }
         .background(Curio.ground)
         .scrollPosition($position)
         .scrollDismissesKeyboard(.interactively)

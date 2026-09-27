@@ -31,6 +31,11 @@ enum Curio {
     static let iconDisc = Color("IconDisc")
     /// Stars and dust in illustrations.
     static let sparkle = Color("Sparkle")
+    /// The pixel field's four brightness levels (PixelField).
+    static let fieldDim = Color("FieldDim")
+    static let fieldMid = Color("FieldMid")
+    static let fieldLit = Color("FieldLit")
+    static let fieldCrest = Color("FieldCrest")
     static let danger = Color("Danger")
     static let dangerTint = Color("DangerTint")
 

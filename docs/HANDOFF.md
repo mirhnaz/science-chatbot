@@ -601,6 +601,25 @@ produces odd ones. Final: mean 67 words (40–99), reading grade ~7, varied
 openings; creator line, political redirect, and unsafe request unchanged.
 Known limit: occasional loose analogies remain (model accuracy ceiling).
 
+### Pixel field (2026-09-27)
+
+User asked for an animation in the empty space at the bottom, like the
+omarchy.org pixel hero (screen recording), with kid-friendly science
+scenes per device and no main-thread cost; also on Trail (quieter).
+Done: web `src/client/field-worker.ts` (WebGL shader in a worker on an
+OffscreenCanvas; `/field-worker.js` asset route; the page measures the
+empty gap and posts it as the scene's focus), iOS `PixelField.metal` +
+`PixelField.swift` (colorEffect; the view fills the leftover scroll space
+on Home and Trail). Field colour tokens in DESIGN.md. Xcode needed its
+Metal Toolchain component (downloaded with the user's approval, 839 MB).
+
+Verified: web 390 / 1180 / 1440 screenshots (starfield + comet, atom,
+solar system) in light and dark; with the field running, headless Chrome
+measured 0 main-thread long tasks and 61 fps; 40 HTTP/frontend tests.
+iOS builds and is installed on the iPhone and iPad. **Not verified on iOS
+by eye:** the Mac run through Xcode stalled (AppleScript to Xcode hung,
+probably a dialog in Xcode), so the iOS look needs the user's check.
+
 ## Agreed direction, not yet implemented
 
 The user expects login, conversation history, and more functionality over time.

@@ -14,6 +14,10 @@ struct HomeView: View {
     let openSettings: () -> Void
     @AppStorage("childName") private var name = ""
     @Environment(\.curioWide) private var wide
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    /// Visible height of the scroll view, so the pixel field can fill what
+    /// the content leaves empty.
+    @State private var visibleHeight = 0.0
 
     private var greeting: String {
         let first = name.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -26,42 +30,53 @@ struct HomeView: View {
         if wide { wideBody } else { phoneBody }
     }
 
-    /// iPad landscape: a 380 pt column beside the Sparks.
+    /// iPad landscape: a 380 pt column beside the Sparks, and the pixel field
+    /// under the taller of the two.
     private var wideBody: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
-            HStack(alignment: .top, spacing: 32) {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 20) {
-                        Text(greeting)
-                            .font(Curio.display(34, .bold, relativeTo: .largeTitle))
-                            .foregroundStyle(Curio.ink)
-                            .accessibilityAddTraits(.isHeader)
-                        OpenTrails(trails: chat.openTrails, resume: resume)
-                        if !stamps.trails.isEmpty {
-                            FinishedTrailsCard(trails: stamps.trails)
+                .padding(.horizontal, 40)
+            ScrollView {
+                VStack(spacing: 0) {
+                    HStack(alignment: .top, spacing: 32) {
+                        VStack(alignment: .leading, spacing: 20) {
+                            Text(greeting)
+                                .font(Curio.display(34, .bold, relativeTo: .largeTitle))
+                                .foregroundStyle(Curio.ink)
+                                .accessibilityAddTraits(.isHeader)
+                            OpenTrails(trails: chat.openTrails, resume: resume)
+                            if !stamps.trails.isEmpty {
+                                FinishedTrailsCard(trails: stamps.trails)
+                            }
+                            MadeWithLove()
                         }
-                        MadeWithLove()
+                        .frame(width: 380, alignment: .leading)
+                        SparksGrid(chat: chat, start: start, edit: edit)
                     }
+                    .padding(.horizontal, 40)
                     .padding(.top, 24)
+                    .padding(.bottom, 16)
+                    field
                 }
-                .scrollBounceBehavior(.basedOnSize)
-                .frame(width: 380)
-                ScrollView {
-                    SparksGrid(chat: chat, start: start, edit: edit)
-                        .padding(.top, 24)
-                        .padding(.bottom, 16)
-                }
-                .scrollBounceBehavior(.basedOnSize)
+                .frame(minHeight: visibleHeight)
             }
+            .measureVisibleHeight { visibleHeight = $0 }
+            .scrollBounceBehavior(.basedOnSize)
         }
-        .padding(.horizontal, 40)
         .padding(.top, 16)
         .background(Curio.ground)
     }
 
+    /// Fills the space the content leaves: stars and a comet on phones, an
+    /// atom on iPad.
+    private var field: some View {
+        PixelField(scene: sizeClass == .compact ? .starfield : .atom)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
     private var phoneBody: some View {
         ScrollView {
+          VStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 0) {
                 header
                 Text(greeting)
@@ -82,7 +97,11 @@ struct HomeView: View {
             .padding(.top, 8)
             .padding(.bottom, 16)
             .frame(maxWidth: .infinity)
+            field
+          }
+          .frame(minHeight: visibleHeight)
         }
+        .measureVisibleHeight { visibleHeight = $0 }
         .scrollBounceBehavior(.basedOnSize)
         .scrollDismissesKeyboard(.interactively)
         .background(Curio.ground)
@@ -405,5 +424,15 @@ struct MadeWithLove: View {
         .font(Curio.body(12, .bold, relativeTo: .caption))
         .foregroundStyle(Curio.label)
         .accessibilityElement(children: .combine)
+    }
+}
+
+extension View {
+    /// Reports a scroll view's visible height (without bars and safe areas).
+    /// It measures the scroll view itself, not its content, so it cannot loop.
+    func measureVisibleHeight(_ action: @escaping (Double) -> Void) -> some View {
+        onGeometryChange(for: Double.self) { proxy in
+            max(0, proxy.size.height - proxy.safeAreaInsets.top - proxy.safeAreaInsets.bottom)
+        } action: { action($0) }
     }
 }
