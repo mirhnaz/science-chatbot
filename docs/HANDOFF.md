@@ -657,8 +657,13 @@ iOS. Verified: 25 Rust, 44 HTTP/frontend, 15 ScienceCore tests; web
 screenshots of the burst, badges, loading and welcome in light and dark.
 iOS builds and is installed; **its new screens were not checked by eye**
 (the Mac run via Xcode is unreliable), so the iOS look needs the user.
-The live server needs a rebuild and restart for the new routes
-(`/did-you-know.json`, `prefer=`).
+Deployed by the agent over SSH at the user's request: mir-omarchy-pc now
+runs `curio-web` as a **user service** (the user had switched; the system
+unit is inactive), pulled to `29318d4`, `npm run build`, `systemctl
+--user restart curio-web` without sudo. Verified: local `/healthz` ok,
+public page / styles / app.js / field-worker.js / did-you-know.json match
+the repository, and a real question returned an answer with trail name,
+label and fact.
 
 ## Agreed direction, not yet implemented
 
