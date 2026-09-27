@@ -779,6 +779,13 @@ and if nothing was heard an alert says so with the system's reason.
 Follow-up (same day): the user preferred horizontal splits on the iPad
 Trail, so the picture is now a full-width 200 pt banner above the answer
 (web ≥1100 and iPad), replacing the two halves.
+Voice, second pass (same day): the user found it missed words or kept
+only the last word. `VoiceInput` now uses iOS 26's `SpeechAnalyzer` with a
+`DictationTranscriber` (`.progressiveShortDictation`): live text as the
+child speaks, finished phrases kept and only the phrase in progress
+replaced (SFSpeechRecognizer's partial results reset after pauses). Still
+on-device; Apple's model downloads once via `AssetInventory` if missing.
+Builds and is installed; **not tested by voice here** (needs the user).
 Verified: web screenshots at 1180/1440 with a long Home column; tests.
 iOS installed on iPhone and iPad, not checked by eye here.
 
