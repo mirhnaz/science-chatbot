@@ -11,63 +11,77 @@
   <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=3">
   <link rel="manifest" href="/site.webmanifest?v=5">
   <meta name="apple-mobile-web-app-title" content="Curio">
+  <link rel="preload" href="/fonts/nunito-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/fredoka-latin.woff2" as="font" type="font/woff2" crossorigin>
   <script src="/theme.js"></script>
   <link rel="stylesheet" href="/styles.css">
   <script type="module" src="/app.js"></script>
 </head>
-<body data-view="fresh">
+<body data-view="home">
   <a class="skip-link" href="#question">Skip to your question</a>
 
-  <!-- Glass toolbar: brand mark once a trail starts, title, theme. -->
-  <header class="toolbar">
-    <img class="toolbar-mark" src="/icon-192.png?v=3" width="36" height="36" alt="">
-    <div class="toolbar-title">
-      <h1 id="title">Curio</h1>
-      <p id="subtitle" aria-hidden="true"></p>
-    </div>
-    <div class="theme-control glass">
-      <label for="theme">Theme</label>
-      <select id="theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select>
-    </div>
-  </header>
-
   <main id="main">
-    <!-- Fresh session: hero, the question box (moved here), and Sparks. -->
-    <section id="fresh" class="fresh" aria-labelledby="hero-heading">
-      <img class="hero-mark" src="/icon-192.png?v=3" width="96" height="96" alt="">
-      <h2 id="hero-heading" class="hero-heading">A little curiosity.<br>A whole world to explore.</h2>
-      <div id="fresh-compose" class="compose-slot"></div>
+    <!-- Home (docs/design/redesign-2026-09/Main.dc.html). -->
+    <section id="home" class="screen home" aria-labelledby="greeting">
+      <header class="app-header">
+        <span class="brand"><span class="brand-mark" id="brand-mark"></span><span>Curio</span></span>
+        <button id="settings-home" class="icon-button" type="button" aria-label="Settings"></button>
+      </header>
+      <h1 id="greeting" class="greeting">What are you curious about today?</h1>
+      <button id="resume" class="resume-card" type="button" hidden></button>
       <section class="sparks" aria-labelledby="sparks-heading">
-        <h3 id="sparks-heading">Sparks</h3>
-        <p class="sparks-help">Pick one to start exploring</p>
+        <div class="section-head">
+          <h2 id="sparks-heading">Sparks</h2>
+          <button id="new-sparks" class="pill" type="button"></button>
+        </div>
         <p id="sparks-status" class="sr-only" role="status">Finding new sparks…</p>
         <div id="spark-grid" class="spark-grid" aria-busy="true"></div>
-        <button id="new-sparks" class="pill glass" type="button"><span aria-hidden="true">🎲</span> New sparks</button>
       </section>
-      <p class="made-with-love">❤️ Made with love by <strong>Ayaan and Naz</strong></p>
+      <p id="made-with-love" class="made-with-love">Made with love by Ayaan and Naz</p>
     </section>
 
-    <!-- The trail: one topic's chain of questions. -->
-    <section id="trail" class="trail" aria-label="Your curiosity trail" hidden></section>
+    <!-- Trail (Trail.dc.html): header, step rail, and the current step. -->
+    <section id="trail-screen" class="screen trail-screen" aria-labelledby="trail-name" hidden>
+      <header class="app-header trail-header">
+        <button id="back" class="icon-button" type="button" aria-label="Back to home"></button>
+        <div class="trail-title">
+          <h1 id="trail-name">Your question</h1>
+          <p id="trail-detail">Trail · Step 1</p>
+        </div>
+        <button id="settings-trail" class="icon-button" type="button" aria-label="Settings"></button>
+      </header>
+      <div id="trail" class="trail" aria-label="Your curiosity trail"></div>
+    </section>
+
+    <!-- Trail complete (Complete.dc.html). -->
+    <section id="complete" class="screen complete" aria-labelledby="complete-heading" hidden></section>
   </main>
 
-  <!-- Dock: the question box during a trail. (The New-spark carousel and
-       "Ask your own" were removed: they overlapped Dive deeper.) -->
+  <!-- Bottom bar: the question box (hidden on Trail complete). -->
   <div id="dock" class="dock">
-    <div id="dock-compose" class="compose-slot"></div>
+    <form id="question-form" class="compose">
+      <label class="sr-only" for="question">Your science question</label>
+      <textarea id="question" name="question" maxlength="2000" rows="1" placeholder="Ask anything…" aria-describedby="question-help"></textarea>
+      <p id="question-help" class="sr-only">Press Enter to ask. Press Shift and Enter for a new line.</p>
+      <button id="ask" class="send" type="submit" aria-label="Ask" disabled></button>
+      <button id="cancel" class="send" type="button" aria-label="Stop" hidden></button>
+    </form>
     <p class="disclaimer">AI can make mistakes. Check surprising facts with an adult.</p>
   </div>
 
-  <!-- The one question box; app.js moves it between the centre and the dock. -->
-  <form id="question-form" class="compose">
-    <label class="sr-only" for="question">Your science question</label>
-    <textarea id="question" name="question" maxlength="2000" rows="1" placeholder="Ask a science question…" aria-describedby="question-help"></textarea>
-    <p id="question-help" class="sr-only">Press Enter to ask. Press Shift and Enter for a new line.</p>
-    <button id="ask" class="send" type="submit" aria-label="Ask" disabled><span aria-hidden="true">↑</span></button>
-    <button id="cancel" class="send stop" type="button" aria-label="Stop" hidden><span aria-hidden="true">■</span></button>
-  </form>
+  <dialog id="settings" class="settings" aria-labelledby="settings-heading">
+    <form method="dialog" class="settings-form">
+      <h2 id="settings-heading">Settings</h2>
+      <label for="child-name">Your first name</label>
+      <input id="child-name" type="text" maxlength="40" autocomplete="given-name" spellcheck="false">
+      <p class="settings-help">Curio uses it to say hello. It stays in this browser.</p>
+      <label for="theme">Theme</label>
+      <select id="theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select>
+      <button id="settings-done" class="primary" type="submit">Done</button>
+    </form>
+  </dialog>
 
-  <div id="undo" class="toast glass" role="status" hidden>
+  <div id="undo" class="toast" role="status" hidden>
     <span>Started a new trail</span><button id="undo-button" type="button">Undo</button>
   </div>
   <p id="status" class="sr-only" role="status" aria-live="polite"></p>

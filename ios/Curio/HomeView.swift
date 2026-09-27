@@ -14,7 +14,9 @@ struct HomeView: View {
 
     private var greeting: String {
         let first = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        return first.isEmpty ? "What are you curious about today?" : "What are you curious about today, \(first)?"
+        let hour = Calendar.current.component(.hour, from: .now)
+        let when = hour >= 18 || hour < 5 ? "tonight" : "today"
+        return first.isEmpty ? "What are you curious about \(when)?" : "What are you curious about \(when), \(first)?"
     }
 
     var body: some View {

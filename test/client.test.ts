@@ -36,7 +36,7 @@ function* walk(root: Element): Generator<Element> {
 const byClass = (root: Element, name: string) => [...walk(root)].filter(e => e.className.split(' ').includes(name));
 const text = (root: Element): string => root.textContent + root.children.map(text).join('');
 
-async function browser(stored?: string, storageBlocked = false) {
+async function browser(stored?: string, storageBlocked = false, local: Record<string, string> = {}) {
   const elements = new Map<string, Element>();
   const get = (id: string): Element => {
     let element = elements.get(id);
@@ -68,6 +68,10 @@ async function browser(stored?: string, storageBlocked = false) {
       getItem() { if (storageBlocked) throw new Error('Storage blocked'); return saved ?? null; },
       setItem(_key: string, value: string) { if (storageBlocked) throw new Error('Storage blocked'); saved = value; }
     },
+    localStorage: {
+      getItem(key: string) { if (storageBlocked) throw new Error('Storage blocked'); return local[key] ?? null; },
+      setItem(key: string, value: string) { if (storageBlocked) throw new Error('Storage blocked'); local[key] = value; }
+    },
     AbortController,
     setTimeout(callback: () => void, ms: number) { const id = ++timerId; timers.set(id, { callback, ms }); return id; },
     clearTimeout(id: number) { timers.delete(id); },
@@ -78,35 +82,44 @@ async function browser(stored?: string, storageBlocked = false) {
   });
   vm.runInContext(await readFile(new URL('../client/app.js', import.meta.url), 'utf8'), context);
   const trail = () => get('trail');
-  return { get, requests, context, timers, body, trail, saved: () => saved };
+  return { get, requests, context, timers, body, trail, local, saved: () => saved };
 }
 
-test('a spark asks at once and starts a trail; the box moves to the dock', async () => {
+/** Answers the latest request and waits for the page to update. */
+async function answerLatest(b: Awaited<ReturnType<typeof browser>>, body: unknown = reply()) {
+  b.requests[b.requests.length - 1].complete(body); await flush();
+}
+
+test('a spark asks at once and opens its trail', async () => {
   const b = await browser();
-  assert.equal(b.body.attributes['data-view'], 'fresh');
-  assert.equal(b.get('fresh').hidden, false);
+  assert.equal(b.body.attributes['data-view'], 'home');
+  assert.equal(b.get('home').hidden, false);
+  assert.equal(b.get('resume').hidden, true, 'no trail to continue yet');
   b.requests[0].complete({ suggestions: sparks() }); await flush();
   const cards = b.get('spark-grid').children;
   assert.equal(cards.length, 4);
+  assert.ok(cards[0].className.includes('spark-card cat-space'), 'unknown topics use the Space colours');
   cards[0].listeners.click();
   assert.equal(b.requests.length, 2, 'a spark asks immediately');
   assert.equal(JSON.parse(b.requests[1].options.body!).question, sparks()[0].question);
   assert.equal(b.body.attributes['data-view'], 'trail');
-  assert.equal(b.get('trail').hidden, false);
-  assert.deepEqual(b.get('dock-compose').children, [b.get('question-form')], 'the question box moved to the dock');
-  assert.equal(b.get('title').textContent, sparks()[0].question);
-  assert.equal(b.get('subtitle').textContent, 'Thinking…');
+  assert.equal(b.get('trail-screen').hidden, false);
+  assert.equal(b.get('home').hidden, true);
+  assert.equal(b.get('trail-name').textContent, 'Topic 0', 'the trail is named after its spark');
+  assert.equal(b.get('trail-detail').textContent, 'Thinking…');
+  assert.equal(b.get('question').placeholder, 'Ask more about topic 0…');
   assert.ok(byClass(b.trail(), 'loading').length === 1);
   assert.ok(b.get('spark-grid').children.every(card => card.disabled), 'sparks wait for the answer');
   assert.equal(b.get('cancel').hidden, false);
-  assert.match(text(b.trail()), /🌱 Topic 0/, 'the trail shows its spark topic');
-  b.requests[1].complete(reply()); await flush();
-  assert.equal(byClass(b.trail(), 'follow-up').length, 3);
+  await answerLatest(b);
+  assert.equal(b.get('trail-detail').textContent, 'Trail · Step 1');
+  assert.equal(byClass(b.trail(), 'follow-up').length, 3, 'CSS shows two on phones, three when wide');
+  assert.equal(byClass(b.trail(), 'illustration').length, 1);
   assert.equal(b.get('cancel').hidden, true);
-  assert.match(byClass(b.trail(), 'answered-in')[0].textContent, /^Answered in \d+\.\d seconds$/);
+  assert.doesNotMatch(text(b.trail()), /Answered in/, 'no timing metric');
 });
 
-test('Dive deeper adds a step, folds the previous one, and ignores double taps', async () => {
+test('Dive deeper adds a step, moves the previous one to the rail, and ignores double taps', async () => {
   const b = await browser();
   b.requests[0].complete({ suggestions: sparks() }); await flush();
   const first = vm.runInContext('ask("What is gravity?")', b.context);
@@ -118,18 +131,19 @@ test('Dive deeper adds a step, folds the previous one, and ignores double taps',
   assert.equal(JSON.parse(b.requests[2].options.body!).question, 'Why does the Moon orbit Earth?');
   followUp.listeners.click();
   assert.equal(b.requests.length, 3, 'double taps must not start another request');
-  const folded = byClass(b.trail(), 'step-folded');
-  assert.equal(folded.length, 1, 'the earlier step folds');
-  assert.match(text(folded[0]), /↳ Why does the Moon orbit Earth\?/, 'and shows the chosen follow-up');
-  assert.equal(byClass(b.trail(), 'follow-up').length, 0, 'follow-ups hide while the next answer loads');
-  b.requests[2].complete(reply('The Moon falls around Earth.')); await flush();
-  assert.equal(b.get('subtitle').textContent, '2 steps');
-  assert.equal(byClass(b.trail(), 'follow-up').length, 3);
-  folded[0].listeners.click();
-  assert.equal(byClass(b.trail(), 'step-folded').length, 0, 'a folded step opens again');
+  const rail = byClass(b.trail(), 'rail-step');
+  assert.equal(rail.length, 1, 'the earlier step joins the rail');
+  assert.equal(rail[0].attributes['aria-label'], 'Step 1: What is gravity?');
+  assert.equal(byClass(b.trail(), 'connector').length, 1);
+  assert.equal(byClass(b.trail(), 'follow-up').length, 0, 'choices hide while the next answer loads');
+  await answerLatest(b, reply('The Moon falls around Earth.'));
+  assert.equal(b.get('trail-detail').textContent, 'Trail · Step 2');
+  byClass(b.trail(), 'rail-step')[0].listeners.click();
+  assert.equal(byClass(b.trail(), 'rail-step')[0].attributes['aria-expanded'], 'true');
+  assert.match(text(b.trail()), /Gravity pulls objects together/, 'an earlier answer opens again');
 });
 
-test('the question box asks, clears, and Stop gives the question back', async () => {
+test('a question typed on Home starts a trail, and Stop gives it back', async () => {
   const b = await browser();
   b.requests[0].complete({ suggestions: sparks() }); await flush();
   b.get('question').value = '  Why is the sky blue?  ';
@@ -139,10 +153,11 @@ test('the question box asks, clears, and Stop gives the question back', async ()
   assert.equal(b.requests.length, 2);
   assert.equal(JSON.parse(b.requests[1].options.body!).question, 'Why is the sky blue?');
   assert.equal(b.get('question').value, '', 'the question moves into the trail');
+  assert.equal(b.get('trail-name').textContent, 'Your question');
   b.get('cancel').listeners.click(); await flush();
   assert.equal(b.requests[1].options.signal?.aborted, true);
   assert.equal(b.get('question').value, 'Why is the sky blue?');
-  assert.equal(b.body.attributes['data-view'], 'fresh', 'an empty trail returns to the fresh screen');
+  assert.equal(b.body.attributes['data-view'], 'home', 'an empty trail returns Home');
   b.get('question').listeners.keydown({ key: 'Enter', shiftKey: false, isComposing: false, preventDefault() {} });
   assert.equal(b.requests.length, 3, 'Enter asks');
 });
@@ -157,8 +172,24 @@ test('errors offer Try again, which asks the same question', async () => {
   const again = [...walk(b.trail())].find(e => e.textContent === 'Try again')!;
   again.listeners.click();
   assert.equal(JSON.parse(b.requests[2].options.body!).question, 'Why do cats purr?');
-  b.requests[2].complete(reply()); await flush();
+  await answerLatest(b);
   assert.equal(byClass(b.trail(), 'error').length, 0);
+});
+
+test('Back keeps the trail, and Home offers to continue it', async () => {
+  const b = await browser();
+  b.requests[0].complete({ suggestions: sparks() }); await flush();
+  b.get('spark-grid').children[0].listeners.click();
+  await answerLatest(b);
+  b.get('back').listeners.click();
+  assert.equal(b.body.attributes['data-view'], 'home');
+  assert.equal(b.get('resume').hidden, false);
+  assert.equal(byClass(b.get('resume'), 'dot').length, 5, 'five steps in a trail');
+  assert.equal(byClass(b.get('resume'), 'done').length, 1);
+  assert.match(b.get('resume').attributes['aria-label'], /Step 1 of 5/);
+  b.get('resume').listeners.click();
+  assert.equal(b.body.attributes['data-view'], 'trail');
+  assert.match(text(b.trail()), /Gravity pulls objects together/);
 });
 
 test('a new spark replaces the trail, and Undo brings the old one back', async () => {
@@ -166,14 +197,53 @@ test('a new spark replaces the trail, and Undo brings the old one back', async (
   b.requests[0].complete({ suggestions: sparks() }); await flush();
   const first = vm.runInContext('ask("What is gravity?")', b.context);
   b.requests[1].complete(reply()); await first;
-  b.context.pending = sparks()[1];
-  vm.runInContext('startTrail(pending)', b.context);
+  b.get('back').listeners.click();
+  b.get('spark-grid').children[1].listeners.click();
   assert.equal(b.get('undo').hidden, false);
   assert.doesNotMatch(text(b.trail()), /Gravity pulls objects together/);
   b.get('undo-button').listeners.click();
   assert.equal(b.body.attributes['data-view'], 'trail');
   assert.match(text(b.trail()), /Gravity pulls objects together/);
   assert.equal(b.get('undo').hidden, true);
+});
+
+test('the fifth answer offers Finish, which earns one stamp and shows Trail complete', async () => {
+  const b = await browser();
+  b.requests[0].complete({ suggestions: sparks() }); await flush();
+  b.get('spark-grid').children[0].listeners.click();
+  await answerLatest(b, reply('Plants grow toward light. They bend.'));
+  for (let step = 2; step <= 5; step++) {
+    assert.equal(b.get('dock').hidden, false);
+    byClass(b.trail(), 'follow-up')[0].listeners.click();
+    await answerLatest(b, reply(`Answer ${step}. More detail.`));
+  }
+  assert.equal(byClass(b.trail(), 'follow-up').length, 0, 'no more choices on the last step');
+  assert.equal(b.get('dock').hidden, true, 'Finish replaces the question box');
+  byClass(b.trail(), 'finish')[0].listeners.click();
+  assert.equal(b.body.attributes['data-view'], 'complete');
+  assert.equal(b.get('complete').hidden, false);
+  const facts = byClass(b.get('complete'), 'fact').map(text);
+  assert.deepEqual(facts, ['Plants grow toward light.', 'Answer 3.', 'Answer 5.'], 'first, middle and last answers');
+  const saved = JSON.parse(b.local['curio.stamps.v1']);
+  assert.equal(saved.length, 1);
+  assert.equal(saved[0].topic, 'Topic 0');
+  assert.deepEqual(Object.keys(saved[0]).sort(), ['earned', 'id', 'topic'], 'a stamp keeps only its topic and date');
+  const trails = JSON.parse(b.local['curio.trails.v1']);
+  assert.equal(trails[0].question, sparks()[0].question);
+  assert.equal(byClass(b.get('complete'), 'locked').length, 1, 'one dashed "next" stamp');
+  const home = [...walk(b.get('complete'))].find(e => e.textContent === 'Start a new spark')!;
+  home.listeners.click();
+  assert.equal(b.body.attributes['data-view'], 'home');
+  assert.equal(b.get('resume').hidden, true, 'a finished trail is not offered again');
+});
+
+test('Home greets the child by the saved first name', async () => {
+  const b = await browser(undefined, false, { 'curio.name.v1': 'Ayaan' });
+  assert.match(b.get('greeting').textContent, /^What are you curious about (today|tonight), Ayaan\?$/);
+  b.get('child-name').value = '  Mira ';
+  b.get('settings-done').listeners.click();
+  assert.equal(b.local['curio.name.v1'], 'Mira');
+  assert.match(b.get('greeting').textContent, /, Mira\?$/);
 });
 
 test('right-click or long-press on a spark fills the box without asking', async () => {

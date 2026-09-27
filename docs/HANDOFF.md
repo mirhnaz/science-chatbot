@@ -453,6 +453,32 @@ typecheck; 390 px light screenshot shows Dive deeper clear of the dock.
 Interim gap until step 4: the web page has no way back to Sparks during a
 trail (Back/Home arrives with the redesigned Trail header).
 
+### Redesign v2 step 4: phone screens (2026-09-27)
+
+Web rebuilt to the redesign (plain TS): Home (greeting with name from a new
+Settings dialog, resume card, tinted Sparks, Shuffle), Trail (header, rail,
+illustration, Dive deeper, Finish on step 5), Trail complete (stamp, recap,
+stamps, Start a new spark, Show a grown-up = recap PNG + questions via Web
+Share, else download + clipboard). Stamps and finished trails in
+localStorage. Client tests rewritten for the new flow (35 HTTP/frontend
+tests incl. resume, Finish → stamp, name greeting). iOS: "today"/"tonight"
+greeting, Show a grown-up adds the questions as the share message,
+finished trails recorded with stamps (`StampStore.trails`), Complete opens
+at the top, and Debug `-autoAsk` runs no longer save stamps.
+
+Verified: `npm test` 21 Rust + 35 HTTP/frontend, typecheck, iOS build.
+Web at 390 px, light and dark, Home / resume / Trail / Complete via
+headless Chrome (mock tutor). iPad (landscape) light: Home, Trail,
+Complete checked by screenshot; that run found the Complete scroll offset
+(fixed, not re-checked on device). **iPad dark not verified**: someone was
+using the iPad during the run, so launches stopped and those captures were
+deleted. The latest iOS build is not installed yet.
+
+Data note: two earlier `-autoComplete` test runs each saved a stamp (and
+trail) into the iPad's real Curio storage; it held six stamps at 08:49, so
+four came from real use. The test ones were not removed; ask before
+deleting anything.
+
 ## Agreed direction, not yet implemented
 
 The user expects login, conversation history, and more functionality over time.

@@ -11,6 +11,26 @@ uses the same curiosity column in plain TypeScript ([FRONTEND.md](FRONTEND.md)).
 > record); the curiosity-column, principles, layout and web-notes sections
 > are the earlier design, superseded where they conflict.
 
+## Screens (2026-09 redesign, implemented)
+
+Layouts of record: `docs/design/redesign-2026-09/*.dc.html`. Feature
+decisions (final, 2026-09-26/27): a trail is **5 steps**; each finished
+trail earns **one stamp** (no limit; the counter is a total, the row shows
+the latest four and a dashed "next"); Sparks are **shuffle-only**; **Show a
+grown-up** shares the recap picture plus the trail's questions as text;
+stamps and finished trails are kept **on the device only**.
+
+- **Home**: brand and Settings; greeting by first name ("today"/"tonight");
+  resume card while a trail is unfinished; Sparks 2×2 with Shuffle; credit.
+- **Trail**: Back · topic · "Trail · Step N" · Settings; numbered rail of
+  earlier steps; current question, illustration, answer; Dive deeper (two
+  on phones). The fifth answer shows Finish instead of the question box.
+- **Trail complete**: stamp, "Trail complete!", recap, stamps, Start a new
+  spark, Show a grown-up.
+- Placeholders until new features exist: category illustration (not per
+  step), the step's question (not a short label), the topic (not a trail
+  name), first sentences (not generated facts), no microphone.
+
 ## The curiosity column (current iPad build)
 
 [design/curiosity-column.png](design/curiosity-column.png) (source:
@@ -159,6 +179,7 @@ its iPad/web artboards (dark derived); ᵈ are derived here.
 | `danger` · `Danger` ᵈ | `#B3261E` | `#FF9A93` | Error text |
 | `danger-tint` · `DangerTint` ᵈ | `#FDECEA` | `#3A1F24` | Error background |
 | `ground-veil` (CSS only) | ground at 92 % | ground at 92 % | Blurred bars over scrolling content |
+| `scrim` (CSS only) | ink at 40 % | black at 55 % | Behind dialogs |
 
 ### Categories
 

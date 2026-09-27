@@ -17,7 +17,7 @@ struct ContentView: View {
     @State private var speakingStep: UUID?
     @State private var showSettings = false
     @State private var screen = Screen.home
-    @State private var stamps = StampStore()
+    @State private var stamps = StampStore(persists: !ProcessInfo.processInfo.arguments.contains("-autoAsk"))
     @FocusState private var composing: Bool
 
     private var choice: EngineChoice { EngineChoice(rawValue: engineChoice) ?? .automatic }
@@ -167,7 +167,7 @@ struct ContentView: View {
     /// The last step's Finish: earns the trail's stamp once and celebrates.
     private func finishTrail() {
         stopSpeech()
-        stamps.award(trail: chat.trailID, topic: chat.topic)
+        stamps.award(trail: chat.trailID, topic: chat.topic, question: chat.steps.first?.question ?? "")
         chat.markFinished()
         go(.complete)
     }

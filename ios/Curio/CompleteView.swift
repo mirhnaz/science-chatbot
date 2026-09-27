@@ -2,8 +2,8 @@ import Foundation
 import Observation
 import SwiftUI
 
-/// One stamp per completed trail. Only the topic and the date are kept (not
-/// the child's questions), on this device, in UserDefaults.
+/// One stamp per completed trail. Only the topic and the date are kept, on
+/// this device, in UserDefaults.
 struct Stamp: Codable, Identifiable, Equatable {
     /// The trail that earned it, so a trail is only stamped once.
     let id: UUID
@@ -12,25 +12,49 @@ struct Stamp: Codable, Identifiable, Equatable {
     let earned: Date
 }
 
+/// A finished trail, for "Trails you finished": its topic, first question,
+/// and date only.
+struct FinishedTrail: Codable, Identifiable, Equatable {
+    let id: UUID
+    let topic: String?
+    let question: String
+    let finished: Date
+}
+
+/// Stamps and finished trails, kept on this device (UserDefaults).
 @MainActor @Observable
 final class StampStore {
-    private static let key = "stamps"
-    private(set) var stamps: [Stamp] = []
+    private static let stampsKey = "stamps"
+    private static let trailsKey = "finishedTrails"
+    private(set) var stamps: [Stamp] = StampStore.load(stampsKey)
+    private(set) var trails: [FinishedTrail] = StampStore.load(trailsKey)
+    /// False for Debug test runs (`-autoAsk`), so they never add stamps to
+    /// a child's real collection.
+    private let persists: Bool
 
-    init() {
-        if let data = UserDefaults.standard.data(forKey: Self.key),
-           let saved = try? JSONDecoder().decode([Stamp].self, from: data) {
-            stamps = saved
+    init(persists: Bool = true) {
+        self.persists = persists
+    }
+
+    /// Adds the trail's stamp and records it as finished, once per trail.
+    func award(trail: UUID, topic: String?, question: String) {
+        if !stamps.contains(where: { $0.id == trail }) {
+            stamps.append(Stamp(id: trail, topic: topic, earned: .now))
+            if persists { Self.save(stamps, Self.stampsKey) }
+        }
+        if !trails.contains(where: { $0.id == trail }) {
+            trails = Array((trails + [FinishedTrail(id: trail, topic: topic, question: question, finished: .now)]).suffix(100))
+            if persists { Self.save(trails, Self.trailsKey) }
         }
     }
 
-    /// Adds the trail's stamp unless it already has one.
-    func award(trail: UUID, topic: String?) {
-        guard !stamps.contains(where: { $0.id == trail }) else { return }
-        stamps.append(Stamp(id: trail, topic: topic, earned: .now))
-        if let data = try? JSONEncoder().encode(stamps) {
-            UserDefaults.standard.set(data, forKey: Self.key)
-        }
+    private static func load<T: Decodable>(_ key: String) -> [T] {
+        guard let data = UserDefaults.standard.data(forKey: key) else { return [] }
+        return (try? JSONDecoder().decode([T].self, from: data)) ?? []
+    }
+
+    private static func save<T: Encodable>(_ value: T, _ key: String) {
+        if let data = try? JSONEncoder().encode(value) { UserDefaults.standard.set(data, forKey: key) }
     }
 }
 
@@ -95,6 +119,9 @@ struct CompleteView: View {
                 .padding(.bottom, 16)
             }
             .scrollBounceBehavior(.basedOnSize)
+            // Opens at the stamp, even when the screen is too short for all.
+            .defaultScrollAnchor(.top)
+            .scrollIndicators(.hidden)
 
             VStack(spacing: 10) {
                 Button(action: newSpark) {
@@ -107,7 +134,8 @@ struct CompleteView: View {
                 }
                 .buttonStyle(.plain)
                 if let shareImage {
-                    ShareLink(item: shareImage,
+                    // The recap picture, plus the trail's questions as text.
+                    ShareLink(item: shareImage, message: Text(questionsText),
                               preview: SharePreview("What I found out about \(topicName)", image: shareImage)) {
                         Label("Show a grown-up", systemImage: "square.and.arrow.up")
                             .font(Curio.body(16, .heavy, relativeTo: .headline))
@@ -127,6 +155,11 @@ struct CompleteView: View {
         .frame(maxWidth: .infinity)
         .background(Curio.ground)
         .task { renderShareImage(facts: facts) }
+    }
+
+    private var questionsText: String {
+        let list = chat.steps.enumerated().map { "\($0.offset + 1). \($0.element.question)" }
+        return "What I explored on Curio (\(topicName)):\n" + list.joined(separator: "\n")
     }
 
     /// "Show a grown-up" shares the recap card as a picture (light colours,

@@ -1,52 +1,59 @@
-# Frontend: the curiosity column
+# Frontend: Home, Trail, Trail complete
 
-The web page follows the shared design in [DESIGN.md](DESIGN.md), the same as
-the iPad app. It stays plain TypeScript, HTML, and CSS: one screen with modest
-state needs no React, and plain files keep the Rust asset allowlist and CSP
-unchanged. React + TypeScript + Vite remains the agreed direction when
-account/history screens make shared state and reusable components useful.
+The web page follows [DESIGN.md](DESIGN.md) (tokens) and the 2026-09 redesign
+artboards in `docs/design/redesign-2026-09/`, the same as the iOS app. It
+stays plain TypeScript, HTML, and CSS: three screens with modest state need
+no React, and plain files keep the Rust asset allowlist and CSP simple.
+React + TypeScript + Vite remains the agreed direction when account/history
+screens make shared state and reusable components useful.
 
-- `public/index.html`: toolbar, fresh screen (hero, Sparks), trail, dock
-  (the question box), and the Undo banner.
-- `public/styles.css`: colour tokens (light/dark, purple accent), glass, and
-  responsive rules.
-- `src/client/app.ts`: sparks, the trail (steps, folding, Dive deeper), asking,
-  Stop/Try again/Undo, scrolling, and read aloud.
+- `public/index.html`: Home, Trail and Trail complete sections, the bottom
+  bar (question box), the Settings dialog (first name, theme), and Undo.
+- `public/styles.css`: tokens (see DESIGN.md), self-hosted Fredoka/Nunito
+  (`public/fonts/`), and the screen styles.
+- `src/client/app.ts`: sparks, the trail (rail, current step, Dive deeper,
+  Finish), Trail complete (recap, stamps, Show a grown-up), asking,
+  Stop/Try again/Undo, and read aloud. Icons are constant inline SVG.
 - `src/client/theme.ts`: Light/Dark/System, applied before the first paint.
 
 ## Behaviour
 
-- **Fresh screen**: the question box and four Sparks sit in the centre. A spark
-  asks at once and starts a trail; right-click or long-press fills the box
-  instead. On the first question the box moves to the dock; browsers with View
-  Transitions animate the move.
-- **Trail**: steps stack in order. Only the latest is open; earlier steps fold
-  to their question, a two-line preview, and the chosen follow-up (↳), and can
-  be reopened. The latest step is at least a screen tall and is scrolled to just
-  below the toolbar, so its answer fills in in view.
-- **Dock**: only the question box; typing continues the current trail. Enter
-  asks; Shift+Enter adds a line. The dock and toolbar blur content scrolling
-  beneath them. The "New spark" chips and "Ask your own" were removed
-  (2026-09-27) because they overlapped Dive deeper; Home's Back/Sparks
-  replace them in the redesign.
+- **Home**: greeting ("today" or "tonight", with the first name from
+  Settings), "Continue your trail" while a trail is unfinished (five dots,
+  step, Keep going), four tinted Sparks with Shuffle, and the credit line. A
+  spark asks at once and starts a new trail; right-click or long-press fills
+  the box instead. A question typed on Home also starts a new trail.
+- **Trail**: header (Back, topic, "Trail · Step N", Settings); earlier steps
+  as a numbered rail that re-opens an answer; the current question, a
+  category illustration, the answer, and Dive deeper (two choices on phones,
+  all three when wide). Typing continues the trail. Back keeps the trail.
+- **Five steps** make a trail: after the fifth answer Finish replaces the
+  question box and opens **Trail complete**: the stamp, three recap facts
+  (first sentences of the first, middle, and last answers), the latest four
+  stamps and a total, Start a new spark, and Show a grown-up.
+- **Show a grown-up** shares the recap card as a PNG plus the trail's
+  questions as text (Web Share with files); otherwise it downloads the
+  picture and copies the questions.
 - **Undo**: a new trail shows "Started a new trail · Undo" for six seconds.
-- **Stop** removes the unanswered step and puts the question back in the box.
-  Errors show in the step with **Try again**.
-- **Read aloud** is a button on each answer when the browser has a local English
-  voice.
+- **Stop** removes the unanswered step and puts the question back in the
+  box. Errors show in the step with **Try again**.
+- **Read aloud** is a button on each answer when the browser has a local
+  English voice.
 
-The trail exists only in the page; every question is still sent to `/api/chat`
-on its own, so the API is unchanged. Recent spark IDs are kept in tab-scoped
-sessionStorage under `curio.recent-suggestions.v1`. The theme persists in
-localStorage under `curio.theme.v1` (the pre-rename key is read once).
+Every question is still sent to `/api/chat` on its own, so the API is
+unchanged. Browser storage: recent spark IDs in sessionStorage
+(`curio.recent-suggestions.v1`); in localStorage the theme
+(`curio.theme.v1`), first name (`curio.name.v1`), stamps (`curio.stamps.v1`:
+trail ID, topic, date) and finished trails (`curio.trails.v1`: trail ID,
+topic, first question, date; last 100). The trail in progress lives only in
+the page and is lost on reload.
 
 ## Checks
 
 Run `npm run build:frontend` after TypeScript changes. Keep visible keyboard
 focus, labelled controls, reduced-motion and reduced-transparency/contrast
 fallbacks, and theme contrast. Change shared colour tokens rather than
-scattering literal colours. Check both themes at laptop (1280×800) and phone
-(390px) widths with long answers, several steps, loading and errors. A headless
-Chrome script driving the page over the DevTools protocol was used for the
-2026-09-26 screenshots (fresh, loading, answer, two-step trail, Ask your own,
-Undo); the new step landed exactly below the toolbar at both widths.
+scattering literal colours. Check both themes at phone (390 px), iPad (1180 px) and
+web (1440 px) widths with long answers, several steps, loading and errors. A
+headless Chrome script driving the page over the DevTools protocol (with a
+mock tutor on the dev server) was used for the 2026-09-27 screenshots.

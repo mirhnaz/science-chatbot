@@ -1,7 +1,7 @@
-// Curio's web page: the curiosity column (docs/DESIGN.md). A fresh session
-// centres the question box with Sparks; after the first question the box moves
-// to the glass dock and a trail of questions grows above it. Every question is
-// still sent to /api/chat on its own; the trail is kept only in this page.
+// Curio's web page (docs/DESIGN.md; layouts in docs/design/redesign-2026-09/):
+// Home → a Trail of up to five steps → Trail complete. Every question is still
+// sent to /api/chat on its own; the trail is kept only in this page. Stamps and
+// finished trails (topic, first question, date) stay in this browser.
 
 interface ChatResponse {
   answer?: unknown;
@@ -15,16 +15,19 @@ interface Spark { id: string; topic: string; icon: string; question: string }
 interface Step {
   id: number;
   question: string;
-  /** Spark topic, for example "⚡ Electricity", when a trail began from one. */
+  /** Spark topic, for example "Electricity", when a trail began from one. */
   topic?: string;
   answer?: string;
   followUps?: string[];
   error?: string;
-  /** The next question asked from this step (shown as ↳ when folded). */
+  /** The next question asked from this step. */
   chosen?: string;
-  /** Seconds from asking to the answer arriving, as the child waited. */
-  seconds?: number;
 }
+
+/** One stamp per finished trail: only its topic and date. */
+interface Stamp { id: string; topic: string | null; earned: string }
+/** A finished trail, for "Trails you finished". */
+interface FinishedTrail { id: string; topic: string | null; question: string; finished: string }
 
 // Optional browser tool integration; unavailable browsers use the normal UI.
 interface ScienceTool {
@@ -48,21 +51,33 @@ interface Document {
 }
 
 interface AppElements {
+  main: HTMLElement;
+  home: HTMLElement;
+  'trail-screen': HTMLElement;
+  complete: HTMLElement;
+  greeting: HTMLHeadingElement;
+  resume: HTMLButtonElement;
+  'brand-mark': HTMLSpanElement;
+  'made-with-love': HTMLParagraphElement;
+  'settings-home': HTMLButtonElement;
+  'settings-trail': HTMLButtonElement;
+  back: HTMLButtonElement;
+  'trail-name': HTMLHeadingElement;
+  'trail-detail': HTMLParagraphElement;
+  trail: HTMLElement;
+  dock: HTMLDivElement;
   question: HTMLTextAreaElement;
   'question-form': HTMLFormElement;
   ask: HTMLButtonElement;
   cancel: HTMLButtonElement;
-  fresh: HTMLElement;
-  'fresh-compose': HTMLDivElement;
-  'dock-compose': HTMLDivElement;
-  trail: HTMLElement;
   'spark-grid': HTMLDivElement;
   'sparks-status': HTMLParagraphElement;
   'new-sparks': HTMLButtonElement;
+  settings: HTMLDialogElement;
+  'child-name': HTMLInputElement;
+  'settings-done': HTMLButtonElement;
   undo: HTMLDivElement;
   'undo-button': HTMLButtonElement;
-  title: HTMLHeadingElement;
-  subtitle: HTMLParagraphElement;
   status: HTMLParagraphElement;
 }
 
@@ -79,19 +94,114 @@ function element<K extends keyof HTMLElementTagNameMap>(tag: K, className?: stri
   return node;
 }
 
+function button(className: string, label?: string): HTMLButtonElement {
+  const node = element('button', className, label);
+  node.type = 'button';
+  return node;
+}
+
+/** Appends a constant icon (never user text), then an optional text label. */
+function withIcon<T extends HTMLElement>(node: T, icon: string, label?: string): T {
+  const glyph = element('span', 'icon');
+  glyph.innerHTML = icon;
+  node.append(glyph);
+  if (label !== undefined) node.append(element('span', undefined, label));
+  return node;
+}
+
 const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-/** Phones keep the question box in the dock even on the fresh screen. */
-const phoneQuery = window.matchMedia('(max-width: 600px)');
+
+// ---- Icons (2 px stroke, round caps; docs/DESIGN.md) -------------------------
+
+const stroke = 'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
+const svg = (body: string) => `<svg viewBox="0 0 24 24" ${stroke} aria-hidden="true">${body}</svg>`;
+const icons = {
+  comet: svg('<circle cx="16" cy="8" r="4"/><path d="M13 11L3 21"/><path d="M11 8L4 15"/><path d="M16 13l-7 7"/>'),
+  gear: svg('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>'),
+  back: svg('<path d="M15 18l-6-6 6-6"/>'),
+  close: svg('<path d="M6 6l12 12"/><path d="M18 6L6 18"/>'),
+  shuffle: svg('<path d="M16 3h5v5"/><path d="M4 20L21 3"/><path d="M21 16v5h-5"/><path d="M15 15l6 6"/><path d="M4 4l5 5"/>'),
+  send: svg('<path d="M12 19V5"/><path d="M5 12l7-7 7 7"/>'),
+  stop: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>',
+  speaker: svg('<path d="M11 5L6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/>'),
+  chevronRight: svg('<path d="M9 6l6 6-6 6"/>'),
+  chevronDown: svg('<path d="M6 9l6 6 6-6"/>'),
+  chevronUp: svg('<path d="M18 15l-6-6-6 6"/>'),
+  check: svg('<path d="M5 12l5 5L20 7"/>'),
+  share: svg('<path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/>'),
+  flag: svg('<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><path d="M4 22v-7"/>'),
+  heart: '<svg viewBox="0 0 24 24" class="heart" aria-hidden="true"><path d="M12 21s-7-4.6-9-9.2C1.6 8.4 4 5 7.5 5c2 0 3.4 1.1 4.5 2.6C13.1 6.1 14.5 5 16.5 5 20 5 22.4 8.4 21 11.8 19 16.4 12 21 12 21z"/></svg>'
+};
+
+/** Category styles: CSS class (tokens) and icon paths. Unknown topics, and the
+ *  child's own questions, use Space. */
+const categories: Record<string, { key: string; paths: string }> = {
+  Weather: { key: 'weather', paths: '<circle cx="9" cy="8" r="3.5"/><path d="M9 1.5V3"/><path d="M2.5 8H4"/><path d="M4.4 3.4l1 1"/><path d="M8 20.5h9a3.5 3.5 0 0 0 .5-7 5 5 0 0 0-9.6 1.5A3 3 0 0 0 8 20.5z"/>' },
+  Animals: { key: 'animals', paths: '<path d="M2.5 12s3.5-6 9.5-6 8.5 6 8.5 6-2.5 6-8.5 6-9.5-6-9.5-6z"/><path d="M20.5 12l1.5-3.5v7z" fill="currentColor"/><circle cx="8" cy="11" r="1.2" fill="currentColor"/>' },
+  Space: { key: 'space', paths: '<circle cx="16" cy="8" r="4"/><path d="M13 11L3 21"/><path d="M11 8L4 15"/><path d="M16 13l-7 7"/>' },
+  Sound: { key: 'sound', paths: '<path d="M9 18V5l10-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/>' },
+  Light: { key: 'light', paths: '<path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/>' },
+  Body: { key: 'body', paths: '<path d="M12 21s-7-4.6-9-9.2C1.6 8.4 4 5 7.5 5c2 0 3.4 1.1 4.5 2.6C13.1 6.1 14.5 5 16.5 5 20 5 22.4 8.4 21 11.8 19 16.4 12 21 12 21z"/>' },
+  Earth: { key: 'earth', paths: '<path d="M8 3l4 8 5-5 5 15H2L8 3z"/>' },
+  Electricity: { key: 'electricity', paths: '<path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>' },
+  'Forces & motion': { key: 'forces', paths: '<path d="M5 9l-3 3 3 3"/><path d="M9 5l3-3 3 3"/><path d="M15 19l-3 3-3-3"/><path d="M19 9l3 3-3 3"/><path d="M2 12h20"/><path d="M12 2v20"/>' },
+  Matter: { key: 'matter', paths: '<circle cx="12" cy="12" r="1"/><path d="M20.2 20.2c2-2 0-7.4-4.5-11.9S6.3 1.8 4.3 3.8s0 7.4 4.5 11.9 9.4 6.5 11.4 4.5z"/><path d="M15.7 15.7c4.5-4.5 6.5-9.9 4.5-11.9s-7.4 0-11.9 4.5-6.5 9.9-4.5 11.9 7.4 0 11.9-4.5z"/>' },
+  Plants: { key: 'plants', paths: '<path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.5 19 2c1 2 2 4.2 2 8 0 5.5-4.8 10-10 10z"/><path d="M2 21c0-3 1.9-5.4 5.1-6C9.5 14.5 12 13 13 12"/>' }
+};
+const category = (topic?: string | null) => {
+  const style = categories[topic ?? ''] ?? categories.Space;
+  return { key: style.key, icon: svg(style.paths), paths: style.paths };
+};
+
+// ---- Local storage (optional; blocked storage just forgets) ---------------
+
+function load<T>(key: string, valid: (value: unknown) => value is T, fallback: T): T {
+  try {
+    const value: unknown = JSON.parse(localStorage.getItem(key) ?? 'null');
+    return valid(value) ? value : fallback;
+  } catch { return fallback; }
+}
+function save(key: string, value: unknown) {
+  try { localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value)); } catch { /* Optional storage. */ }
+}
+const nameKey = 'curio.name.v1';
+const stampsKey = 'curio.stamps.v1';
+const trailsKey = 'curio.trails.v1';
+const record = (item: unknown): item is Record<string, unknown> => !!item && typeof item === 'object';
+const isStamps = (value: unknown): value is Stamp[] => Array.isArray(value) && value.every(item =>
+  record(item) && typeof item.id === 'string' && (item.topic === null || typeof item.topic === 'string') && typeof item.earned === 'string');
+const isTrails = (value: unknown): value is FinishedTrail[] => Array.isArray(value) && value.every(item =>
+  record(item) && typeof item.id === 'string' && (item.topic === null || typeof item.topic === 'string')
+  && typeof item.question === 'string' && typeof item.finished === 'string');
+function childName(): string {
+  try { return (localStorage.getItem(nameKey) ?? '').trim().slice(0, 40); } catch { return ''; }
+}
 
 // ---- State ---------------------------------------------------------------
 
+/** Steps in a full trail; after the last answer the trail can be finished. */
+const trailLength = 5;
+type View = 'home' | 'trail' | 'complete';
+let view: View = 'home';
 let steps: Step[] = [];
-let undoSteps: Step[] | null = null;
+let trailId = newTrailId();
+/** The child tapped Finish; until then Home offers to continue the trail. */
+let finished = false;
+let undoState: { steps: Step[]; trailId: string; finished: boolean } | null = null;
 let undoTimer: ReturnType<typeof setTimeout> | undefined;
 let expanded = new Set<number>();
 let nextStepId = 1;
 let controller: AbortController | null = null;
-let composeIn: 'fresh' | 'dock' | null = null;
+let stamps = load(stampsKey, isStamps, []);
+let finishedTrails = load(trailsKey, isTrails, []);
+
+function newTrailId() {
+  return `trail-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+const answered = () => steps.filter(step => step.answer !== undefined).length;
+const isComplete = () => answered() >= trailLength;
+const hasUnfinishedTrail = () => steps.length > 0 && !finished;
+const trailTopic = () => steps[0]?.topic;
 
 // ---- Sparks (starter questions from /api/suggestions) --------------------
 
@@ -157,14 +267,17 @@ function editFirst(target: HTMLElement, text: string) {
   });
 }
 
+/** A tinted card: icon disc, topic label, and the question. */
 function renderSparks() {
   const cards = sparks.map(spark => {
-    const card = element('button', 'spark-card');
-    card.type = 'button';
-    const label = element('span', 'spark-topic', `${spark.icon} ${spark.topic}`);
-    const question = element('span', 'spark-question', spark.question);
-    card.append(label, question);
-    card.setAttribute('aria-label', spark.question);
+    const style = category(spark.topic);
+    const card = button(`spark-card cat-${style.key}`);
+    const disc = element('span', 'icon-disc');
+    disc.innerHTML = style.icon;
+    const words = element('span', 'spark-words');
+    words.append(element('span', 'spark-topic', spark.topic), element('span', 'spark-question', spark.question));
+    card.append(disc, words);
+    card.setAttribute('aria-label', `${spark.topic}: ${spark.question}`);
     card.addEventListener('click', () => startTrail(spark));
     editFirst(card, spark.question);
     return card;
@@ -178,40 +291,42 @@ function renderSparks() {
 function startTrail(spark: Spark) {
   if (controller) return;
   sparks = sparks.filter(item => item.id !== spark.id);
-  void ask(spark.question, { newTrail: true, topic: `${spark.icon} ${spark.topic}` });
+  void ask(spark.question, { newTrail: true, topic: spark.topic });
 }
 
 function replaceTrail() {
   stopSpeech();
-  undoSteps = steps.some(step => step.answer) ? steps : null;
+  undoState = steps.some(step => step.answer) ? { steps, trailId, finished } : null;
   steps = [];
+  trailId = newTrailId();
+  finished = false;
   expanded = new Set();
   showUndo();
 }
 
 function showUndo() {
   clearTimeout(undoTimer);
-  $('undo').hidden = !undoSteps;
-  if (undoSteps) undoTimer = setTimeout(() => { undoSteps = null; $('undo').hidden = true; }, 6000);
+  $('undo').hidden = !undoState;
+  if (undoState) undoTimer = setTimeout(() => { undoState = null; $('undo').hidden = true; }, 6000);
 }
 
 function undo() {
-  if (!undoSteps) return;
+  if (!undoState) return;
   controller?.abort('undo');
-  steps = undoSteps;
-  undoSteps = null;
+  ({ steps, trailId, finished } = undoState);
+  undoState = null;
   showUndo();
-  show(() => render());
+  go(finished ? 'home' : 'trail');
 }
 
 async function ask(question: unknown, options: { newTrail?: boolean; topic?: string } = {}) {
   if (controller) throw new Error('A question is already being answered.');
   if (typeof question !== 'string' || !question.trim() || question.trim().length > 2000) throw new Error('Enter a question between 1 and 2,000 characters.');
   const asked = question.trim();
-  const wasFresh = steps.length === 0;
-  if (options.newTrail) replaceTrail();
+  // A question typed on Home, or after a finished trail, starts a new trail.
+  if (options.newTrail || view !== 'trail' || isComplete()) replaceTrail();
   if (steps.length) steps[steps.length - 1].chosen = asked;
-  const step: Step = { id: nextStepId++, question: asked, topic: options.topic };
+  const step: Step = { id: nextStepId++, question: asked, topic: options.topic ?? trailTopic() };
   steps.push(step);
   expanded = new Set();
   if ($('question').value.trim() === asked) $('question').value = '';
@@ -219,20 +334,18 @@ async function ask(question: unknown, options: { newTrail?: boolean; topic?: str
 
   const current = new AbortController();
   controller = current;
-  const started = Date.now();
   const timer = setTimeout(() => current.abort('timeout'), 125000);
   $('status').textContent = 'Exploring your question…';
-  if (wasFresh || options.newTrail) show(() => render()); else render();
-  scrollToLatest();
+  go('trail');
+  scrollToTop();
   try {
     const response = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: asked }), signal: current.signal });
     const data: ChatResponse = await response.json();
     if (!response.ok) throw new Error(typeof data.error === 'string' ? data.error : 'Something went wrong. Please try again.');
     if (typeof data.answer !== 'string' || !data.answer.trim()) throw new Error('No answer came back. Please try again.');
     step.answer = data.answer;
-    step.seconds = (Date.now() - started) / 1000;
     step.followUps = Array.isArray(data.followUps) ? data.followUps.filter((q: unknown): q is string => typeof q === 'string' && !!q.trim()).slice(0, 3) : [];
-    $('status').textContent = `Answered in ${((typeof data.elapsedMs === 'number' ? data.elapsedMs : 0) / 1000).toFixed(1)} seconds.`;
+    $('status').textContent = isComplete() ? 'Your answer is ready, and your trail is ready to finish.' : 'Your answer is ready.';
     return { question: asked, answer: step.answer, followUps: step.followUps };
   } catch (error) {
     const reason: unknown = current.signal.reason;
@@ -255,7 +368,7 @@ async function ask(question: unknown, options: { newTrail?: boolean; topic?: str
   } finally {
     clearTimeout(timer);
     if (controller === current) controller = null;
-    if (steps.length === 0) show(() => render()); else render();
+    if (steps.length === 0) go('home'); else render();
   }
 }
 
@@ -266,127 +379,335 @@ function retry() {
   void ask(last.question, { topic: last.topic });
 }
 
+/** The last step's Finish: one stamp and one "finished trail" per trail. */
+function finishTrail() {
+  if (!isComplete() || controller) return;
+  stopSpeech();
+  const now = new Date().toISOString();
+  if (!stamps.some(stamp => stamp.id === trailId)) {
+    stamps = [...stamps, { id: trailId, topic: trailTopic() ?? null, earned: now }];
+    save(stampsKey, stamps);
+  }
+  if (!finishedTrails.some(trail => trail.id === trailId)) {
+    finishedTrails = [...finishedTrails, { id: trailId, topic: trailTopic() ?? null, question: steps[0].question, finished: now }].slice(-100);
+    save(trailsKey, finishedTrails);
+  }
+  finished = true;
+  go('complete');
+  scrollToTop();
+}
+
 // ---- Rendering -----------------------------------------------------------
 
-/** Runs a layout change as a View Transition, so the question box glides
- *  between the centre and the dock where the browser supports it. */
-function show(update: () => void) {
-  if (typeof document.startViewTransition === 'function' && !reduceMotion()) document.startViewTransition(update);
+/** Switches screens, as a View Transition where the browser supports it. */
+function go(next: View) {
+  const update = () => { view = next; render(); };
+  if (next !== view && typeof document.startViewTransition === 'function' && !reduceMotion()) document.startViewTransition(update);
   else update();
 }
 
 function render() {
-  const fresh = steps.length === 0;
-  const centred = fresh && !phoneQuery.matches;
-  document.body.setAttribute('data-view', fresh ? 'fresh' : 'trail');
-  document.body.setAttribute('data-dock', centred ? 'off' : 'on');
-  $('fresh').hidden = !fresh;
-  $('trail').hidden = fresh;
-  const target = centred ? 'fresh' : 'dock';
-  if (composeIn !== target) {
-    $(centred ? 'fresh-compose' : 'dock-compose').append($('question-form'));
-    composeIn = target;
-  }
-  $('question').placeholder = fresh ? 'Ask a science question…' : 'Ask more about this…';
-  $('title').textContent = steps[0]?.question ?? 'Curio';
-  $('subtitle').textContent = controller ? 'Thinking…' : steps.length > 1 ? `${steps.length} steps` : '';
+  document.body.setAttribute('data-view', view);
+  $('home').hidden = view !== 'home';
+  $('trail-screen').hidden = view !== 'trail';
+  $('complete').hidden = view !== 'complete';
+  // The last step offers Finish instead of the question box.
+  $('dock').hidden = view === 'complete' || (view === 'trail' && isComplete() && !controller);
+  const topic = trailTopic();
+  $('question').placeholder = view === 'trail' ? `Ask more about ${topic ? topic.toLowerCase() : 'this'}…` : 'Ask anything…';
+  renderHome();
   renderTrail();
+  if (view === 'complete') renderComplete();
   updateControls();
 }
 
+function renderHome() {
+  const name = childName();
+  const hour = new Date().getHours();
+  const when = hour >= 18 || hour < 5 ? 'tonight' : 'today';
+  $('greeting').textContent = name ? `What are you curious about ${when}, ${name}?` : `What are you curious about ${when}?`;
+  const resume = $('resume');
+  resume.hidden = !hasUnfinishedTrail();
+  if (resume.hidden) return;
+  const dots = element('span', 'dots');
+  for (let i = 0; i < trailLength; i++) dots.append(element('span', i < answered() ? 'dot done' : 'dot'));
+  // The design's short step label needs the tutor to name each step; until
+  // then, the step's question.
+  const row = element('span', 'resume-row');
+  row.append(dots, element('span', 'resume-step', `Step ${steps.length} · ${steps[steps.length - 1].question}`),
+    withIcon(element('span', 'resume-go', 'Keep going'), icons.chevronRight));
+  resume.replaceChildren(element('span', 'resume-label', 'Continue your trail'), element('span', 'resume-question', steps[0].question), row);
+  resume.setAttribute('aria-label', `Continue your trail: ${steps[0].question}. Step ${steps.length} of ${trailLength}.`);
+}
+
 function renderTrail() {
+  $('trail-name').textContent = trailTopic() ?? 'Your question';
+  $('trail-detail').textContent = controller ? 'Thinking…' : `Trail · Step ${steps.length}`;
   const latestId = steps[steps.length - 1]?.id;
-  $('trail').replaceChildren(...steps.map((step, index) =>
-    step.id === latestId || expanded.has(step.id)
-      ? openStep(step, step.id === latestId, index === 0)
-      : foldedStep(step)));
+  const nodes: HTMLElement[] = [];
+  steps.forEach((step, index) => {
+    if (step.id === latestId) nodes.push(currentStep(step, index + 1));
+    else nodes.push(railStep(step, index + 1), element('div', 'connector'));
+  });
+  $('trail').replaceChildren(...nodes);
+  $('trail').className = `trail cat-${category(trailTopic()).key}`;
 }
 
-function foldedStep(step: Step) {
-  const button = element('button', 'step-folded');
-  button.type = 'button';
-  button.setAttribute('aria-expanded', 'false');
-  const head = element('span', 'folded-question', step.question);
-  button.append(head);
-  if (step.answer) button.append(element('span', 'folded-preview', step.answer));
-  if (step.chosen) button.append(element('span', 'chosen', `↳ ${step.chosen}`));
-  button.addEventListener('click', () => { expanded.add(step.id); renderTrail(); updateControls(); });
-  return button;
+function stepDisc(number: number, current: boolean) {
+  const disc = element('span', current ? 'step-disc current' : 'step-disc', String(number));
+  disc.setAttribute('aria-hidden', 'true');
+  return disc;
 }
 
-function openStep(step: Step, latest: boolean, first: boolean) {
-  const article = element('article', latest ? 'step latest' : 'step');
+/** An earlier step: number, one-line question, chevron; opens its answer. */
+function railStep(step: Step, number: number) {
+  const wrap = element('div', 'rail-item');
+  const open = expanded.has(step.id);
+  const row = button('rail-step');
+  row.setAttribute('aria-expanded', String(open));
+  row.setAttribute('aria-label', `Step ${number}: ${step.question}`);
+  row.append(stepDisc(number, false), element('span', 'rail-question', step.question));
+  withIcon(row, open ? icons.chevronUp : icons.chevronDown);
+  row.addEventListener('click', () => {
+    if (open) expanded.delete(step.id); else expanded.add(step.id);
+    renderTrail(); updateControls();
+  });
+  wrap.append(row);
+  if (open && step.answer) {
+    const answer = element('div', 'rail-answer');
+    answer.append(element('p', 'answer', step.answer));
+    const speak = speakButton(step);
+    if (speak) answer.append(speak);
+    wrap.append(answer);
+  }
+  return wrap;
+}
+
+function speakButton(step: Step) {
+  if (!step.answer || !localVoice()) return null;
+  const on = speakingStep === step.id;
+  const speak = button('icon-button accent speak');
+  speak.setAttribute('aria-label', on ? 'Stop reading' : 'Read this aloud');
+  speak.setAttribute('aria-pressed', String(on));
+  speak.innerHTML = on ? icons.stop : icons.speaker;
+  speak.addEventListener('click', () => toggleSpeech(step));
+  return speak;
+}
+
+/** The current step: heading, illustration, answer, and what comes next. */
+function currentStep(step: Step, number: number) {
+  const article = element('article', 'current-step');
   article.id = `step-${step.id}`;
-  if (first && step.topic) article.append(element('p', 'step-topic', step.topic));
-  const head = element('div', 'step-head');
-  head.append(element('h2', 'step-question', step.question));
-  if (step.answer && localVoice()) {
-    const speak = element('button', 'round glass speak');
-    speak.type = 'button';
-    const on = speakingStep === step.id;
-    speak.setAttribute('aria-label', on ? 'Stop reading' : 'Read aloud');
-    speak.setAttribute('aria-pressed', String(on));
-    speak.innerHTML = on ? stopIcon : speakerIcon;
-    speak.addEventListener('click', () => toggleSpeech(step));
-    head.append(speak);
-  }
-  if (!latest) {
-    const fold = element('button', 'round fold', '⌃');
-    fold.type = 'button';
-    fold.setAttribute('aria-label', 'Fold');
-    fold.addEventListener('click', () => { expanded.delete(step.id); renderTrail(); updateControls(); });
-    head.append(fold);
-  }
+  const head = element('div', 'current-head');
+  head.append(stepDisc(number, true), element('h2', 'current-question', step.question));
+  const speak = speakButton(step);
+  if (speak) head.append(speak);
   article.append(head);
 
   if (step.error) {
     const error = element('div', 'error');
     error.setAttribute('role', 'alert');
     error.append(element('p', undefined, step.error));
-    if (latest) {
-      const again = element('button', 'pill', 'Try again');
-      again.type = 'button';
-      again.addEventListener('click', retry);
-      error.append(again);
-    }
+    const again = button('pill', 'Try again');
+    again.addEventListener('click', retry);
+    error.append(again);
     article.append(error);
   } else if (step.answer === undefined) {
     const loading = element('div', 'loading');
     loading.append(element('span', 'spinner'), element('span', undefined, 'Working on your answer…'));
     article.append(loading);
   } else {
-    article.append(element('div', 'answer', step.answer));
-    // Shows unusual delays at a glance (network included).
-    if (step.seconds !== undefined) article.append(element('p', 'answered-in', `Answered in ${step.seconds.toFixed(1)} seconds`));
-    if (latest && step.followUps?.length) {
+    const body = element('div', 'step-body');
+    body.append(illustration(step.topic), element('p', 'answer', step.answer));
+    article.append(body);
+    if (isComplete()) {
+      const finish = withIcon(button('primary finish'), icons.flag, 'Finish your trail');
+      finish.addEventListener('click', finishTrail);
+      article.append(finish);
+    } else if (step.followUps?.length) {
       const dive = element('section', 'dive');
-      dive.append(element('h3', undefined, 'Dive deeper'));
-      const rows = element('div', 'dive-rows');
+      dive.setAttribute('aria-label', 'Dive deeper');
+      dive.append(element('h3', 'dive-label', 'Dive deeper'));
+      const chips = element('div', 'dive-chips');
       for (const followUp of step.followUps) {
-        const row = element('button', 'follow-up');
-        row.type = 'button';
-        row.append(element('span', undefined, followUp), element('span', 'chevron', '›'));
-        row.setAttribute('aria-label', followUp);
-        row.addEventListener('click', () => { if (!controller) void ask(followUp); });
-        editFirst(row, followUp);
-        rows.append(row);
+        const chip = button('chip follow-up');
+        chip.append(element('span', 'chip-text', followUp));
+        withIcon(chip, icons.chevronRight);
+        chip.setAttribute('aria-label', followUp);
+        chip.addEventListener('click', () => { if (!controller) void ask(followUp); });
+        editFirst(chip, followUp);
+        chips.append(chip);
       }
-      dive.append(rows);
+      dive.append(chips);
       article.append(dive);
-    } else if (step.chosen) {
-      article.append(element('p', 'chosen', `↳ ${step.chosen}`));
     }
   }
   return article;
 }
 
-/** Puts the new step's question at the top, just under the toolbar. The latest
- *  step is at least a screen tall (CSS), so there is always room to get there. */
-function scrollToLatest() {
-  const latest = steps[steps.length - 1];
-  if (!latest) return;
+/** The illustration slot. Per-step pictures need generating; until then each
+ *  category has one scene: sparkles and its icon on a disc. */
+function illustration(topic?: string) {
+  const figure = element('div', 'illustration');
+  figure.setAttribute('aria-hidden', 'true');
+  const dots = [[24, 22, 1.6], [80, 100, 1.6], [150, 18, 2], [210, 106, 1.6], [120, 60, 1.3], [272, 26, 1.8], [318, 86, 1.4], [48, 66, 1.2]]
+    .map(([x, y, r]) => `<circle class="sparkle" cx="${x}" cy="${y}" r="${r}"/>`).join('');
+  figure.innerHTML = `<svg viewBox="0 0 350 124" preserveAspectRatio="xMidYMid slice">${dots}<circle class="halo" cx="175" cy="62" r="46"/><circle class="disc" cx="175" cy="62" r="32"/><svg class="glyph" x="155" y="42" width="40" height="40" viewBox="0 0 24 24" ${stroke}>${category(topic).paths}</svg></svg>`;
+  return figure;
+}
+
+// ---- Trail complete ------------------------------------------------------
+
+/** Three things from the trail. The design asks for generated facts; until
+ *  then, the first sentence of three answers spread across the trail. */
+function recapFacts(): string[] {
+  const answers = steps.map(step => step.answer).filter((answer): answer is string => !!answer);
+  const picks = answers.length <= 3 ? answers.map((_, i) => i) : [0, Math.floor(answers.length / 2), answers.length - 1];
+  return picks.map(i => firstSentence(answers[i]));
+}
+function firstSentence(text: string) {
+  const match = /^[\s\S]+?[.!?](?=\s|$)/.exec(text.trim());
+  return (match ? match[0] : text).trim();
+}
+
+function renderComplete() {
+  const topic = trailTopic() ?? null;
+  const style = category(topic);
+  const stampName = topic ? `${topic} stamp` : 'Curious Mind stamp';
+
+  const header = element('header', 'app-header');
+  const close = button('icon-button');
+  close.setAttribute('aria-label', 'Close');
+  close.innerHTML = icons.close;
+  close.addEventListener('click', () => go('home'));
+  header.append(close, element('p', 'caption', `${topic ?? 'Your question'} · ${steps.length} steps`), element('span', 'header-spacer'));
+
+  const hero = element('div', `stamp-hero cat-${style.key}`);
+  hero.innerHTML = style.icon;
+  hero.setAttribute('role', 'img');
+  hero.setAttribute('aria-label', stampName);
+  const heading = element('h1', undefined, 'Trail complete!');
+  heading.id = 'complete-heading';
+  const sub = element('p', 'complete-sub', `You earned the ${stampName}. Here’s what you figured out:`);
+
+  const recap = element('div', 'recap');
+  for (const fact of recapFacts()) recap.append(withIcon(element('p', 'fact'), icons.check, fact));
+
+  const head = element('div', 'stamps-head');
+  head.append(element('h2', undefined, 'Your stamps'), element('span', 'stamps-count', stamps.length === 1 ? '1 stamp' : `${stamps.length} stamps`));
+  const row = element('div', 'stamps');
+  for (const stamp of stamps.slice(-4)) {
+    const own = category(stamp.topic);
+    const disc = element('span', `stamp cat-${own.key}${stamp.id === trailId ? ' new' : ''}`);
+    disc.innerHTML = own.icon;
+    disc.setAttribute('role', 'img');
+    disc.setAttribute('aria-label', `${stamp.topic ?? 'Curious Mind'} stamp, ${stamp.id === trailId ? 'just earned' : 'earned'}`);
+    row.append(disc);
+  }
+  const next = element('span', 'stamp locked');
+  next.setAttribute('role', 'img');
+  next.setAttribute('aria-label', 'Next stamp, not earned yet');
+  row.append(next);
+
+  const actions = element('div', 'complete-actions');
+  const newSpark = button('primary', 'Start a new spark');
+  newSpark.addEventListener('click', () => go('home'));
+  const grownUp = withIcon(button('secondary'), icons.share, 'Show a grown-up');
+  grownUp.addEventListener('click', () => { void showGrownUp(); });
+  actions.append(newSpark, grownUp);
+
+  $('complete').replaceChildren(header, hero, heading, sub, recap, head, row, actions);
+}
+
+/** "Show a grown-up": the recap card as a picture, plus the trail's
+ *  questions as text. Shares where the browser can; otherwise saves the
+ *  picture and copies the questions. */
+async function showGrownUp() {
+  const topic = trailTopic() ?? 'Your question';
+  const questions = steps.map((step, i) => `${i + 1}. ${step.question}`).join('\n');
+  const text = `What I explored on Curio (${topic}):\n${questions}`;
+  const blob = await recapImage(topic, recapFacts());
+  const file = blob ? new File([blob], 'curio-trail.png', { type: 'image/png' }) : null;
+  try {
+    if (file && navigator.canShare?.({ files: [file], text })) {
+      await navigator.share({ files: [file], text, title: `Curio: ${topic}` });
+      return;
+    }
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') return;  // closed the share sheet
+  }
+  if (blob) {
+    const link = element('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'curio-trail.png';
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    $('status').textContent = 'Saved the picture and copied the questions.';
+  } catch {
+    $('status').textContent = 'Saved the picture.';
+  }
+}
+
+/** Draws the recap card on a canvas, in the light colours (docs/DESIGN.md). */
+async function recapImage(topic: string, facts: string[]): Promise<Blob | null> {
+  const canvas = element('canvas');
+  const context = canvas.getContext('2d');
+  if (!context) return null;
+  const scale = 2, width = 390, pad = 20, lineHeight = 21;
+  const titleFont = '700 20px Fredoka, Nunito, sans-serif';
+  const factFont = '700 15px Nunito, sans-serif';
+  const wrap = (text: string, max: number) => {
+    context.font = factFont;
+    const lines: string[] = [];
+    let line = '';
+    for (const word of text.split(/\s+/)) {
+      const next = line ? `${line} ${word}` : word;
+      if (context.measureText(next).width > max && line) { lines.push(line); line = word; } else line = next;
+    }
+    if (line) lines.push(line);
+    return lines;
+  };
+  const factLines = facts.map(fact => wrap(fact, width - pad * 2 - 62));
+  const cardTop = pad + 44;
+  const height = cardTop + 16 + factLines.reduce((sum, lines) => sum + lines.length * lineHeight + 10, 0) + 6 + pad;
+  canvas.width = width * scale;
+  canvas.height = height * scale;
+  context.scale(scale, scale);
+  context.fillStyle = '#FFF9F0';  // ground
+  context.fillRect(0, 0, width, height);
+  context.fillStyle = '#211E3B';  // ink
+  context.font = titleFont;
+  context.fillText(`${topic}: what I found out`, pad, pad + 20);
+  context.fillStyle = '#FFFFFF';  // surface
+  context.strokeStyle = '#EDE6DA';  // border
+  context.lineWidth = 1.5;
+  context.beginPath();
+  context.roundRect(pad, cardTop, width - pad * 2, height - cardTop - pad, 18);
+  context.fill();
+  context.stroke();
+  let y = cardTop + 16;
+  for (const lines of factLines) {
+    context.strokeStyle = '#1F7A45';  // success
+    context.lineWidth = 2.6;
+    context.lineCap = 'round';
+    context.beginPath();
+    context.moveTo(pad + 18, y + 9); context.lineTo(pad + 23, y + 14); context.lineTo(pad + 32, y + 4);
+    context.stroke();
+    context.fillStyle = '#211E3B';
+    context.font = factFont;
+    lines.forEach((line, i) => context.fillText(line, pad + 46, y + 15 + i * lineHeight));
+    y += lines.length * lineHeight + 10;
+  }
+  return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+}
+
+function scrollToTop() {
+  if (typeof window.scrollTo !== 'function') return;
   const frame = window.requestAnimationFrame ?? ((callback: () => void) => setTimeout(callback, 16));
-  frame(() => document.getElementById(`step-${latest.id}`)?.scrollIntoView({ block: 'start', behavior: reduceMotion() ? 'auto' : 'smooth' }));
+  frame(() => window.scrollTo({ top: 0, behavior: reduceMotion() ? 'auto' : 'smooth' }));
 }
 
 function updateControls() {
@@ -395,16 +716,13 @@ function updateControls() {
   $('ask').hidden = busy;
   $('cancel').hidden = !busy;
   $('new-sparks').disabled = busy || sparksLoading;
-  document.querySelectorAll<HTMLButtonElement>('.spark-card, .follow-up').forEach(button => { button.disabled = busy; });
-  $('subtitle').textContent = busy ? 'Thinking…' : steps.length > 1 ? `${steps.length} steps` : '';
-  document.getElementById('main')?.setAttribute('aria-busy', String(busy));
+  $('resume').disabled = busy;
+  document.querySelectorAll<HTMLButtonElement>('.spark-card, .follow-up').forEach(item => { item.disabled = busy; });
+  $('trail-detail').textContent = busy ? 'Thinking…' : `Trail · Step ${steps.length}`;
+  $('main').setAttribute('aria-busy', String(busy));
 }
 
 // ---- Read aloud ----------------------------------------------------------
-
-// Constant inline icons (no user text), styled with currentColor.
-const speakerIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>';
-const stopIcon = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>';
 
 const synthesis = window.speechSynthesis;
 let speakingStep: number | null = null;
@@ -428,7 +746,26 @@ function toggleSpeech(step: Step) {
   synthesis.speak(utterance);
 }
 
+// ---- Settings (name here; theme.ts saves the theme) ----------------------
+
+function openSettings() {
+  $('child-name').value = childName();
+  const dialog = $('settings');
+  if (typeof dialog.showModal === 'function') dialog.showModal();
+}
+
 // ---- Wiring --------------------------------------------------------------
+
+$('brand-mark').innerHTML = icons.comet;
+const heart = element('span', 'icon');
+heart.innerHTML = icons.heart;
+$('made-with-love').replaceChildren(heart, element('span', undefined, 'Made with love by Ayaan and Naz'));
+$('settings-home').innerHTML = icons.gear;
+$('settings-trail').innerHTML = icons.gear;
+$('back').innerHTML = icons.back;
+$('ask').innerHTML = icons.send;
+$('cancel').innerHTML = icons.stop;
+withIcon($('new-sparks'), icons.shuffle, 'Shuffle');
 
 function submit() {
   if (controller || !$('question').value.trim()) return;
@@ -446,10 +783,17 @@ $('question').addEventListener('input', () => {
 });
 $('cancel').addEventListener('click', () => controller?.abort('cancel'));
 $('new-sparks').addEventListener('click', () => { void refreshSparks(); });
+$('resume').addEventListener('click', () => { go('trail'); scrollToTop(); });
+$('back').addEventListener('click', () => { stopSpeech(); go('home'); });
+$('settings-home').addEventListener('click', openSettings);
+$('settings-trail').addEventListener('click', openSettings);
+$('settings-done').addEventListener('click', () => {
+  save(nameKey, $('child-name').value.trim().slice(0, 40));
+  renderHome();
+});
 $('undo-button').addEventListener('click', undo);
 synthesis?.addEventListener('voiceschanged', renderTrail);
 window.addEventListener('pagehide', () => { controller?.abort('cancel'); stopSpeech(); });
-phoneQuery.addEventListener?.('change', () => render());
 
 render();
 void refreshSparks();
