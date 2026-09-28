@@ -37,6 +37,10 @@ stamps and finished trails are kept **on the device only**.
   earlier ≥1400 px side nav was removed); Trail and Stamps have back
   controls, and each screen away from Home is one browser history entry, so
   the browser's Back returns Home.
+  Wide windows (2026-09-28): the layout stops growing at 1240 px and stays
+  centred, with the pixel field still spanning the window; the question bar
+  follows its column, answers are capped at 72ch, and from 1320 px the Trail
+  rail is a floating card.
 - Sparks: 2×2 (four) on phones, 3×2 (six, `/api/suggestions?count=6`) at
   ≥1100 px. Deviations: the stamps pill is a count, not a link; no Complete layout was designed for wide screens, so it stays one
   centred column.

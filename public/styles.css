@@ -459,7 +459,13 @@ body[data-dock="true"] main {
 
 /* ≥1100 px (iPad landscape, TabletHome/TabletTrail.dc.html): two columns. */
 @media (min-width: 1100px) {
+  /* Wide windows: the layout stops growing at --page and stays centred
+     (the iPad landscape layout, a little wider); --inset is the margin on
+     each side, used to keep the fixed question bar under its column. The
+     pixel field still spans the whole window. */
+  :root { --page: 1240px; --inset: max(0px, calc((100vw - var(--page)) / 2)); }
   .screen { max-width: none; }
+  .home, .trail-screen { max-width: var(--page); }
   .finished-card { display: flex; }
   .stamps-pill { padding: 0 16px; font-size: 15px; }
   .brand-mark { width: 40px; height: 40px; border-radius: 12px; }
@@ -486,7 +492,7 @@ body[data-dock="true"] main {
   .icon-disc { width: 48px; height: 48px; padding: 11px; }
   .spark-topic { font-size: 12px; }
   .spark-question { font-size: 17px; line-height: 22px; }
-  body[data-view="home"] .dock { left: calc(40px + 380px + 32px); right: 40px; padding-left: 0; padding-right: 0; }
+  body[data-view="home"] .dock { left: calc(var(--inset) + 40px + 380px + 32px); right: calc(var(--inset) + 40px); padding-left: 0; padding-right: 0; }
   .dock > * { max-width: none; }
 
   /* Trail: the whole trail in a 340 px side rail; the step beside it. */
@@ -506,18 +512,18 @@ body[data-dock="true"] main {
   /* The picture as a full-width banner, the answer below it. */
   .step-body { display: flex; flex-direction: column; gap: 22px; margin-top: 22px; }
   .step-body .illustration { width: 100%; height: 200px; aspect-ratio: auto; margin: 0; border-radius: 22px; }
-  .step-body .answer { margin: 0; font-size: 18px; line-height: 29px; }
+  .step-body .answer { margin: 0; max-width: 72ch; font-size: 18px; line-height: 29px; }
   .dive-label { margin-top: 26px; font-size: 17px; }
   .dive-chips { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 10px; }
   .dive-chips .chip:nth-child(n+3) { display: flex; }
   .chip { min-height: 64px; padding: 12px 16px; border-radius: 16px; line-height: 20px; }
   .finish { max-width: 360px; }
-  body[data-view="trail"] .dock { left: calc(340px + 40px); right: 40px; padding-left: 0; padding-right: 0; }
+  body[data-view="trail"] .dock { left: calc(var(--inset) + 340px + 40px); right: calc(var(--inset) + 40px); padding-left: 0; padding-right: 0; }
   /* Only the step column fades above the bar; the rail stays whole. */
   body[data-view="trail"][data-dock="true"] main {
     -webkit-mask-image: linear-gradient(#000, #000), linear-gradient(to bottom, #000 calc(100% - var(--dock-h, 90px) - 20px), transparent calc(100% - var(--dock-h, 90px) + 6px));
     mask-image: linear-gradient(#000, #000), linear-gradient(to bottom, #000 calc(100% - var(--dock-h, 90px) - 20px), transparent calc(100% - var(--dock-h, 90px) + 6px));
-    -webkit-mask-size: 340px 100%, 100% 100%; mask-size: 340px 100%, 100% 100%;
+    -webkit-mask-size: calc(var(--inset) + 340px) 100%, 100% 100%; mask-size: calc(var(--inset) + 340px) 100%, 100% 100%;
     -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
   }
   .compose textarea { min-height: 52px; padding: 14px 20px; border-radius: 26px; font-size: 17px; }
@@ -544,6 +550,11 @@ body[data-dock="true"] main {
   .so-far .fact .icon { width: 18px; height: 18px; margin: 0; }
 }
 
+/* With room around the centred layout, the Trail rail becomes a card
+   instead of a panel against the window edge. */
+@media (min-width: 1320px) {
+  .side-rail { top: 24px; height: calc(100dvh - 48px); margin-top: 24px; border: var(--border-width) solid var(--border); border-radius: 24px; }
+}
 /* ≥1400 px (web): the iPad layouts, as wide web matches iPad. */
 @media (min-width: 1400px) {
   .complete { max-width: 560px; }

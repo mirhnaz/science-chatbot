@@ -1222,7 +1222,7 @@ function sendFieldFocus() {
   const bottom = box.height - 16;
   const left = line(lowest([...Array.from(side.children), $('made-with-love')]), bottom);
   const right = line(sparksBox.bottom, floor);
-  const spaces: Rect[] = [[0, left + 8, split, bottom], [split + 16, right + 8, box.width - 16, floor - 12]];
+  const spaces: Rect[] = [[0, left + 8, split, bottom], [split + 16, right + 8, sparksBox.right - box.left, floor - 12]];
   // The larger space for a solar system: height, unless it is narrow.
   const score = ([x0, y0, x1, y1]: Rect) => Math.min(y1 - y0, (x1 - x0) * 0.35);
   post([split, left, right], score(spaces[0]) >= score(spaces[1]) ? spaces[0] : spaces[1]);
