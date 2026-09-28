@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Curio launch video</title>
+<!-- The Curio launch video as a 1920×1080 animation. render(t) draws the
+     frame at t seconds, so render-video.mjs can step through it frame by
+     frame; opened in a browser it plays in real time. Screens in shots/ are
+     real screenshots of the app with real tutor answers. -->
+<style>
+  @font-face { font-family: "Fredoka"; font-weight: 500 700; src: url("../../public/fonts/fredoka-latin.woff2") format("woff2"); }
+  @font-face { font-family: "Nunito"; font-weight: 600 800; src: url("../../public/fonts/nunito-latin.woff2") format("woff2"); }
+  :root {
+    --ground: #FFF9F0; --night: #17152A; --ink: #211E3B; --muted: #5B5775; --accent: #4F46C9; --accent-tint: #E6E1FF;
+    --display: "Fredoka", system-ui, sans-serif; --body: "Nunito", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; background: #000; }
+  #stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: var(--ground); font-family: var(--body); color: var(--ink); }
+  #sky { position: absolute; inset: 0; }
+  .scene { position: absolute; inset: 0; opacity: 0; will-change: opacity, transform; }
+  .center { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  .big { font-family: var(--display); font-weight: 700; font-size: 104px; line-height: 1.05; letter-spacing: -.01em; }
+  .mid { font-family: var(--display); font-weight: 600; font-size: 64px; line-height: 1.1; }
+  .sub { font-size: 40px; font-weight: 700; color: var(--muted); }
+  .on-night { color: #F3F0FF; }
+  .on-night .sub, .sub.on-night { color: #A9A4C6; }
+  .caption { position: absolute; left: 0; right: 0; top: 70px; text-align: center; font-family: var(--display); font-weight: 600; font-size: 60px; line-height: 1.1; }
+  .caption small { display: block; margin-top: 12px; font-family: var(--body); font-weight: 700; font-size: 32px; color: var(--muted); }
+
+  /* Questions floating up in the night sky. */
+  .q { position: absolute; padding: 18px 30px; border-radius: 999px; background: rgba(42, 38, 82, .92); border: 2px solid #3E3870; color: #F3F0FF; font-size: 36px; font-weight: 700; white-space: nowrap; }
+
+  /* Logo */
+  .logo { width: 260px; height: 260px; border-radius: 58px; box-shadow: 0 30px 80px rgba(79, 70, 201, .35); }
+  .word { font-family: var(--display); font-weight: 700; font-size: 150px; margin-top: 28px; }
+
+  /* Devices, drawn with plain shapes around the real screens. */
+  .device { position: absolute; background: #1D1B30; box-shadow: 0 40px 90px rgba(33, 30, 59, .28); overflow: hidden; }
+  .device img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .device .screen { position: relative; width: 100%; height: 100%; overflow: hidden; border-radius: inherit; }
+  .ipad { width: 1180px; height: 820px; padding: 20px; border-radius: 46px; transform-origin: 50% 0; }
+  .ipad .screen { border-radius: 28px; }
+  .phone { width: 390px; height: 844px; padding: 14px; border-radius: 62px; }
+  .phone .screen { border-radius: 50px; }
+  .laptop { width: 1152px; height: 720px; padding: 18px 18px 18px; border-radius: 26px 26px 8px 8px; }
+  .laptop .screen { border-radius: 10px; }
+  .base { position: absolute; height: 28px; background: linear-gradient(#D9D4E4, #B9B3C8); border-radius: 0 0 26px 26px; box-shadow: 0 24px 60px rgba(33, 30, 59, .2); }
+  .zoom { position: absolute; inset: 0; transform-origin: 0 0; }
+  .ring { position: absolute; border: 6px solid var(--accent); border-radius: 26px; box-shadow: 0 0 0 10px rgba(79, 70, 201, .18); opacity: 0; }
+
+  .pills { position: absolute; left: 0; right: 0; bottom: 70px; display: flex; justify-content: center; gap: 22px; }
+  .pill { padding: 16px 28px; border-radius: 999px; background: #fff; border: 2px solid #E4DFD3; font-size: 32px; font-weight: 800; color: var(--accent); opacity: 0; }
+  .dots { display: flex; gap: 22px; margin-top: 40px; }
+  .dot { width: 34px; height: 34px; border-radius: 50%; border: 5px solid var(--accent); }
+  .facts { display: flex; flex-direction: column; gap: 26px; align-items: center; }
+  .fact { font-family: var(--display); font-weight: 600; font-size: 70px; opacity: 0; }
+  .fact.small { font-family: var(--body); font-weight: 700; font-size: 40px; color: var(--muted); }
+  .love { margin-top: 44px; font-size: 34px; font-weight: 700; color: var(--muted); display: flex; gap: 12px; align-items: center; }
+  .love svg { width: 30px; height: 30px; fill: #E5484D; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="sky" width="1920" height="1080"></canvas>
+
+  <div class="scene center on-night" id="s-hook"><p class="big" id="hook">Every kid has<br>big questions.</p></div>
+
+  <div class="scene" id="s-questions"></div>
+
+  <div class="scene center" id="s-logo">
+    <img class="logo" id="logo" src="icon.png" alt="">
+    <p class="word" id="word">Curio</p>
+    <p class="sub" id="tag">Your science explorer.</p>
+  </div>
+
+  <div class="scene" id="s-home">
+    <p class="caption">Tap a spark, or ask anything.<small>Sparks are starter questions from 11 science topics.</small></p>
+    <div class="device ipad" id="home-dev" style="left:370px;top:260px"><div class="screen"><div class="zoom" id="home-zoom"><img src="shots/ipad-home.png" alt=""></div><div class="ring" id="home-ring"></div></div></div>
+  </div>
+
+  <div class="scene" id="s-trail">
+    <p class="caption" id="trail-cap-a">Clear, exciting answers in seconds.<small>Written for kids by an AI tutor, with a picture and Read aloud.</small></p>
+    <p class="caption" id="trail-cap-b" style="opacity:0">Every answer opens three new questions.<small>Pick one to dive deeper, one step at a time.</small></p>
+    <div class="device ipad" id="trail-dev" style="left:370px;top:260px"><div class="screen"><div class="zoom"><img src="shots/ipad-trail.png" alt=""></div><div class="zoom" id="trail-dive" style="opacity:0"><img src="shots/ipad-trail-dive.png" alt=""></div><div class="ring" id="dive-ring" style="left:356px;top:600px;width:756px;height:88px"></div></div></div>
+  </div>
+
+  <div class="scene center" id="s-steps">
+    <p class="mid">Five steps make a trail.</p>
+    <div class="dots" id="dots"><i class="dot"></i><i class="dot"></i><i class="dot"></i><i class="dot"></i><i class="dot"></i></div>
+  </div>
+
+  <div class="scene" id="s-complete">
+    <p class="caption">Finish the trail, earn a stamp.<small>And see everything you figured out.</small></p>
+    <div class="device ipad" id="complete-dev" style="left:370px;top:260px"><div class="screen"><div class="zoom"><img src="shots/ipad-complete.png" alt=""></div></div></div>
+  </div>
+
+  <div class="scene" id="s-stamps">
+    <p class="caption">Collect all 12 kinds of stamp.<small>New sparks point you to topics you haven’t explored yet.</small></p>
+    <div class="device ipad" id="stamps-dev" style="left:370px;top:260px"><div class="screen"><div class="zoom"><img src="shots/ipad-stamps.png" alt=""></div></div></div>
+  </div>
+
+  <div class="scene" id="s-devices">
+    <p class="caption">On iPad, iPhone and the web.</p>
+    <div class="device laptop" id="dev-laptop" style="left:110px;top:250px;width:1000px;height:625px"><div class="screen"><img src="shots/web-trail-dark.png" alt=""></div></div>
+    <div class="base" id="dev-base" style="left:60px;top:875px;width:1100px"></div>
+    <div class="device ipad" id="dev-ipad" style="left:900px;top:330px;width:760px;height:528px;padding:14px;border-radius:34px"><div class="screen" style="border-radius:20px"><img src="shots/ipad-home.png" alt=""></div></div>
+    <div class="device phone" id="dev-phone" style="left:1540px;top:250px;width:300px;height:649px;padding:11px;border-radius:48px"><div class="screen" style="border-radius:38px"><img src="shots/phone-trail.png" alt=""></div></div>
+    <div class="pills"><span class="pill">Say your question</span><span class="pill">Listen to answers</span><span class="pill">Light and dark mode</span></div>
+  </div>
+
+  <div class="scene center" id="s-private">
+    <div class="facts">
+      <p class="fact">Runs on our own computer.</p>
+      <p class="fact">No ads. No accounts.</p>
+      <p class="fact small">Your name and stamps stay on your device.</p>
+    </div>
+  </div>
+
+  <div class="scene center" id="s-end">
+    <img class="logo" src="icon.png" alt="" style="width:200px;height:200px;border-radius:46px">
+    <p class="word" style="font-size:120px;margin-top:20px">Curio</p>
+    <p class="sub">Big questions. Everyday discoveries.</p>
+    <p class="love"><svg viewBox="0 0 24 24"><path d="M12 21s-8-5.2-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.8-8 11-8 11z"/></svg>Made with love by Ayaan and Naz</p>
+  </div>
+</div>
+
+<script>
+  const DURATION = 54;
+  const $ = id => document.getElementById(id);
+  const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+  /** 0 → 1 as t goes from a to b. */
+  const ramp = (t, a, b) => clamp((t - a) / (b - a));
+  const ease = x => x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+  const out = x => 1 - Math.pow(1 - x, 3);
+  const back = x => { const c = 1.7; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+  /** Scene visibility: fades in over `f` s from `a`, out over `f` s to `b`. */
+  const vis = (t, a, b, f = .6) => Math.min(ramp(t, a, a + f), 1 - ramp(t, b - f, b));
+  const mix = (a, b, k) => a + (b - a) * k;
+
+  // ---- The pixel sky: 8 px cells, as in the app's pixel field. ----
+  const sky = $('sky').getContext('2d');
+  const hash = (x, y) => { let h = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return h - Math.floor(h); };
+  function hex(c) { return [parseInt(c.slice(1, 3), 16), parseInt(c.slice(3, 5), 16), parseInt(c.slice(5, 7), 16)]; }
+  const NIGHT = hex('#17152A'), DAY = hex('#FFF9F0');
+  const nightLevels = ['#221F3B', '#2D2952', '#474093', '#8A82F5'].map(hex);
+  const dayLevels = ['#EFE8F3', '#E2D9F6', '#C3B8F4', '#8F85EA'].map(hex);
+  function drawSky(t) {
+    const day = ease(ramp(t, 12.2, 13.6));            // night → day at the logo
+    const ground = NIGHT.map((v, i) => Math.round(mix(v, DAY[i], day)));
+    sky.fillStyle = `rgb(${ground})`;
+    sky.fillRect(0, 0, 1920, 1080);
+    const C = 8;
+    const endFade = 1 - ramp(t, 52.4, 53.6);
+    for (let cy = 0; cy < 135; cy++) {
+      const y01 = cy / 135;
+      for (let cx = 0; cx < 240; cx++) {
+        const h1 = hash(cx, cy), h2 = hash(cx + 17, cy + 17);
+        // Night: stars everywhere, twinkling. Day: a strip along the bottom.
+        let v = 0;
+        const star = h2 > .985 ? (.35 + .35 * Math.sin(t * 2.3 + h1 * 40)) : 0;
+        const strip = Math.pow(clamp((y01 - .72) / .28), 2);
+        const dither = h1 < strip * .9 ? .18 + .22 * (.5 + .5 * Math.sin(t * .8 + h2 * 6.28)) : 0;
+        v = mix(Math.max(star, dither * .6), dither, day) * endFade;
+        // The comet in the opening: a head and a tail crossing the sky.
+        if (t < 13) {
+          const ph = ramp(t, .2, 9.5);
+          const hx = mix(-200, 2100, ph), hy = mix(160, 520, ph);
+          const px = cx * C + 4 - hx, py = cy * C + 4 - hy;
+          const dirx = .988, diry = .155;
+          const along = -(px * dirx + py * diry), perp = Math.abs(px * -diry + py * dirx);
+          if (along > 0 && along < 260 && perp < 5 + 16 * along / 260) v = Math.max(v, .85 * (1 - along / 260) * (1 - day));
+          if (px * px + py * py < 300) v = Math.max(v, 1 - day);
+        }
+        if (v < .05) continue;
+        const k = v < .3 ? 0 : v < .55 ? 1 : v < .8 ? 2 : 3;
+        const n = nightLevels[k], d = dayLevels[k];
+        sky.fillStyle = `rgb(${Math.round(mix(n[0], d[0], day))},${Math.round(mix(n[1], d[1], day))},${Math.round(mix(n[2], d[2], day))})`;
+        sky.fillRect(cx * C + 1, cy * C + 1, C - 2, C - 2);
+      }
+    }
+  }
+
+  // ---- Questions floating up (real sparks from the app). ----
+  const questions = [
+    ['Why is the sky blue?', 180, 0], ['How do volcanoes erupt?', 1180, .35], ['Why do cats purr?', 330, .7],
+    ['What makes a comet grow a tail?', 1020, 1.05], ['How do birds stay warm at night?', 150, 1.4], ['Why do we hear echoes?', 1280, 1.75],
+  ];
+  const qEls = questions.map(([text]) => { const el = document.createElement('span'); el.className = 'q'; el.textContent = text; $('s-questions').append(el); return el; });
+
+  function set(el, opacity, transform = '') { el.style.opacity = opacity; el.style.transform = transform; }
+  /** A device sliding up into place and settling. */
+  function device(el, t, a, b) {
+    const k = out(ramp(t, a, a + .9)), leave = ramp(t, b - .6, b);
+    set(el, 1, `translateY(${(1 - k) * 160 - leave * 60}px) scale(${mix(.94, 1, k) * .93})`);
+  }
+
+  function render(t) {
+    drawSky(t);
+    // 1. Hook
+    set($('s-hook'), vis(t, .4, 4.6, .8), `translateY(${(1 - out(ramp(t, .4, 1.6))) * 30}px)`);
+    // 2. Questions
+    const qs = vis(t, 4.4, 10.2, .5);
+    set($('s-questions'), qs);
+    questions.forEach(([, x, delay], i) => {
+      const p = ramp(t, 4.6 + delay, 9.8 + delay * .3);
+      const y = mix(1000, 180 + (i % 3) * 230, out(clamp(p * 1.6)));
+      set(qEls[i], clamp(ramp(t, 4.6 + delay, 5.2 + delay)), `translate(${x}px, ${y - p * 60}px)`);
+    });
+    // 3. Logo (the sky turns to day behind it)
+    set($('s-logo'), vis(t, 10, 14.4, .5));
+    set($('logo'), 1, `scale(${mix(.4, 1, back(ramp(t, 10, 11)))})`);
+    $('word').style.opacity = ramp(t, 10.6, 11.2);
+    $('tag').style.opacity = ramp(t, 11.4, 12);
+    $('word').style.color = $('tag').style.color = '';
+    const day = ramp(t, 12.2, 13.6);
+    $('word').style.color = `rgb(${[243, 240, 255].map((v, i) => Math.round(mix(v, [33, 30, 59][i], day)))})`;
+    $('tag').style.color = `rgb(${[169, 164, 198].map((v, i) => Math.round(mix(v, [91, 87, 117][i], day)))})`;
+    // 4. Home: slow push towards the sparks, ring on one card.
+    set($('s-home'), vis(t, 14.2, 21.2));
+    device($('home-dev'), t, 14.2, 21.2);
+    const hz = ease(ramp(t, 16.5, 20.5));
+    $('home-zoom').style.transform = `scale(${mix(1, 1.35, hz)}) translate(${-hz * 330}px, ${-hz * 150}px)`;
+    // A ring on the first spark card (437, 145, 211 × 180 on the screen),
+    // following the zoom: a point p lands at s·p + s·offset.
+    const ring = $('home-ring');
+    set(ring, vis(t, 18.6, 21, .4));
+    const s = mix(1, 1.35, hz), ox = -hz * 330 * s, oy = -hz * 150 * s;
+    ring.style.left = `${437 * s + ox - 10}px`; ring.style.top = `${145 * s + oy - 10}px`;
+    ring.style.width = `${211 * s + 20}px`; ring.style.height = `${180 * s + 20}px`;
+    // 5. Trail: read the answer, then pan down to Dive deeper.
+    set($('s-trail'), vis(t, 21, 29.2));
+    device($('trail-dev'), t, 21, 29.2);
+    const tz = ease(ramp(t, 24.8, 25.6));
+    // Scroll to Dive deeper (the same screen, scrolled), then circle the choices.
+    $('trail-dive').style.opacity = tz;
+    set($('dive-ring'), vis(t, 25.9, 29, .4));
+    $('trail-cap-a').style.opacity = 1 - ramp(t, 24.6, 25.1);
+    $('trail-cap-b').style.opacity = ramp(t, 25.1, 25.6);
+    // 6. Five steps
+    set($('s-steps'), vis(t, 29, 32.6, .5));
+    [...$('dots').children].forEach((d, i) => {
+      const k = ramp(t, 29.6 + i * .4, 29.9 + i * .4);
+      d.style.background = k > .5 ? 'var(--accent)' : 'transparent';
+      d.style.transform = `scale(${1 + .35 * Math.sin(Math.PI * k)})`;
+    });
+    // 7. Complete, 8. Stamps
+    set($('s-complete'), vis(t, 32.4, 38));
+    device($('complete-dev'), t, 32.4, 38);
+    set($('s-stamps'), vis(t, 37.8, 42.2));
+    device($('stamps-dev'), t, 37.8, 42.2);
+    // 9. Devices, arriving one by one, then the feature pills.
+    set($('s-devices'), vis(t, 42, 48.2));
+    [['dev-laptop', 42.1], ['dev-base', 42.1], ['dev-ipad', 42.5], ['dev-phone', 42.9]].forEach(([id, a]) => {
+      const k = out(ramp(t, a, a + .9));
+      set($(id), clamp(k * 1.4), `translateY(${(1 - k) * 140}px)`);
+    });
+    [...document.querySelectorAll('.pill')].forEach((p, i) => set(p, ramp(t, 44.4 + i * .45, 44.9 + i * .45), `translateY(${(1 - out(ramp(t, 44.4 + i * .45, 45 + i * .45))) * 24}px)`));
+    // 10. Private by design
+    set($('s-private'), vis(t, 48, 52, .5));
+    [...document.querySelectorAll('.fact')].forEach((f, i) => set(f, ramp(t, 48.3 + i * .7, 48.8 + i * .7), `translateY(${(1 - out(ramp(t, 48.3 + i * .7, 49 + i * .7))) * 30}px)`));
+    // 11. End card
+    set($('s-end'), Math.min(ramp(t, 51.8, 52.4), 1), `scale(${mix(.96, 1, out(ramp(t, 51.8, 52.8)))})`);
+  }
+
+  window.render = render;
+  window.DURATION = DURATION;
+  // Opened directly: play in real time (the renderer sets ?frames).
+  if (!location.search.includes('frames')) {
+    const start = performance.now();
+    const tick = () => { render(((performance.now() - start) / 1000) % DURATION); requestAnimationFrame(tick); };
+    requestAnimationFrame(tick);
+  } else {
+    render(0);
+  }
+</script>
+</body>
+</html>
