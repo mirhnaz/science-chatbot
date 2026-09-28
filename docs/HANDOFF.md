@@ -804,6 +804,19 @@ today's restarts. Likely cause of the short answers, not confirmed: the
 user will retry with the engine set to mir-ai-pc. Possible follow-ups:
 show which engine answered, or retry the server before falling back.
 
+### TestFlight (planned, 2026-09-28)
+
+The user will enrol in the Apple Developer Program (individual, $99/yr) to
+share the iOS app with friends and family through TestFlight; the current
+signing team cannot use TestFlight. When they return with the team and a
+bundle ID: replace the placeholder `local.curio.app`, set
+`ITSAppUsesNonExemptEncryption = NO` (HTTPS only), create the app in App
+Store Connect (the name "Curio" may be taken), archive and upload, then
+invite external testers (the first build needs Beta App Review). Testers'
+copies use the home server through the Funnel host (two answers at a time;
+Automatic mode can fall back to the on-device model). Also pending: push
+`d0aef22` (vertical launch video) when the user asks.
+
 ## Agreed direction, not yet implemented
 
 The user expects login, conversation history, and more functionality over time.
