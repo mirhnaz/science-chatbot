@@ -1,6 +1,9 @@
 # Curio launch video
 
 [curio-launch.mp4](curio-launch.mp4): 54 s, 1920 × 1080, 30 fps, H.264 + AAC.
+[curio-launch-vertical.mp4](curio-launch-vertical.mp4): the same story at
+1080 × 1920 for Instagram Reels and Stories, with the iPhone app in every
+app scene ([launch-video-vertical.html](launch-video-vertical.html)).
 
 Storyboard: a pixel night sky with a comet ("Every kid has big questions")
 and real sparks floating up; the app icon reveal as the sky turns to day;
@@ -20,6 +23,7 @@ recorded and mixed in later.
 ```sh
 python3 make-music.py      # writes music.wav (generated, no licence needed)
 node render-video.mjs      # renders launch-video.html frame by frame, then ffmpeg
+node render-video.mjs --vertical   # the 1080 × 1920 cut
 ```
 
 Needs Google Chrome and ffmpeg. `launch-video.html` also plays in real time
