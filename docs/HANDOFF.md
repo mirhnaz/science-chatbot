@@ -880,6 +880,27 @@ Funnel), so `X-Forwarded-For` is read; a request from outside the tailnet
 (for example a phone on mobile data) has still not been seen in the log.
 The "not deployed" note in the phases 1 and 2 section above is superseded.
 
+### Server hardening, phase 5 checks (2026-10-01)
+
+Verified on the live service, entering through Funnel's internet address
+(curl with public DNS, so not the tailnet shortcut):
+
+- The log shows the caller's real public address (IPv4 and IPv6 seen); a
+  forged `X-Forwarded-For` header is ignored.
+- Scanner paths (`/.env`, `/.git/config`, source files, `/api/tags`,
+  `/api/generate`, dot-dot paths) return 404; OPTIONS 405; wrong content
+  type 415; foreign `Origin` 403; 9 KB body 413; blank question 400; plain
+  HTTP redirects to HTTPS.
+- Twelve real questions in a row: ten answered, then 429 with `Retry-After`.
+- SSH: the user turned password login off (drop-in
+  `10-no-passwords.conf`, sshd reloaded 20:19); the server now offers
+  `publickey` only.
+
+Not done: a port scan of the machine's public IPv6 address from outside the
+home network (cannot be done from this machine). Whether the user applied
+the optional ufw change limiting 53317 to the home network is unknown.
+Phase 4 (systemd sandboxing of `curio-web`) has not been started.
+
 ## Agreed direction, not yet implemented
 
 The user expects login, conversation history, and more functionality over time.
