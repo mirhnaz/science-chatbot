@@ -853,6 +853,25 @@ needing the user: 3 firewall review, SSH password login off, Sunshine and the
 unused Caddy service; 4 systemd sandboxing of `curio-web`; 5 outside probes.
 Open question: whether Curio stays public or gets a passcode.
 
+### Server hardening, phase 3 (2026-10-01)
+
+Findings (read-only; `ufw status` output supplied by the user):
+
+- ufw is active with incoming default DROP (`/etc/default/ufw`). The only
+  allow rules are 53317 tcp/udp (LocalSend file sharing) from anywhere and
+  Docker DNS. There is no rule for SSH (22) or Sunshine (47984-48010), so
+  both are already closed to the LAN and the internet; they are reachable
+  only over Tailscale, whose own firewall rules accept `tailscale0` traffic.
+  This is read from configuration, not yet probed from outside (phase 5).
+- sshd uses the Arch defaults: password login is still allowed.
+
+Done: `science-chatbot-caddy` (user service, port 11435) stopped and
+disabled; nothing used it and Funnel goes straight to 11436. Undo with
+`systemctl --user enable --now science-chatbot-caddy`.
+
+Waiting for the user (needs sudo): turn SSH password login off; optionally
+limit 53317 to the home network.
+
 ## Agreed direction, not yet implemented
 
 The user expects login, conversation history, and more functionality over time.
