@@ -814,8 +814,11 @@ bundle ID: replace the placeholder `local.curio.app`, set
 Store Connect (the name "Curio" may be taken), archive and upload, then
 invite external testers (the first build needs Beta App Review). Testers'
 copies use the home server through the Funnel host (two answers at a time;
-Automatic mode can fall back to the on-device model). Also pending: push
-`d0aef22` (vertical launch video) when the user asks.
+Automatic mode can fall back to the on-device model).
+
+Web width cap (`b5f71b8`, 2026-10-01): pushed with `d0aef22` and `2b1cc6d`
+and deployed to mir-omarchy-pc (pull, `npm run build`, user-service
+restart); health ok and the served styles.css carries `--page: 1240px`.
 
 ## Agreed direction, not yet implemented
 
