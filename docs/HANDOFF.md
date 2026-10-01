@@ -872,6 +872,14 @@ disabled; nothing used it and Funnel goes straight to 11436. Undo with
 Waiting for the user (needs sudo): turn SSH password login off; optionally
 limit 53317 to the home network.
 
+Deployed 2026-10-01 20:23 IST: `npm run build`, `curio-web` restarted. The
+public URL returned 200 with the two new headers, and the journal shows
+`request ...` lines. Requests made from this machine to the public name show
+its own Tailscale address (they travel inside the tailnet, not through
+Funnel), so `X-Forwarded-For` is read; a request from outside the tailnet
+(for example a phone on mobile data) has still not been seen in the log.
+The "not deployed" note in the phases 1 and 2 section above is superseded.
+
 ## Agreed direction, not yet implemented
 
 The user expects login, conversation history, and more functionality over time.
