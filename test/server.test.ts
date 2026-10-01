@@ -11,6 +11,10 @@ interface AppOptions {
   publicOrigin?: string;
   timeoutMs?: number;
   root?: string;
+  perMinute?: number;
+  perDay?: number;
+  dailyCap?: number;
+  requireClientHeader?: boolean;
 }
 
 async function readObject(response: Response): Promise<Record<string, unknown>> {
@@ -33,7 +37,10 @@ async function fixture(t: TestContext, handler: http.RequestListener, options: A
   const child = spawn(process.env.RUST_SERVER_BIN || 'backend/target/debug/curio-server', [], {
     env: { ...process.env, HOST: '127.0.0.1', PORT: '0', ASSET_ROOT: options.root || process.cwd(),
       OLLAMA_BASE_URL: options.upstream || base, OLLAMA_MODEL: options.model || 'gemma4:12b',
-      PUBLIC_ORIGIN: options.publicOrigin || '', OLLAMA_TIMEOUT_MS: String(options.timeoutMs ?? 120000) },
+      PUBLIC_ORIGIN: options.publicOrigin || '', OLLAMA_TIMEOUT_MS: String(options.timeoutMs ?? 120000),
+      // Question limits are off (0) unless a test asks for them.
+      QUESTIONS_PER_MINUTE: String(options.perMinute ?? 0), QUESTIONS_PER_DAY: String(options.perDay ?? 0),
+      QUESTIONS_DAILY_CAP: String(options.dailyCap ?? 0), REQUIRE_CLIENT_HEADER: options.requireClientHeader ? '1' : '0' },
     stdio: ['ignore', 'pipe', 'pipe']
   });
   const exited = once(child, 'exit');
@@ -45,9 +52,9 @@ async function fixture(t: TestContext, handler: http.RequestListener, options: A
     assert.equal(child.exitCode, 0, 'Rust exits gracefully');
   };
   t.after(stop);
+  let output = '';
   const url = await new Promise<string>((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error('Rust server did not start')), 5000);
-    let output = '';
     let errors = '';
     child.stderr.on('data', data => { errors += String(data); });
     child.on('error', error => { clearTimeout(timer); reject(error); });
@@ -58,7 +65,7 @@ async function fixture(t: TestContext, handler: http.RequestListener, options: A
       if (match) { clearTimeout(timer); resolve(match[1]); }
     });
   });
-  return { url, stop, post: (body: unknown, headers: Record<string, string> = {}) => fetch(`${url}/api/chat`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: JSON.stringify(body) }) };
+  return { url, stop, logs: () => output, post: (body: unknown, headers: Record<string, string> = {}) => fetch(`${url}/api/chat`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: JSON.stringify(body) }) };
 }
 
 test('compiled server serves browser assets from the deployment layout', async t => {
@@ -218,6 +225,8 @@ test('asset allowlist preserves bytes, MIME types, query handling and security h
     assert.equal(res.headers.get('cache-control'), 'no-store');
     assert.equal(res.headers.get('x-content-type-options'), 'nosniff');
     assert.equal(res.headers.get('referrer-policy'), 'no-referrer');
+    assert.equal(res.headers.get('strict-transport-security'), 'max-age=31536000');
+    assert.equal(res.headers.get('permissions-policy'), 'camera=(), geolocation=(), payment=(), usb=()');
     assert.equal(res.headers.get('content-security-policy'), "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
     if (status === 405) {
       assert.equal(res.headers.get('allow'), 'POST');
@@ -400,6 +409,72 @@ test('Rust shutdown also closes an unfinished request body', async t => {
   req.write('{');
   await delay(30);
   await f.stop();
+});
+
+test('each caller gets a per-minute question limit, counted by forwarded address', async t => {
+  let calls = 0;
+  const f = await fixture(t, (_, res) => { calls++; answer(res); }, { perMinute: 2 });
+  const from = (ip: string) => f.post({ question: 'Why?' }, { 'X-Forwarded-For': ip });
+  assert.equal((await from('203.0.113.7')).status, 200);
+  // Only the last address, written by the nearest proxy, is believed.
+  assert.equal((await from('198.51.100.1, 203.0.113.7')).status, 200);
+  const refused = await from('203.0.113.7');
+  assert.equal(refused.status, 429);
+  assert.deepEqual(await refused.json(), { error: 'That was a lot of questions! Take a short break and try again.' });
+  const wait = Number(refused.headers.get('retry-after'));
+  assert.ok(wait >= 1 && wait <= 60);
+  assert.equal((await from('203.0.113.8')).status, 200, 'another caller is unaffected');
+  assert.equal((await f.post({ question: ' ' }, { 'X-Forwarded-For': '203.0.113.9' })).status, 400);
+  assert.equal(calls, 3);
+});
+
+test('daily limits refuse a caller and then everyone', async t => {
+  let calls = 0;
+  const f = await fixture(t, (_, res) => { calls++; answer(res); }, { perDay: 1, dailyCap: 2 });
+  const from = (ip: string) => f.post({ question: 'Why?' }, { 'X-Forwarded-For': ip });
+  assert.equal((await from('203.0.113.7')).status, 200);
+  const again = await from('203.0.113.7');
+  assert.equal(again.status, 429);
+  assert.deepEqual(await again.json(), { error: 'You have asked lots of questions today. Come back tomorrow!' });
+  assert.equal((await from('203.0.113.8')).status, 200);
+  const capped = await from('203.0.113.9');
+  assert.equal(capped.status, 429);
+  assert.deepEqual(await capped.json(), { error: 'The science tutor has answered a lot today. Come back tomorrow!' });
+  assert.equal(calls, 2);
+});
+
+test('the client header can be required before a question reaches Ollama', async t => {
+  let calls = 0;
+  const f = await fixture(t, (_, res) => { calls++; answer(res); }, { requireClientHeader: true });
+  const missing = await f.post({ question: 'Why?' });
+  assert.equal(missing.status, 403);
+  assert.deepEqual(await missing.json(), { error: 'Please ask from the Curio page or app.' });
+  assert.equal(calls, 0);
+  assert.equal((await f.post({ question: 'Why?' }, { 'X-Curio-Client': 'web' })).status, 200);
+  assert.equal((await fetch(f.url)).status, 200, 'pages do not need the header');
+});
+
+test('every request is logged on one line without the question text', async t => {
+  const f = await fixture(t, (_, res) => answer(res));
+  await f.post({ question: 'A secret question?' }, { 'X-Forwarded-For': '203.0.113.7', 'X-Curio-Client': 'web', 'User-Agent': 'Test "agent"\\' });
+  await fetch(f.url + '/wp-login.php?user=admin');
+  await until(() => f.logs().includes('/wp-login.php'));
+  const lines = f.logs().split('\n').filter(line => line.startsWith('request '));
+  assert.equal(lines.length, 2);
+  assert.match(lines[0], /^request ip=203\.0\.113\.7 method=POST path=\/api\/chat status=200 ms=\d+ client=web agent="Test \?agent\?\?"$/);
+  assert.match(lines[1], /^request ip=127\.0\.0\.1 method=GET path=\/wp-login\.php status=404 ms=\d+ client=- agent="[^"]*"$/);
+  assert.doesNotMatch(f.logs(), /secret|admin/);
+});
+
+test('a question body that stalls is given up after ten seconds', async t => {
+  const f = await fixture(t, (_, res) => answer(res));
+  const status = await new Promise<number>((resolve, reject) => {
+    const req = http.request(f.url + '/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' } }, res => { res.resume(); resolve(res.statusCode!); });
+    req.on('error', reject);
+    t.after(() => req.destroy());
+    req.write('{');
+  });
+  assert.equal(status, 408);
 });
 
 test('starter suggestions rotate across four topics without calling Ollama', async t => {

@@ -501,7 +501,7 @@ async function ask(question: unknown, options: { newTrail?: boolean; topic?: str
   go('trail');
   scrollToTop();
   try {
-    const response = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: asked }), signal: current.signal });
+    const response = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Curio-Client': 'web' }, body: JSON.stringify({ question: asked }), signal: current.signal });
     const data: ChatResponse = await response.json();
     if (!response.ok) throw new Error(typeof data.error === 'string' ? data.error : 'Something went wrong. Please try again.');
     if (typeof data.answer !== 'string' || !data.answer.trim()) throw new Error('No answer came back. Please try again.');

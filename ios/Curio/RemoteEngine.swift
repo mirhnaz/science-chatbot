@@ -37,6 +37,8 @@ struct RemoteEngine: TutorEngine {
         var request = URLRequest(url: baseURL.appendingPathComponent("api/chat"))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        // Tells the server this is the Curio app (see CLIENT_HEADER in http.rs).
+        request.setValue("ios", forHTTPHeaderField: "X-Curio-Client")
         request.httpBody = try JSONEncoder().encode(["question": question])
         // Slightly longer than the server's 120 s deadline so its message wins.
         request.timeoutInterval = 125

@@ -12,8 +12,8 @@ RUST_SERVER_BIN=backend/target/release/curio-server node --test build/test/*.tes
 ```
 
 `npm test` builds the frontend, TypeScript test files, and debug Rust
-binary. It runs 21 Rust checks (17 validation tests, three question-bank tests, and one
-documentation example), then all 32 HTTP/frontend checks against Rust with no backend selector
+binary. It runs 30 Rust checks (18 validation tests, five question-limit tests, five
+question-bank tests, and two documentation examples), then all 50 HTTP/frontend checks against Rust with no backend selector
 or skipped cases. Node runs the test harness and mock Ollama server only. Socket
 tests need permission to bind loopback ports; they never load the real model.
 

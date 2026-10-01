@@ -62,7 +62,7 @@ they conflict; the eight `.dc.html` files beside it are the layouts of record.
 
 Run from the repository root after obtaining command authorization:
 
-- `npm test`: 21 Rust checks and 32 HTTP/frontend checks at this
+- `npm test`: 30 Rust checks and 50 HTTP/frontend checks at this
   checkpoint; uses a mock Ollama server and local sockets.
 - `npm run typecheck`: frontend and test TypeScript checks.
 - `npm run check:rust`: rustfmt and Clippy; relevant to Rust changes.

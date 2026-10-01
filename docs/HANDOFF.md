@@ -820,6 +820,39 @@ Web width cap (`b5f71b8`, 2026-10-01): pushed with `d0aef22` and `2b1cc6d`
 and deployed to mir-omarchy-pc (pull, `npm run build`, user-service
 restart); health ok and the served styles.css carries `--page: 1240px`.
 
+### Server hardening, phases 1 and 2 (2026-10-01)
+
+Why: the server is public through Funnel and kept no request log, so there
+was no way to see who called it; the only brake on `/api/chat` was the two
+model slots. The user approved a five-phase plan; phases 1 and 2 are coded.
+
+Committed, **not deployed** (the release build and `curio-web` restart were
+not run; the live binary is still the old one):
+
+- Request log: one line per request on standard output (journal), with
+  address, method, path, status, milliseconds, `X-Curio-Client`, user agent.
+  No query string and no question text.
+- Question limits in `backend/src/limits.rs`: 10 per minute and 200 per day
+  per caller, 1000 per day for everyone; 429 with `Retry-After`. Settings and
+  how a caller is identified are in the README configuration table. The plan
+  said 100 per day; 200 was chosen because the family shares one home address.
+- A question body that has not arrived within 10 s gets 408.
+- `Strict-Transport-Security` and `Permissions-Policy` response headers.
+- The web page and iOS source send `X-Curio-Client` (`web` / `ios`).
+  Enforcement (`REQUIRE_CLIENT_HEADER=1`) is off: installed iOS builds do not
+  send the header yet. Turn it on in the live unit after the app is updated.
+
+Verified: `npm test` 30 Rust + 50 HTTP/frontend, typecheck, rustfmt + Clippy.
+Not verified: that Funnel passes the real caller address in
+`X-Forwarded-For` (check the first live log lines; if every line shows
+127.0.0.1 the per-caller limits act as one shared limit). iOS not built.
+
+Not done: no timeout on slow request *headers* (`axum::serve` has no such
+setting; Tailscale terminates the public connections). Remaining phases, all
+needing the user: 3 firewall review, SSH password login off, Sunshine and the
+unused Caddy service; 4 systemd sandboxing of `curio-web`; 5 outside probes.
+Open question: whether Curio stays public or gets a passcode.
+
 ## Agreed direction, not yet implemented
 
 The user expects login, conversation history, and more functionality over time.

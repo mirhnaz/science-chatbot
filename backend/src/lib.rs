@@ -5,4 +5,5 @@
 
 pub mod chat;
 pub mod http;
+pub mod limits;
 pub mod suggestions;

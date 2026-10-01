@@ -72,6 +72,16 @@ The app reads environment variables, not `.env` files.
 | `OLLAMA_MODEL` | `gemma4:12b` | Installed model |
 | `PUBLIC_ORIGIN` | Unset | Exact allowed browser origin; when unset, compares request host |
 | `OLLAMA_TIMEOUT_MS` | `120000` | Complete upstream deadline, including response body reads |
+| `QUESTIONS_PER_MINUTE` | `10` | Questions one caller may ask per minute; `0` = no limit |
+| `QUESTIONS_PER_DAY` | `200` | Questions one caller may ask per day; `0` = no limit |
+| `QUESTIONS_DAILY_CAP` | `1000` | Questions from all callers together per day; `0` = no limit |
+| `REQUIRE_CLIENT_HEADER` | `0` | `1` refuses questions without the `X-Curio-Client` header |
+
+A caller is an IP address (IPv6: its /64 network), taken from the last
+`X-Forwarded-For` entry when the connection comes from this machine, as it does
+behind Tailscale Funnel. Counts are in memory and reset on restart. Every
+request is logged on one line (address, method, path, status, time, client
+header, user agent; never the question): `journalctl --user -u curio-web`.
 
 `PUBLIC_ORIGIN` is an origin check, not authentication. The existing deployment
 uses public Tailscale Funnel directly to loopback port `11436`. Preserve its
