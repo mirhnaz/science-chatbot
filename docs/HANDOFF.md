@@ -944,10 +944,15 @@ old app had none). Release archive built (version 1.0, build 1) and exported
 as an App Store Connect `.ipa`: Xcode registered the bundle ID and created
 the cloud-managed distribution certificate and store profile.
 
-**Not done:** the upload failed with "App record with bundle identifier
-app.curio.tutor not found". The user must create the app in App Store
-Connect; then rerun the upload (ios/README.md → TestFlight). After that:
-internal testers at once, external testers after Beta App Review.
+Uploaded: the user created the app record and build 1.0 (1) was uploaded to
+App Store Connect ("Upload succeeded", then Apple's processing). Two
+warnings only: no debug symbols for the prebuilt SherpaOnnxC and
+onnxruntime frameworks, so crashes inside them will not show function
+names. **Not verified:** that Apple's processing finished (the user gets an
+email if it finds problems) and that a tester can install. Next, in App
+Store Connect → TestFlight: internal testers can be added at once; external
+testers need test information and Beta App Review. The next upload needs
+`CFBundleVersion` 2.
 
 On the devices the old `local.curio.app` is still installed beside the new
 app and holds the stamps, trails and (iPad) the old model copy; the new app
