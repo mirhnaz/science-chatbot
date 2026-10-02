@@ -901,6 +901,30 @@ home network (cannot be done from this machine). Whether the user applied
 the optional ufw change limiting 53317 to the home network is unknown.
 Phase 4 (systemd sandboxing of `curio-web`) has not been started.
 
+### Server hardening, phase 4: sandbox (2026-10-02)
+
+The live user unit and the template `deploy/curio-web.user.service` now
+carry systemd sandbox settings: the server sees an empty home directory
+except `public/`, `build/client/`, `backend/data/` and
+`backend/target/release/` (all read-only), cannot write to disk, gain
+privileges, or use unusual system calls. `systemd-analyze --user security
+curio-web` went from 9.4 (unsafe) to 1.4 (ok). A new asset folder in
+`http.rs` must also be added to `BindReadOnlyPaths`. The previous live unit
+is saved beside it as `curio-web.service.bak-presandbox`.
+
+Verified live through Funnel after the restart: page, script, styles, font,
+facts, suggestions and one real question all returned 200; no errors in the
+journal. Not possible in a user service: limiting the process to local
+network addresses (`IPAddressAllow` needs root), so it is not set.
+
+Also confirmed by reading `/etc/ufw/user.rules` and `user6.rules` (world
+readable): port 53317 is now allowed only from 192.168.29.0/24 and
+fe80::/10.
+
+Decision: Curio stays public (no passcode). Still open: set
+`REQUIRE_CLIENT_HEADER=1` in the live unit once updated iOS builds are on
+the devices; outside IPv6 port scan; review the request log after a few days.
+
 ## Agreed direction, not yet implemented
 
 The user expects login, conversation history, and more functionality over time.
