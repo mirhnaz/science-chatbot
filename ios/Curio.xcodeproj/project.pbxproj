@@ -29,6 +29,7 @@
 		77C23C41241224B9B00D4AE7 /* Speech.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8A8239AA4721DD4FE59AEB6 /* Speech.swift */; };
 		A1C0510E0000000000000005 /* Fredoka.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A1C0510E0000000000000006 /* Fredoka.ttf */; };
 		A1C0510E0000000000000007 /* Nunito.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A1C0510E0000000000000008 /* Nunito.ttf */; };
+		A1C0510E000000000000001C /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A1C0510E000000000000001B /* PrivacyInfo.xcprivacy */; };
 		8B47A1C8920191F4D619ACFF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FAB26B4F62FED9798C4C9848 /* Assets.xcassets */; };
 		9AEB7EFFCF555F4CF6D9781B /* LlamaFramework in Frameworks */ = {isa = PBXBuildFile; productRef = 6B7460FF07288AA0992A4D0E /* LlamaFramework */; };
 		A6EF7523266D6AAB7AE3EC77 /* tutor.txt in Resources */ = {isa = PBXBuildFile; fileRef = E12547E2EFB35175E491887F /* tutor.txt */; };
@@ -56,6 +57,7 @@
 		5DC7B15AA78E520137D7E6C4 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
 		69CBFB52AA72DBA38604AA78 /* Curio.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Curio.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		747BC80080FBC496ADAC6E59 /* TutorEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorEngine.swift; sourceTree = "<group>"; };
+		A1C0510E000000000000001B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		7AA43593DB2BD41DC1BE745D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		8859FDC805BA135BC64B2C70 /* App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
 		9742A41C47D7419076FDA162 /* ModelStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelStore.swift; sourceTree = "<group>"; };
@@ -137,6 +139,7 @@
 				A1C0510E0000000000000004 /* HomeView.swift */,
 				A1C0510E0000000000000002 /* CurioTheme.swift */,
 				7AA43593DB2BD41DC1BE745D /* Info.plist */,
+				A1C0510E000000000000001B /* PrivacyInfo.xcprivacy */,
 				2D915168E0CA058C9F138059 /* LocalEngine.swift */,
 				9742A41C47D7419076FDA162 /* ModelStore.swift */,
 				BEC8D6D8EB59AA236DB2D166 /* RemoteEngine.swift */,
@@ -263,6 +266,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				8B47A1C8920191F4D619ACFF /* Assets.xcassets in Resources */,
+				A1C0510E000000000000001C /* PrivacyInfo.xcprivacy in Resources */,
 				A1C0510E0000000000000007 /* Nunito.ttf in Resources */,
 				A1C0510E0000000000000005 /* Fredoka.ttf in Resources */,
 				4CD577A46103241B28F53109 /* questions.json in Resources */,
@@ -383,7 +387,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = local.curio.app;
+				PRODUCT_BUNDLE_IDENTIFIER = app.curio.tutor;
 				PRODUCT_NAME = Curio;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -461,7 +465,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = local.curio.app;
+				PRODUCT_BUNDLE_IDENTIFIER = app.curio.tutor;
 				PRODUCT_NAME = Curio;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";

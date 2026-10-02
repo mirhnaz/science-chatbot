@@ -66,7 +66,7 @@ The team ID is the `OU=` value printed by
 or pick your Personal Team once in Xcode → Signing & Capabilities and copy it.
 Choosing a Team in that screen instead writes it into `project.pbxproj`; do not
 commit that change. If the bundle identifier is taken, change
-`local.curio.app` to something unique.
+`app.curio.tutor` to something unique.
 
 ```sh
 open ios/Curio.xcodeproj
@@ -106,7 +106,7 @@ Answers are a little simpler than the server's. Choose one method:
    select the iPad → **Files** → drag the `.gguf` onto *Curio*.
    In the app, open Settings → Advanced → *Refresh list*. Or copy it from the Mac's
    terminal with the app installed:
-   `xcrun devicectl device copy to --device <device-id> --domain-type appDataContainer --domain-identifier local.curio.app --source <file>.gguf --destination Documents/<file>.gguf`
+   `xcrun devicectl device copy to --device <device-id> --domain-type appDataContainer --domain-identifier app.curio.tutor --source <file>.gguf --destination Documents/<file>.gguf`
 3. **Files app**: Settings → Advanced → *Import model file…* and pick a `.gguf`.
 
 Then choose **On this iPad** or **Automatic** in Settings. The first question loads the model
@@ -178,6 +178,33 @@ cd ios && xcodebuild -project Curio.xcodeproj \
 
 On the device: ask a starter question in airplane mode, tap a follow-up, press
 Stop during an answer, use Read aloud, switch theme, and try the AI PC mode.
+
+## TestFlight
+
+Needs the paid Apple Developer Program team in `Local.xcconfig` and an app
+record for `app.curio.tutor` in App Store Connect (created once, in the
+browser). Raise `CFBundleVersion` in `Curio/Info.plist` for every upload;
+Apple rejects a build number it has already seen.
+
+```sh
+cd ios
+xcodebuild -project Curio.xcodeproj -scheme Curio \
+  -destination 'generic/platform=iOS' -archivePath /tmp/Curio.xcarchive \
+  -allowProvisioningUpdates archive
+xcodebuild -exportArchive -archivePath /tmp/Curio.xcarchive \
+  -exportPath /tmp/curio-upload -exportOptionsPlist ExportOptions.plist \
+  -allowProvisioningUpdates
+```
+
+`ExportOptions.plist` sets `method` to `app-store-connect` and `destination`
+to `upload` (or `export` to only produce a signed `.ipa` as a dry run). Xcode
+creates the distribution certificate and profile itself.
+
+`Curio/PrivacyInfo.xcprivacy` is the privacy manifest Apple requires: it
+declares UserDefaults (settings, stamps, trails; reason `CA92.1`) and no
+tracking or collected data. Update it if the app starts using another
+"required reason" API or storing data off the device.
+`ITSAppUsesNonExemptEncryption` is `NO` in `Info.plist` (HTTPS only).
 
 ## Updating llama.cpp
 

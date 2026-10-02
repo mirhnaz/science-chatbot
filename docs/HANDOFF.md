@@ -1,6 +1,6 @@
 # Project handoff
 
-Updated: 2026-09-26. Read [../AGENTS.md](../AGENTS.md) for working rules.
+Updated: 2026-10-02. Read [../AGENTS.md](../AGENTS.md) for working rules.
 This is a checkpoint, not a live service-status report. Check the current Git
 state and relevant files after obtaining command authorization before changing
 anything. Do not assume another agent has the preceding conversation.
@@ -924,6 +924,37 @@ fe80::/10.
 Decision: Curio stays public (no passcode). Still open: set
 `REQUIRE_CLIENT_HEADER=1` in the live unit once updated iOS builds are on
 the devices; outside IPv6 port scan; review the request log after a few days.
+
+### Paid developer team and TestFlight preparation (2026-10-02)
+
+The user joined the Apple Developer Program. The team ID did not change
+(the Personal Team became the paid team), so `ios/Local.xcconfig` is as
+before; development profiles now last one year instead of 7 days. The user
+chose the bundle ID **`app.curio.tutor`** (replaces `local.curio.app`).
+
+Done: bundle ID in the project and `ios/README.md`;
+`ITSAppUsesNonExemptEncryption = NO`; a privacy manifest
+(`ios/Curio/PrivacyInfo.xcprivacy`: UserDefaults, no tracking, no collected
+data); a TestFlight section in `ios/README.md`.
+
+Verified: 15 ScienceCore tests; signed Debug build from `81399cc` (so it
+sends `X-Curio-Client: ios`) installed on the iPhone and the iPad, not
+launched; the Qwen GGUF copied into the new app on the iPad (the iPhone's
+old app had none). Release archive built (version 1.0, build 1) and exported
+as an App Store Connect `.ipa`: Xcode registered the bundle ID and created
+the cloud-managed distribution certificate and store profile.
+
+**Not done:** the upload failed with "App record with bundle identifier
+app.curio.tutor not found". The user must create the app in App Store
+Connect; then rerun the upload (ios/README.md → TestFlight). After that:
+internal testers at once, external testers after Beta App Review.
+
+On the devices the old `local.curio.app` is still installed beside the new
+app and holds the stamps, trails and (iPad) the old model copy; the new app
+starts empty and needs the Michael voice downloaded again. Nothing was
+deleted; the user removes the old app when ready. `REQUIRE_CLIENT_HEADER=1`
+should wait until the old app is gone and testers have the new build.
+The "TestFlight (planned)" section above is superseded.
 
 ## Agreed direction, not yet implemented
 
