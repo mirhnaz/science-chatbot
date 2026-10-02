@@ -944,15 +944,23 @@ old app had none). Release archive built (version 1.0, build 1) and exported
 as an App Store Connect `.ipa`: Xcode registered the bundle ID and created
 the cloud-managed distribution certificate and store profile.
 
-Uploaded: the user created the app record and build 1.0 (1) was uploaded to
-App Store Connect ("Upload succeeded", then Apple's processing). Two
-warnings only: no debug symbols for the prebuilt SherpaOnnxC and
-onnxruntime frameworks, so crashes inside them will not show function
-names. **Not verified:** that Apple's processing finished (the user gets an
-email if it finds problems) and that a tester can install. Next, in App
-Store Connect → TestFlight: internal testers can be added at once; external
-testers need test information and Beta App Review. The next upload needs
-`CFBundleVersion` 2.
+Uploads: the user created the app record ("Curio: Science Tutor"). Build
+1.0 (1) uploaded but **failed Apple's processing**: ITMS-90208, the
+embedded `onnxruntime.framework` listed minimum iOS 13.0 in its Info.plist
+while its binary is linked for 26.0. "Upload succeeded" only means Apple
+received the file; the failure showed up later in Xcode's upload log
+(`$TMPDIR/Curio_*.xcdistributionlogs/ContentDelivery.log`, which lists the
+state of earlier uploads). The user also sent build 1 again from Xcode's
+Organizer; expect the same failure. Fix: a "Match framework minimum iOS
+versions" Run Script build phase copies each framework binary's value into
+its Info.plist and re-signs it. Build 1.0 (2) was archived with it (plist
+and binary both 26.0, signature valid) and uploaded at 16:11.
+**Not verified:** that build 2 passed processing and that a tester can
+install. Both archives are in `~/Library/Developer/Xcode/Archives/2026-10-02/`.
+Upload warnings (harmless): no debug symbols for the prebuilt SherpaOnnxC
+and onnxruntime frameworks. Next, in App Store Connect → TestFlight:
+internal testers at once; external testers need test information and Beta
+App Review. The next upload needs `CFBundleVersion` 3.
 
 On the devices the old `local.curio.app` is still installed beside the new
 app and holds the stamps, trails and (iPad) the old model copy; the new app
