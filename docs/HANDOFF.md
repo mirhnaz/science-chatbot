@@ -955,8 +955,8 @@ Organizer; expect the same failure. Fix: a "Match framework minimum iOS
 versions" Run Script build phase copies each framework binary's value into
 its Info.plist and re-signs it. Build 1.0 (2) was archived with it (plist
 and binary both 26.0, signature valid) and uploaded at 16:11.
-**Not verified:** that build 2 passed processing and that a tester can
-install. Both archives are in `~/Library/Developer/Xcode/Archives/2026-10-02/`.
+The user confirmed build 2 appears on the TestFlight tab, so it passed
+processing. **Not verified:** that a tester can install it. Both archives are in `~/Library/Developer/Xcode/Archives/2026-10-02/`.
 Upload warnings (harmless): no debug symbols for the prebuilt SherpaOnnxC
 and onnxruntime frameworks. Next, in App Store Connect → TestFlight:
 internal testers at once; external testers need test information and Beta
