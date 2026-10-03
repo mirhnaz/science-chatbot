@@ -969,6 +969,42 @@ deleted; the user removes the old app when ready. `REQUIRE_CLIENT_HEADER=1`
 should wait until the old app is gone and testers have the new build.
 The "TestFlight (planned)" section above is superseded.
 
+### Curio on thingsand.systems (2026-10-02/03)
+
+The user's new domain **thingsand.systems** is the home site for all their
+side projects; Curio is its first entry. The site is a separate project, not
+part of this repository: source in `~/dev/thingsand-systems`, private GitHub
+repository `mirhnaz/thingsand-systems`. Its README covers layout, adding an
+entry, media, and deploying.
+
+- Hosting: static files on the existing Cloudflare Worker
+  `thingsand-homepage` (Free plan), route `thingsand.systems/*`, deployed
+  with `npx wrangler deploy` from that folder. A small Worker script answers
+  byte-range requests for `/media/*` only, because Cloudflare's static
+  serving ignores them and Safari needs them to play video. Porkbun stays
+  the registrar; DNS, HTTPS and the `www` → root redirect are in the
+  Cloudflare dashboard. Setup history is in the Codex handoff
+  (`~/Documents/Codex/2026-10-02/.../outputs/domain-setup-state.json`).
+- Design: original dark, terminal-flavoured page (the user rejected a
+  close copy of omarchy.org): Bricolage Grotesque headline, Martian Mono
+  labels, `things/` and `systems/` lists, a working terminal in the hero.
+  Open-source fonts only (standing rule).
+- The Curio entry describes only what exists and has **no outbound link**:
+  the live app's address is the personal Funnel hostname, kept out of Git.
+  Add a link when there is a public TestFlight link or a subdomain. Its
+  media come from `docs/launch/`: the launch video re-encoded (6.4 MB,
+  faststart) and seven screenshots (full size + 520 px thumbnails). If the
+  launch video or screenshots change here, re-export them for the site.
+  The iPad/iPhone Home shots greet Ayaan by name (also in the video).
+
+Verified live (2026-10-03): page, assets and video match the site
+repository; 206 range replies for the video; HTTP → HTTPS and `www` → root
+301s with path and query kept, through normal resolution. Not verified:
+video playback in Safari on a real iPhone/iPad. Earlier, this Mac's DNS gave
+stale Porkbun addresses (the home router's IPv6 resolver); it has cleared.
+`oneleveldeeper.dev` (planned Substack blog) is not linked from the site
+until it is connected.
+
 ## Agreed direction, not yet implemented
 
 The user expects login, conversation history, and more functionality over time.
