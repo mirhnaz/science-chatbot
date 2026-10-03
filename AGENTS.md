@@ -22,12 +22,12 @@ they conflict; the eight `.dc.html` files beside it are the layouts of record.
   or similar presentation artifacts, render and inspect them, and commit them
   locally do not need another confirmation. This does not authorize pushes,
   deployment changes, or unrelated machine changes.
-- Commit completed changes locally by default after appropriate checks. Stage
-  only task-related changes; preserve unrelated user work. The local-commit
-  preference is standing authorization to commit the completed work.
-- Push only when the user explicitly asks. Report the commit and whether it was
-  pushed. Never treat permission to commit as permission to deploy or restart
-  services.
+- After finishing a task, commit the changes after appropriate checks and push
+  to `origin` (user instruction, 2026-10-03). Stage only task-related changes;
+  preserve unrelated user work. This is standing authorization to commit and
+  push completed work; it does not cover force-pushes.
+- Report the commit and that it was pushed. Never treat permission to commit
+  or push as permission to deploy or restart services.
 - Keep explanations in small steps. The user has programming experience and
   strong systems knowledge but is returning after a long break. Assume basics
   such as functions and loops, not familiarity with advanced C, Java, Objective-C,

@@ -24,7 +24,8 @@ There is no login, database, persisted history, or response streaming yet.
   sockets with a mock Ollama server. `node_modules/` is still needed for frontend
   compilation and tests; its presence does not mean a Node backend is running.
 - Work is on `main`. Dynamic starter suggestions are implemented; check Git for
-  the current commit/push state. Pushes remain explicit user requests.
+  the current commit/push state. Since 2026-10-03, finished work is
+  committed and pushed to origin after each task (see AGENTS.md).
 - “Need a spark?” now loads four curated questions from different topics, with
   a “Surprise me” refresh button. Selecting a starter fills the input; Ask submits.
   The bank has 60 questions across 10 topics. No AI call generates these starters.
